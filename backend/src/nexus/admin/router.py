@@ -1,0 +1,119 @@
+"""FastAPI router for admin and ops endpoints."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from fastapi import APIRouter, Depends, Response
+
+from nexus.admin.schemas import HealthResponse, RiotQuotaResponse, SynergyRebuildResponse
+from nexus.config import get_settings
+from nexus.middleware.auth import get_current_user
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
+
+
+@router.get("/health", response_model=HealthResponse)
+async def health_check() -> dict[str, str]:
+    """Health check endpoint — no auth required."""
+    settings = get_settings()
+    return {
+        "status": "ok",
+        "version": settings.app_version,
+        "environment": settings.environment,
+    }
+
+
+@router.get("/metrics")
+async def prometheus_metrics(
+    _current_user: dict[str, Any] = Depends(get_current_user),
+) -> Response:
+    """Expose Prometheus metrics. Requires authentication."""
+    from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+
+    return Response(
+        content=generate_latest(),
+        media_type=CONTENT_TYPE_LATEST,
+    )
+
+
+@router.get("/riot-quota", response_model=RiotQuotaResponse)
+async def riot_quota(
+    _current_user: dict[str, Any] = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Show current Riot API quota configuration. Requires authentication."""
+    settings = get_settings()
+    return {
+        "per_second_limit": settings.riot_api_rate_limit_per_second,
+        "per_2min_limit": settings.riot_api_rate_limit_per_2min,
+        "estimated_usage": "nominal",
+    }
+
+
+@router.post("/synergy/rebuild", response_model=SynergyRebuildResponse)
+async def rebuild_synergy(
+    _current_user: dict[str, Any] = Depends(get_current_user),
+) -> dict[str, str]:
+    """Trigger a synergy/counter matrix rebuild from match data."""
+    from nexus.shared import clickhouse as ch
+
+    logger.info("Synergy matrix rebuild triggered")
+
+    # Rebuild synergy matrix from match data
+    ch.command(
+        """
+        INSERT INTO synergy_matrix
+        SELECT
+            extractAll(game_version, '^(\\d+\\.\\d+)')[1] AS patch,
+            least(a.champion_id, b.champion_id) AS champion_a,
+            greatest(a.champion_id, b.champion_id) AS champion_b,
+            a.queue_id AS queue_id,
+            count() AS games_played,
+            sum(a.win) AS wins,
+            avg(a.gold_earned - b.gold_earned) AS avg_gold_diff,
+            (sum(a.win) / count()) AS synergy_score,
+            now64(3)
+        FROM matches a
+        INNER JOIN matches b
+            ON a.match_id = b.match_id
+            AND a.team_id = b.team_id
+            AND a.puuid < b.puuid
+        GROUP BY patch, champion_a, champion_b, queue_id
+        HAVING games_played >= 10
+        """
+    )
+
+    # Rebuild counter matrix
+    ch.command(
+        """
+        INSERT INTO counter_matrix
+        SELECT
+            extractAll(a.game_version, '^(\\d+\\.\\d+)')[1] AS patch,
+            a.champion_id AS champion,
+            b.champion_id AS opponent,
+            a.role AS role,
+            a.queue_id AS queue_id,
+            count() AS games_played,
+            sum(a.win) AS wins,
+            avg(a.gold_earned - b.gold_earned) AS avg_gold_diff,
+            ((sum(a.win) / count()) - 0.5) * 100 AS counter_score,
+            now64(3)
+        FROM matches a
+        INNER JOIN matches b
+            ON a.match_id = b.match_id
+            AND a.team_id != b.team_id
+            AND a.role = b.role
+            AND a.role != ''
+        GROUP BY patch, champion, opponent, role, queue_id
+        HAVING games_played >= 5
+        """
+    )
+
+    logger.info("Synergy and counter matrix rebuild completed")
+    return {
+        "status": "completed",
+        "message": "Synergy and counter matrices rebuilt successfully",
+    }

@@ -205,3 +205,49 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ============================================
+# Node.js / Next.js / Frontend
+# ============================================
+node_modules/
+.next/
+out/
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+.turbo/
+
+# ============================================
+# Docker
+# ============================================
+docker-compose.override.yml
+
+# ============================================
+# IDE
+# ============================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ============================================
+# Project-specific
+# ============================================
+*.env.local
+*.env.production
+*.env.staging
+data/          # Docker volume data (local dev)
+
+# ============================================
+# Security: keys and certificates
+# ============================================
+keys/
+*.pem
+*.key
+
+# ============================================
+# Project master doc (local only)
+# ============================================
+CLAUDE.md
