@@ -42,7 +42,8 @@ def _configure_logging() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Startup / shutdown lifecycle for database, Redis, and ClickHouse."""
+    """Startup / shutdown lifecycle for database, Redis, ClickHouse, and arq."""
+    from nexus.dependencies import close_arq_pool, get_arq_pool
     from nexus.shared.clickhouse import close_client, get_clickhouse_client
     from nexus.shared.database import dispose_engine, get_engine
     from nexus.shared.redis import close_redis, get_redis
@@ -55,12 +56,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     get_engine()
     await get_redis()
     get_clickhouse_client()
+    await get_arq_pool()
     logger.info("All connections initialised")
 
     yield
 
     # Shutdown
     logger.info("Shutting down Nexus-5v5 application")
+    await close_arq_pool()
     await close_riot_client()
     await close_redis()
     close_client()

@@ -6,7 +6,7 @@ import { RoleDistributionChart } from "@/components/charts/role-distribution";
 import { PerformanceTrend } from "@/components/charts/performance-trend";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageLoader, ErrorDisplay } from "@/components/ui/loading";
-import { cn, formatKDA, formatTimeAgo, getChampionIconUrl } from "@/lib/utils";
+import { cn, formatTimeAgo, getChampionIconUrl } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -100,12 +100,7 @@ export default function DashboardPage() {
                       {(champ.win_rate * 100).toFixed(0)}% WR
                     </p>
                     <p className="text-xs text-slate-500">
-                      {formatKDA(
-                        Math.round(champ.avg_kda),
-                        1,
-                        Math.round(champ.avg_kda)
-                      )}{" "}
-                      KDA
+                      {champ.avg_kda.toFixed(2)} KDA
                     </p>
                   </div>
                   <div className="hidden sm:block">

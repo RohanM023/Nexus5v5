@@ -61,6 +61,31 @@ services:
     networks:
       - nexus-net
 
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: nexus-worker
+    command: ["uv", "run", "arq", "nexus.worker.WorkerSettings"]
+    volumes:
+      - ./backend/src:/app/src
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-nexus}:${POSTGRES_PASSWORD:-nexus}@postgres:5432/${POSTGRES_DB:-nexus}
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_HOST=redis
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=8123
+    depends_on:
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - nexus-net
+
   postgres:
     image: postgres:16-alpine
     container_name: nexus-postgres

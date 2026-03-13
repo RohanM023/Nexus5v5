@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageLoader, ErrorDisplay } from "@/components/ui/loading";
 import {
@@ -27,38 +27,61 @@ const QUEUE_OPTIONS = [
 export default function MatchHistoryPage() {
   const { profile, isAuthenticated } = useAuth();
   const [queue, setQueue] = useState<number | undefined>(undefined);
-  const [cursor, setCursor] = useState<string | undefined>(undefined);
-  const [allMatches, setAllMatches] = useState<MatchSummary[]>([]);
+  const [championSearch, setChampionSearch] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const primaryAccount = profile?.accounts.find((a) => a.is_primary);
   const puuid = primaryAccount?.puuid;
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["match-history", puuid, queue, cursor],
-    queryFn: async () => {
-      const result = await api.getMatchHistory(puuid!, cursor, queue);
-      return result;
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: [
+      "match-history",
+      puuid,
+      queue,
+      championSearch,
+      startDate,
+      endDate,
+    ],
+    queryFn: async ({ pageParam }) => {
+      return api.getMatchHistory(
+        puuid!,
+        pageParam ?? undefined,
+        queue,
+        championSearch || undefined,
+        startDate || undefined,
+        endDate || undefined
+      );
     },
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination.has_more ? lastPage.pagination.cursor : undefined,
     enabled: !!puuid,
   });
 
-  const displayMatches =
-    cursor && allMatches.length > 0
-      ? allMatches
-      : data?.data || [];
-
-  const loadMore = useCallback(() => {
-    if (data?.pagination.has_more && data.pagination.cursor) {
-      setAllMatches((prev) => [...prev, ...(data.data || [])]);
-      setCursor(data.pagination.cursor);
-    }
-  }, [data]);
+  const allMatches = data?.pages.flatMap((page) => page.data) ?? [];
 
   const changeQueue = (newQueue: number | undefined) => {
     setQueue(newQueue);
-    setCursor(undefined);
-    setAllMatches([]);
   };
+
+  const clearFilters = () => {
+    setQueue(undefined);
+    setChampionSearch("");
+    setStartDate("");
+    setEndDate("");
+  };
+
+  const hasActiveFilters =
+    queue !== undefined || championSearch || startDate || endDate;
 
   if (!isAuthenticated) {
     return <ErrorDisplay message="Please sign in to view match history." />;
@@ -81,45 +104,89 @@ export default function MatchHistoryPage() {
         </p>
       </div>
 
-      <div className="flex items-center gap-2">
-        {QUEUE_OPTIONS.map((opt) => (
-          <button
-            key={opt.label}
-            onClick={() => changeQueue(opt.value)}
-            className={cn(
-              "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-              queue === opt.value
-                ? "bg-blue-600 text-white"
-                : "text-slate-400 hover:bg-slate-800 hover:text-white"
-            )}
-          >
-            {opt.label}
-          </button>
-        ))}
+      {/* Filters */}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {QUEUE_OPTIONS.map((opt) => (
+            <button
+              key={opt.label}
+              onClick={() => changeQueue(opt.value)}
+              className={cn(
+                "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                queue === opt.value
+                  ? "bg-blue-600 text-white"
+                  : "text-slate-400 hover:bg-slate-800 hover:text-white"
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            type="text"
+            placeholder="Search champion..."
+            value={championSearch}
+            onChange={(e) => setChampionSearch(e.target.value)}
+            className="w-48 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-200 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
+          />
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+            />
+            <span className="text-sm text-slate-500">to</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+            />
+          </div>
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="text-sm text-slate-400 hover:text-white"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
       </div>
 
-      {isLoading && allMatches.length === 0 ? (
+      {/* Content */}
+      {isLoading ? (
         <PageLoader message="Loading matches..." />
       ) : error ? (
-        <ErrorDisplay message="Failed to load match history." />
-      ) : displayMatches.length === 0 ? (
+        <ErrorDisplay
+          message="Failed to load match history."
+          onRetry={() => refetch()}
+        />
+      ) : allMatches.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-slate-500">No matches found for this filter.</p>
+            <p className="text-slate-500">
+              {hasActiveFilters
+                ? "No matches found for these filters."
+                : "No matches found. Play some games to see your history here."}
+            </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
-          {displayMatches.map((match) => (
+          {allMatches.map((match) => (
             <MatchRow key={match.match_id} match={match} />
           ))}
 
-          {data?.pagination.has_more && (
+          {hasNextPage && (
             <div className="flex justify-center pt-4">
               <Button
                 variant="secondary"
-                onClick={loadMore}
-                isLoading={isLoading}
+                onClick={() => fetchNextPage()}
+                isLoading={isFetchingNextPage}
               >
                 Load More
               </Button>
@@ -136,7 +203,9 @@ function MatchRow({ match }: { match: MatchSummary }) {
     <Card
       className={cn(
         "transition-colors hover:border-slate-700",
-        match.win ? "border-l-2 border-l-green-500" : "border-l-2 border-l-red-500"
+        match.win
+          ? "border-l-2 border-l-green-500"
+          : "border-l-2 border-l-red-500"
       )}
     >
       <CardContent className="flex items-center gap-4 py-3">

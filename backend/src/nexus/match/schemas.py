@@ -15,10 +15,15 @@ class IngestRequest(BaseModel):
         description="Queue IDs to ingest (420=Ranked Solo, 700=Clash)",
     )
     count: int = Field(default=20, ge=1, le=100)
+    region: str = Field(
+        default="na1",
+        description="Riot platform region (e.g., na1, euw1)",
+    )
 
 
 class IngestResponse(BaseModel):
     puuid: str
+    job_id: str | None = None
     matches_fetched: int
     matches_inserted: int
     status: str
@@ -57,12 +62,11 @@ class MatchHistoryFilters(BaseModel):
     end_date: datetime | None = None
 
 
-class MatchHistoryResponse(BaseModel):
-    data: list[MatchParticipant]
-    pagination: MatchPaginationMeta
-
-
 class MatchPaginationMeta(BaseModel):
     cursor: str | None = None
     has_more: bool = False
-    total: int | None = None
+
+
+class MatchHistoryResponse(BaseModel):
+    data: list[MatchParticipant]
+    pagination: MatchPaginationMeta

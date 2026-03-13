@@ -9,12 +9,19 @@ from typing import Any
 from urllib.parse import quote
 
 import httpx
+from prometheus_client import Counter
 
 from nexus.config import get_settings
 from nexus.shared.exceptions import RateLimitError, RiotAPIError
 from nexus.shared.redis import cache_get, cache_set
 
 logger = logging.getLogger(__name__)
+
+RATE_LIMIT_HITS = Counter(
+    "rate_limit_hits_total",
+    "Total Riot API 429 rate-limit responses observed",
+    ["region"],
+)
 
 REGION_ROUTING: dict[str, str] = {
     "na1": "americas",
@@ -120,6 +127,7 @@ class RiotAPIClient:
                 response = await client.request(method, url)
 
                 if response.status_code == 429:
+                    RATE_LIMIT_HITS.labels(region="unknown").inc()
                     retry_after = int(response.headers.get("Retry-After", "1"))
                     logger.warning(
                         "Riot API rate limited, retrying in %ds (attempt %d/%d)",

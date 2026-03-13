@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2026-03-10
 
-### Phase 1: Foundation (Epics E1 + E2)
+### Phase 1: Foundation
 
 #### Added
 

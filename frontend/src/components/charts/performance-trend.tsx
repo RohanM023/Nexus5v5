@@ -17,6 +17,21 @@ interface PerformanceTrendProps {
 }
 
 export function PerformanceTrend({ data }: PerformanceTrendProps) {
+  if (!data || data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Performance Trend</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="py-8 text-center text-sm text-slate-500">
+            Not enough data to show a trend yet.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const chartData = data.map((point) => ({
     date: new Date(point.date).toLocaleDateString("en-US", {
       month: "short",

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -32,7 +33,7 @@ class MatchRow:
     vision_score: int
     gold_diff_timeline: str = ""
 
-    def to_row(self) -> list:
+    def to_row(self) -> list[Any]:
         """Return values in ClickHouse column order."""
         return [
             self.match_id,

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ChampionPoolEntry(BaseModel):
@@ -35,6 +35,13 @@ class RoleDistribution(BaseModel):
     percentage: float
 
 
+class TopChampion(BaseModel):
+    champion_id: int
+    champion_name: str
+    games_played: int
+    win_rate: float
+
+
 class PerformanceStats(BaseModel):
     user_id: str
     total_games: int
@@ -51,21 +58,9 @@ class PerformanceStats(BaseModel):
     top_champions: list[TopChampion]
 
 
-class TopChampion(BaseModel):
-    champion_id: int
-    champion_name: str
-    games_played: int
-    win_rate: float
-
-
 class GoldDiffPoint(BaseModel):
     minute: int
     gold_diff: int
-
-
-class GoldDiffResponse(BaseModel):
-    match_id: str
-    participants: list[ParticipantGoldDiff]
 
 
 class ParticipantGoldDiff(BaseModel):
@@ -73,3 +68,20 @@ class ParticipantGoldDiff(BaseModel):
     champion_name: str
     team_id: int
     timeline: list[GoldDiffPoint]
+
+
+class GoldDiffResponse(BaseModel):
+    match_id: str
+    participants: list[ParticipantGoldDiff]
+
+
+class ChampionPoolQueryParams(BaseModel):
+    """Query parameters for champion pool endpoint."""
+    patch: str | None = None
+    queue_id: int | None = None
+    role: str | None = None
+    sort_by: str = Field(
+        default="games_played",
+        pattern=r"^(games_played|win_rate|true_mastery|comfort_score)$",
+    )
+    sort_order: str = Field(default="desc", pattern=r"^(asc|desc)$")

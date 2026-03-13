@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from datetime import UTC, datetime
@@ -27,17 +28,47 @@ logger = logging.getLogger(__name__)
 
 async def _get_puuids_for_user(db: AsyncSession, user_id: UUID) -> list[str]:
     """Resolve all linked PUUIDs for a user."""
-    result = await db.execute(select(RiotAccount.puuid).where(RiotAccount.user_id == user_id))
+    result = await db.execute(
+        select(RiotAccount.puuid).where(RiotAccount.user_id == user_id)
+    )
     puuids = [row[0] for row in result.all()]
     if not puuids:
         raise NotFoundError("No linked accounts found for this user")
     return puuids
 
 
-def _build_puuid_filter(puuids: list[str]) -> str:
-    """Build a ClickHouse IN clause for PUUIDs."""
-    escaped = ", ".join(f"'{p}'" for p in puuids)
-    return f"puuid IN ({escaped})"
+def _run_ch_query(
+    sql: str, parameters: dict[str, Any] | None = None
+) -> list[dict[str, Any]]:
+    """Run a ClickHouse query (sync wrapper for use with run_in_executor)."""
+    return ch.query(sql, parameters)
+
+
+async def _async_ch_query(
+    sql: str, parameters: dict[str, Any] | None = None
+) -> list[dict[str, Any]]:
+    """Run a ClickHouse query without blocking the event loop."""
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, _run_ch_query, sql, parameters)
+
+
+async def _fetch_recent_games(
+    puuids: list[str],
+    champion_id: int,
+    limit: int = 20,
+) -> list[dict[str, Any]]:
+    """Fetch the most recent N games for a champion across PUUIDs."""
+    sql = """
+        SELECT win, kills, deaths, assists
+        FROM matches
+        WHERE puuid IN %(puuids)s AND champion_id = %(champion_id)s
+        ORDER BY game_start DESC
+        LIMIT %(limit)s
+    """
+    return await _async_ch_query(
+        sql,
+        {"puuids": puuids, "champion_id": champion_id, "limit": limit},
+    )
 
 
 async def get_champion_pool(
@@ -46,20 +77,29 @@ async def get_champion_pool(
     *,
     patch: str | None = None,
     queue_id: int | None = None,
+    role: str | None = None,
+    sort_by: str = "games_played",
+    sort_order: str = "desc",
 ) -> dict[str, Any]:
     """Compute champion pool with True Mastery and Comfort scores."""
     puuids = await _get_puuids_for_user(db, user_id)
-    puuid_filter = _build_puuid_filter(puuids)
 
-    conditions = [puuid_filter]
+    conditions = ["puuid IN %(puuids)s"]
+    params: dict[str, Any] = {"puuids": puuids}
+
     if patch is not None:
-        conditions.append(f"game_version LIKE '{patch}%'")
+        conditions.append("game_version LIKE %(patch)s")
+        params["patch"] = f"{patch}%"
     if queue_id is not None:
-        conditions.append(f"queue_id = {queue_id}")
+        conditions.append("queue_id = %(queue_id)s")
+        params["queue_id"] = queue_id
+    if role is not None:
+        conditions.append("role = %(role)s")
+        params["role"] = role.upper()
 
     where = " AND ".join(conditions)
 
-    sql = (  # noqa: S608
+    sql = (
         f"SELECT champion_id, champion_name, "
         f"count() AS games_played, sum(win) AS wins, "
         f"avg(kills) AS avg_kills, avg(deaths) AS avg_deaths, "
@@ -71,7 +111,7 @@ async def get_champion_pool(
         f"GROUP BY champion_id, champion_name "
         f"ORDER BY games_played DESC"
     )
-    rows = ch.query(sql)
+    rows = await _async_ch_query(sql, params)
 
     if not rows:
         return {
@@ -115,7 +155,9 @@ async def get_champion_pool(
 
         last_played = row.get("last_played")
         if last_played and hasattr(last_played, "timestamp"):
-            days_since = (now - last_played.replace(tzinfo=UTC)).total_seconds() / 86400
+            days_since = (
+                (now - last_played.replace(tzinfo=UTC)).total_seconds() / 86400
+            )
         else:
             days_since = 30.0
 
@@ -129,19 +171,42 @@ async def get_champion_pool(
             pool_stats=pool_stats,
         )
 
-        # Recent form: use overall win_rate as proxy (full recent form needs
-        # per-champion last-20-game query which is done in batch jobs)
-        recent_form = compute_recent_form(win_rate, min(1.0, avg_kda / 5.0))
+        # Fetch last 20 games for this champion to compute proper RecentForm
+        champion_id = int(row["champion_id"])
+        recent_rows = await _fetch_recent_games(puuids, champion_id, limit=20)
+
+        if recent_rows:
+            recent_wins = sum(int(r["win"]) for r in recent_rows)
+            recent_total = len(recent_rows)
+            win_rate_last_20 = recent_wins / recent_total
+
+            recent_kdas = []
+            for rr in recent_rows:
+                d = max(1.0, float(rr["deaths"]))
+                recent_kdas.append(
+                    (float(rr["kills"]) + float(rr["assists"])) / d
+                )
+            # kda_trend: normalized difference between recent avg KDA and
+            # overall avg KDA — clamped to [0, 1]
+            recent_avg_kda = sum(recent_kdas) / len(recent_kdas)
+            kda_trend_norm = max(
+                0.0, min(1.0, (recent_avg_kda - avg_kda + 5.0) / 10.0)
+            )
+        else:
+            win_rate_last_20 = win_rate
+            kda_trend_norm = min(1.0, avg_kda / 5.0)
+
+        recent_form = compute_recent_form(win_rate_last_20, kda_trend_norm)
         comfort = compute_comfort(true_mastery, recent_form)
 
-        # Cache comfort for draft engine
+        # Cache comfort per PUUID for draft engine (key per CLAUDE.md)
         for puuid in puuids:
-            cache_key = f"score:comfort:{puuid}:{row['champion_id']}"
+            cache_key = f"score:comfort:{puuid}:{champion_id}"
             await cache_set(cache_key, comfort, ttl_seconds=3600)
 
         champions.append(
             {
-                "champion_id": int(row["champion_id"]),
+                "champion_id": champion_id,
                 "champion_name": str(row["champion_name"]),
                 "games_played": games,
                 "wins": wins,
@@ -159,6 +224,11 @@ async def get_champion_pool(
             }
         )
 
+    # Sort results
+    reverse = sort_order == "desc"
+    if sort_by in ("games_played", "win_rate", "true_mastery", "comfort_score"):
+        champions.sort(key=lambda c: c[sort_by], reverse=reverse)
+
     return {
         "user_id": str(user_id),
         "champions": champions,
@@ -172,18 +242,18 @@ async def get_performance(
 ) -> dict[str, Any]:
     """Aggregate performance stats across all linked accounts."""
     puuids = await _get_puuids_for_user(db, user_id)
-    puuid_filter = _build_puuid_filter(puuids)
+    params: dict[str, Any] = {"puuids": puuids}
 
     # Overall stats
-    stats_sql = (  # noqa: S608
-        f"SELECT count() AS total_games, sum(win) AS total_wins, "
-        f"avg(kills) AS avg_kills, avg(deaths) AS avg_deaths, "
-        f"avg(assists) AS avg_assists, "
-        f"avg(cs / (game_duration / 60.0)) AS avg_cs_per_min, "
-        f"avg(vision_score) AS avg_vision_score "
-        f"FROM matches WHERE {puuid_filter}"
+    stats_sql = (
+        "SELECT count() AS total_games, sum(win) AS total_wins, "
+        "avg(kills) AS avg_kills, avg(deaths) AS avg_deaths, "
+        "avg(assists) AS avg_assists, "
+        "avg(cs / (game_duration / 60.0)) AS avg_cs_per_min, "
+        "avg(vision_score) AS avg_vision_score "
+        "FROM matches WHERE puuid IN %(puuids)s"
     )
-    stats_rows = ch.query(stats_sql)
+    stats_rows = await _async_ch_query(stats_sql, params)
 
     if not stats_rows or stats_rows[0]["total_games"] == 0:
         return {
@@ -209,11 +279,11 @@ async def get_performance(
     avg_kda = (float(s["avg_kills"]) + float(s["avg_assists"])) / avg_deaths
 
     # Role distribution
-    role_sql = (  # noqa: S608
-        f"SELECT role, count() AS games FROM matches "
-        f"WHERE {puuid_filter} GROUP BY role ORDER BY games DESC"
+    role_sql = (
+        "SELECT role, count() AS games FROM matches "
+        "WHERE puuid IN %(puuids)s GROUP BY role ORDER BY games DESC"
     )
-    role_rows = ch.query(role_sql)
+    role_rows = await _async_ch_query(role_sql, params)
 
     role_dist = [
         {
@@ -225,14 +295,14 @@ async def get_performance(
     ]
 
     # Top champions
-    top_sql = (  # noqa: S608
-        f"SELECT champion_id, champion_name, "
-        f"count() AS games_played, sum(win) / count() AS win_rate "
-        f"FROM matches WHERE {puuid_filter} "
-        f"GROUP BY champion_id, champion_name "
-        f"ORDER BY games_played DESC LIMIT 5"
+    top_sql = (
+        "SELECT champion_id, champion_name, "
+        "count() AS games_played, sum(win) / count() AS win_rate "
+        "FROM matches WHERE puuid IN %(puuids)s "
+        "GROUP BY champion_id, champion_name "
+        "ORDER BY games_played DESC LIMIT 5"
     )
-    top_rows = ch.query(top_sql)
+    top_rows = await _async_ch_query(top_sql, params)
 
     top_champs = [
         {
@@ -263,12 +333,9 @@ async def get_performance(
 
 async def get_gold_diff(match_id: str) -> dict[str, Any]:
     """Get gold diff timeline for all participants in a match."""
-    rows = ch.query(
-        """
-        SELECT puuid, champion_name, team_id, gold_diff_timeline
-        FROM matches
-        WHERE match_id = %(match_id)s
-        """,
+    rows = await _async_ch_query(
+        "SELECT puuid, champion_name, team_id, gold_diff_timeline "
+        "FROM matches WHERE match_id = %(match_id)s",
         {"match_id": match_id},
     )
 
@@ -283,7 +350,10 @@ async def get_gold_diff(match_id: str) -> dict[str, Any]:
         except (json.JSONDecodeError, TypeError):
             timeline_data = []
 
-        timeline = [{"minute": i, "gold_diff": v} for i, v in enumerate(timeline_data)]
+        timeline = [
+            {"minute": i, "gold_diff": v}
+            for i, v in enumerate(timeline_data)
+        ]
 
         participants.append(
             {

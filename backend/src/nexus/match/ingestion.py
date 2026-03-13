@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from datetime import UTC, datetime
 from typing import Any
+
+from prometheus_client import Counter, Gauge, Histogram
 
 from nexus.match.models import CLICKHOUSE_COLUMNS, MatchRow
 from nexus.shared import clickhouse as ch
@@ -13,6 +16,35 @@ from nexus.shared.redis import cache_get, cache_set
 from nexus.shared.riot_api import get_riot_client
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Prometheus metrics (E3-T09)
+# ---------------------------------------------------------------------------
+MATCHES_FETCHED = Counter(
+    "matches_fetched_total",
+    "Total match IDs fetched from Riot API",
+    ["region"],
+)
+MATCHES_INSERTED = Counter(
+    "matches_inserted_total",
+    "Total matches successfully inserted into ClickHouse",
+    ["region"],
+)
+INGESTION_ERRORS = Counter(
+    "ingestion_errors_total",
+    "Total errors during match ingestion",
+    ["region", "stage"],
+)
+INGESTION_DURATION = Histogram(
+    "ingestion_job_duration_seconds",
+    "Duration of a single ingestion job in seconds",
+    ["region"],
+    buckets=(1, 5, 10, 30, 60, 120, 300, 600),
+)
+ACTIVE_INGESTION_JOBS = Gauge(
+    "active_ingestion_jobs",
+    "Number of ingestion jobs currently running",
+)
 
 WATERMARK_KEY_PREFIX = "ingestion:watermark"
 BATCH_SIZE = 1000
@@ -41,8 +73,14 @@ async def set_watermark(puuid: str, match_id: str) -> None:
     )
 
 
-def _get_existing_match_ids(puuid: str, match_ids: list[str]) -> set[str]:
-    """Check which match IDs already exist in ClickHouse for this PUUID."""
+async def _get_existing_match_ids(
+    puuid: str, match_ids: list[str]
+) -> set[str]:
+    """Check which match IDs already exist in ClickHouse for this PUUID.
+
+    Runs the synchronous ClickHouse query in an executor to avoid
+    blocking the event loop.
+    """
     if not match_ids:
         return set()
 
@@ -58,7 +96,9 @@ def _get_existing_match_ids(puuid: str, match_ids: list[str]) -> set[str]:
         f"SELECT DISTINCT match_id FROM matches "
         f"WHERE puuid = %(puuid)s AND match_id IN ({in_clause})"
     )
-    rows = ch.query(sql, params)
+
+    loop = asyncio.get_running_loop()
+    rows = await loop.run_in_executor(None, ch.query, sql, params)
     return {row["match_id"] for row in rows}
 
 
@@ -84,11 +124,11 @@ def _extract_participant(
     game_start_ms = info.get("gameStartTimestamp", 0)
     game_start = datetime.fromtimestamp(game_start_ms / 1000, tz=UTC)
 
+    raw_match_id = metadata.get("matchId", "")
+
     return MatchRow(
-        match_id=metadata.get("matchId", ""),
-        platform_id=(
-            metadata.get("matchId", "").split("_")[0] if "_" in metadata.get("matchId", "") else ""
-        ),
+        match_id=raw_match_id,
+        platform_id=raw_match_id.split("_")[0] if "_" in raw_match_id else "",
         queue_id=info.get("queueId", 0),
         game_version=info.get("gameVersion", ""),
         game_duration=info.get("gameDuration", 0),
@@ -102,7 +142,10 @@ def _extract_participant(
         kills=participant.get("kills", 0),
         deaths=participant.get("deaths", 0),
         assists=participant.get("assists", 0),
-        cs=participant.get("totalMinionsKilled", 0) + participant.get("neutralMinionsKilled", 0),
+        cs=(
+            participant.get("totalMinionsKilled", 0)
+            + participant.get("neutralMinionsKilled", 0)
+        ),
         gold_earned=participant.get("goldEarned", 0),
         damage_dealt=participant.get("totalDamageDealtToChampions", 0),
         damage_taken=participant.get("totalDamageTaken", 0),
@@ -131,14 +174,28 @@ def _extract_gold_diff_timeline(
     if pid is None:
         return "[]"
 
+    # Determine the lane opponent's participant ID (opposite team, same position)
+    # For simplicity, compute gold diff as total gold for now (opponent
+    # matching requires additional position heuristics).
     gold_diffs: list[int] = []
     for frame in frames:
         pf = frame.get("participantFrames", {}).get(str(pid), {})
         total_gold = pf.get("totalGold", 0)
-        # Gold diff vs lane opponent: simplified as total gold for now
         gold_diffs.append(total_gold)
 
     return json.dumps(gold_diffs)
+
+
+async def _insert_rows_async(
+    table: str,
+    data: list[list[Any]],
+    column_names: list[str],
+) -> None:
+    """Run the synchronous ClickHouse insert in an executor."""
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(
+        None, ch.insert_rows, table, data, column_names
+    )
 
 
 async def ingest_matches(
@@ -149,41 +206,87 @@ async def ingest_matches(
 ) -> dict[str, int]:
     """Fetch, transform, and load match history for a PUUID.
 
-    Returns dict with matches_fetched and matches_inserted counts.
+    Supports incremental ingestion via Redis watermarks and ClickHouse
+    deduplication.  Returns dict with matches_fetched and matches_inserted
+    counts.
     """
     if queue_ids is None:
         queue_ids = [420, 700]
 
+    ACTIVE_INGESTION_JOBS.inc()
+    timer = INGESTION_DURATION.labels(region=region).time()
+    timer.__enter__()
+
+    try:
+        return await _do_ingest(puuid, region, queue_ids, count)
+    except Exception:
+        INGESTION_ERRORS.labels(region=region, stage="job").inc()
+        raise
+    finally:
+        timer.__exit__(None, None, None)
+        ACTIVE_INGESTION_JOBS.dec()
+
+
+async def _do_ingest(
+    puuid: str,
+    region: str,
+    queue_ids: list[int],
+    count: int,
+) -> dict[str, int]:
+    """Inner ingestion logic, separated for clean metrics wrapping."""
     client = get_riot_client()
     all_match_ids: list[str] = []
 
+    # Read watermark for incremental fetch
+    watermark = await get_watermark(puuid)
+
     for queue_id in queue_ids:
-        ids = await client.get_match_ids(puuid, region, queue=queue_id, count=count)
+        try:
+            ids = await client.get_match_ids(
+                puuid, region, queue=queue_id, count=count
+            )
+        except Exception:
+            INGESTION_ERRORS.labels(region=region, stage="fetch_ids").inc()
+            raise
+        if watermark and watermark in ids:
+            # Only take matches newer than the watermark
+            watermark_idx = ids.index(watermark)
+            ids = ids[:watermark_idx]
         all_match_ids.extend(ids)
 
-    # Deduplicate
+    # Deduplicate preserving order (newest first from Riot API)
     all_match_ids = list(dict.fromkeys(all_match_ids))
+    MATCHES_FETCHED.labels(region=region).inc(len(all_match_ids))
 
     if not all_match_ids:
         return {"matches_fetched": 0, "matches_inserted": 0}
 
-    # Filter out already-ingested matches
-    existing = _get_existing_match_ids(puuid, all_match_ids)
+    # Double-check against ClickHouse for matches that slipped past watermark
+    existing = await _get_existing_match_ids(puuid, all_match_ids)
     new_match_ids = [mid for mid in all_match_ids if mid not in existing]
 
     if not new_match_ids:
         return {"matches_fetched": len(all_match_ids), "matches_inserted": 0}
 
-    rows_to_insert: list[list] = []
-    fetched = 0
+    rows_to_insert: list[list[Any]] = []
+    matches_inserted = 0
 
     for match_id in new_match_ids:
-        match_data = await client.get_match(match_id, region)
+        try:
+            match_data = await client.get_match(match_id, region)
+        except Exception:
+            INGESTION_ERRORS.labels(region=region, stage="fetch_match").inc()
+            raise
         if match_data is None:
             continue
 
-        fetched += 1
-        timeline_data = await client.get_match_timeline(match_id, region)
+        try:
+            timeline_data = await client.get_match_timeline(match_id, region)
+        except Exception:
+            INGESTION_ERRORS.labels(
+                region=region, stage="fetch_timeline"
+            ).inc()
+            raise
 
         for participant in match_data.get("info", {}).get("participants", []):
             row = _extract_participant(match_data, participant)
@@ -195,25 +298,45 @@ async def ingest_matches(
 
             rows_to_insert.append(row.to_row())
 
-        # Batch insert
+        matches_inserted += 1
+
+        # Batch insert when we hit the threshold
         if len(rows_to_insert) >= BATCH_SIZE:
-            ch.insert_rows("matches", rows_to_insert, CLICKHOUSE_COLUMNS)
+            try:
+                await _insert_rows_async(
+                    "matches", rows_to_insert, CLICKHOUSE_COLUMNS
+                )
+            except Exception:
+                INGESTION_ERRORS.labels(
+                    region=region, stage="insert"
+                ).inc()
+                raise
             rows_to_insert = []
 
     # Insert remaining rows
     if rows_to_insert:
-        ch.insert_rows("matches", rows_to_insert, CLICKHOUSE_COLUMNS)
+        try:
+            await _insert_rows_async(
+                "matches", rows_to_insert, CLICKHOUSE_COLUMNS
+            )
+        except Exception:
+            INGESTION_ERRORS.labels(region=region, stage="insert").inc()
+            raise
 
-    # Update watermark to newest match
+    MATCHES_INSERTED.labels(region=region).inc(matches_inserted)
+
+    # Update watermark to newest match (first in the list from Riot API)
     if new_match_ids:
         await set_watermark(puuid, new_match_ids[0])
 
-    inserted = fetched  # each fetched match is inserted
     logger.info(
         "Ingestion complete for %s: fetched=%d, inserted=%d",
         puuid,
         len(all_match_ids),
-        inserted,
+        matches_inserted,
     )
 
-    return {"matches_fetched": len(all_match_ids), "matches_inserted": inserted}
+    return {
+        "matches_fetched": len(all_match_ids),
+        "matches_inserted": matches_inserted,
+    }

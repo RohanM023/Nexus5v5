@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -18,6 +18,21 @@ interface GoldDiffChartProps {
 }
 
 export function GoldDiffChart({ timeline, matchId }: GoldDiffChartProps) {
+  if (!timeline || timeline.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Gold Difference</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="py-8 text-center text-sm text-slate-500">
+            No gold diff data available for this match.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const data = timeline.map((value, index) => ({
     minute: index,
     goldDiff: value,
@@ -37,7 +52,7 @@ export function GoldDiffChart({ timeline, matchId }: GoldDiffChartProps) {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={data}>
+          <AreaChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
             <XAxis
               dataKey="minute"
@@ -80,11 +95,12 @@ export function GoldDiffChart({ timeline, matchId }: GoldDiffChartProps) {
                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <Line
+            <Area
               type="monotone"
               dataKey="goldDiff"
               stroke="#3b82f6"
               strokeWidth={2}
+              fill="url(#goldGradient)"
               dot={false}
               activeDot={{
                 r: 5,
@@ -93,7 +109,7 @@ export function GoldDiffChart({ timeline, matchId }: GoldDiffChartProps) {
                 strokeWidth: 2,
               }}
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>

@@ -1,4 +1,4 @@
-.PHONY: dev down test test-backend test-frontend lint lint-fix migrate migrate-create seed build logs shell-api shell-db
+.PHONY: dev down test test-backend test-frontend lint lint-fix migrate migrate-create seed build logs shell-api shell-db worker
 
 # ── Development ──────────────────────────────────────────────
 
@@ -10,6 +10,9 @@ down: ## Stop all services
 
 build: ## Build all Docker images
 	docker compose build
+
+worker: ## Start the arq background worker
+	docker compose up worker
 
 logs: ## Follow logs from all services
 	docker compose logs -f

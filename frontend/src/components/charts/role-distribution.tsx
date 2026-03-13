@@ -25,6 +25,21 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function RoleDistributionChart({ data }: RoleDistributionProps) {
+  if (!data || data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Role Distribution</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="py-8 text-center text-sm text-slate-500">
+            No role data available yet.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const chartData = data.map((item) => ({
     name: ROLE_LABELS[item.role] || item.role,
     value: item.games,

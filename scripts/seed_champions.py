@@ -2,9 +2,10 @@
 
 Usage:
     python scripts/seed_champions.py
+    python scripts/seed_champions.py redis://custom-host:6379/0
 
 Redis key patterns:
-    champion:by_id:{champion_id}   -> JSON {id, key, name, title, image}
+    champion:by_id:{champion_id}   -> JSON {id, key, name, title, tags, image_url}
     champion:by_name:{name_lower}  -> champion_id
     champion:all                   -> JSON list of all champions
     champion:version               -> DDragon version string
@@ -18,14 +19,20 @@ import sys
 
 import httpx
 import redis.asyncio as aioredis
+import structlog
 
 DDRAGON_VERSIONS_URL = "https://ddragon.leagueoflegends.com/api/versions.json"
 DDRAGON_CHAMPIONS_URL = (
     "https://ddragon.leagueoflegends.com/cdn/{version}/data/en_US/champion.json"
 )
+DDRAGON_ICON_URL = (
+    "https://ddragon.leagueoflegends.com/cdn/{version}/img/champion/{filename}"
+)
 
-REDIS_URL = "redis://localhost:6379/0"
+DEFAULT_REDIS_URL = "redis://localhost:6379/0"
 CHAMPION_TTL = 86400 * 7  # 7 days
+
+log = structlog.get_logger()
 
 
 async def get_latest_version(client: httpx.AsyncClient) -> str:
@@ -38,30 +45,37 @@ async def get_latest_version(client: httpx.AsyncClient) -> str:
 
 async def fetch_champions(
     client: httpx.AsyncClient, version: str
-) -> dict[str, dict]:
+) -> dict[str, dict[str, object]]:
     """Fetch all champion data from DDragon."""
     url = DDRAGON_CHAMPIONS_URL.format(version=version)
     resp = await client.get(url)
     resp.raise_for_status()
-    data = resp.json()
-    return data["data"]
+    data: dict[str, object] = resp.json()
+    return data["data"]  # type: ignore[return-value]
 
 
-async def seed_redis(redis_client: aioredis.Redis, version: str, champions: dict[str, dict]) -> int:
+async def seed_redis(
+    redis_client: aioredis.Redis,  # type: ignore[type-arg]
+    version: str,
+    champions: dict[str, dict[str, object]],
+) -> int:
     """Populate Redis with champion data."""
     pipe = redis_client.pipeline()
 
-    all_champions: list[dict] = []
+    all_champions: list[dict[str, object]] = []
 
     for _key, champ in champions.items():
-        champion_id = int(champ["key"])
-        champion_data = {
+        champion_id = int(champ["key"])  # type: ignore[arg-type]
+        image_filename: str = champ["image"]["full"]  # type: ignore[index]
+        image_url = DDRAGON_ICON_URL.format(version=version, filename=image_filename)
+
+        champion_data: dict[str, object] = {
             "id": champion_id,
             "key": champ["id"],
             "name": champ["name"],
             "title": champ["title"],
-            "image": champ["image"]["full"],
             "tags": champ["tags"],
+            "image_url": image_url,
         }
 
         serialized = json.dumps(champion_data)
@@ -74,8 +88,9 @@ async def seed_redis(redis_client: aioredis.Redis, version: str, champions: dict
         )
 
         # Map by lowercase name for lookups
+        champ_name: str = champ["name"]  # type: ignore[assignment]
         pipe.set(
-            f"champion:by_name:{champ['name'].lower()}",
+            f"champion:by_name:{champ_name.lower()}",
             str(champion_id),
             ex=CHAMPION_TTL,
         )
@@ -93,22 +108,48 @@ async def seed_redis(redis_client: aioredis.Redis, version: str, champions: dict
 
 
 async def main() -> None:
-    redis_url = sys.argv[1] if len(sys.argv) > 1 else REDIS_URL
+    structlog.configure(
+        processors=[
+            structlog.dev.ConsoleRenderer(),
+        ],
+        wrapper_class=structlog.make_filtering_bound_logger(0),
+    )
 
-    async with httpx.AsyncClient(timeout=30.0) as http_client:
-        print("Fetching latest DDragon version...")
-        version = await get_latest_version(http_client)
-        print(f"  Version: {version}")
+    redis_url = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_REDIS_URL
 
-        print("Fetching champion data...")
-        champions = await fetch_champions(http_client, version)
-        print(f"  Found {len(champions)} champions")
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as http_client:
+            log.info("Fetching latest DDragon version")
+            version = await get_latest_version(http_client)
+            log.info("Resolved DDragon version", version=version)
 
-    redis_client = aioredis.from_url(redis_url, decode_responses=True)
+            log.info("Fetching champion data from DDragon")
+            champions = await fetch_champions(http_client, version)
+            log.info("Fetched champions from DDragon", count=len(champions))
+    except httpx.HTTPStatusError as exc:
+        log.error(
+            "DDragon API returned an error",
+            status_code=exc.response.status_code,
+            url=str(exc.request.url),
+        )
+        sys.exit(1)
+    except httpx.RequestError as exc:
+        log.error(
+            "Failed to connect to DDragon API",
+            error=str(exc),
+            url=str(exc.request.url),
+        )
+        sys.exit(1)
+
+    redis_client: aioredis.Redis = aioredis.from_url(  # type: ignore[type-arg]
+        redis_url, decode_responses=True
+    )
     try:
         count = await seed_redis(redis_client, version, champions)
-        print(f"Seeded {count} champions into Redis")
-        print("Done.")
+        log.info("Champion seeding complete", count=count, version=version)
+    except aioredis.RedisError as exc:
+        log.error("Redis error during seeding", error=str(exc))
+        sys.exit(1)
     finally:
         await redis_client.aclose()
 
