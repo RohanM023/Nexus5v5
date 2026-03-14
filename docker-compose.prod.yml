@@ -62,6 +62,25 @@ services:
           memory: 512m
           cpus: "0.5"
 
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    volumes: []
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
+        reservations:
+          memory: 256m
+          cpus: "0.25"
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=info
+
   redis:
     restart: unless-stopped
     ports: []

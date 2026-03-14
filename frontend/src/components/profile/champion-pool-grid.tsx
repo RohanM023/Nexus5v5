@@ -24,12 +24,11 @@ export function ChampionPoolGrid({ champions }: ChampionPoolGridProps) {
   const [filterRole, setFilterRole] = useState<FilterRole>("ALL");
   const [sortBy, setSortBy] = useState<SortBy>("mastery");
 
-  const filtered =
-    filterRole === "ALL"
-      ? champions
-      : champions.filter((c) =>
-          c.roles.some((r) => r.toUpperCase() === filterRole)
-        );
+  // Role filtering is handled server-side via API query params.
+  // Client-side filtering is not possible since backend does not
+  // return per-champion role lists. Show all champions when a role
+  // filter is selected (the parent should re-fetch with the role param).
+  const filtered = champions;
 
   const sorted = [...filtered].sort((a, b) => {
     switch (sortBy) {

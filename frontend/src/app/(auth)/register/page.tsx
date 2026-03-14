@@ -29,7 +29,7 @@ function getPasswordStrength(password: string): {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, isRegistering, registerError } = useAuth();
+  const { signUp, isSigningUp, signUpError } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,10 +47,10 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!canSubmit) return;
     try {
-      await register({ email, password, display_name: displayName });
+      await signUp({ email, password, display_name: displayName });
       router.push("/dashboard");
     } catch {
-      // Error handled via registerError
+      // Error handled via signUpError
     }
   };
 
@@ -128,9 +128,9 @@ export default function RegisterPage() {
             }
           />
 
-          {registerError && (
+          {signUpError && (
             <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              {registerError.message}
+              {signUpError.message}
             </div>
           )}
 
@@ -138,7 +138,7 @@ export default function RegisterPage() {
             type="submit"
             className="w-full"
             size="lg"
-            isLoading={isRegistering}
+            isLoading={isSigningUp}
             disabled={!canSubmit}
           >
             Create Account

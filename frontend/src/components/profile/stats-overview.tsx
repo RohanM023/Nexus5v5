@@ -2,10 +2,10 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { cn, formatWinRate } from "@/lib/utils";
-import type { AggregatedStats } from "@/types";
+import type { PerformanceStats } from "@/types";
 
 interface StatsOverviewProps {
-  stats: AggregatedStats;
+  stats: PerformanceStats;
 }
 
 export function StatsOverview({ stats }: StatsOverviewProps) {

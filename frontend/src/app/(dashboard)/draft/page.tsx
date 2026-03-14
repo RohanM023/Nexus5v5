@@ -33,20 +33,6 @@ export default function DraftLauncherPage() {
   const { createSession, isCreatingSession } = useDraft();
   const [selectedMode, setSelectedMode] = useState<"clash" | "custom" | "scrim">("clash");
 
-  if (!isAuthenticated) {
-    return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-        <p className="text-slate-400">Please sign in to use the draft assistant.</p>
-        <Link
-          href="/login"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
-        >
-          Sign In
-        </Link>
-      </div>
-    );
-  }
-
   const handleCreateSession = async () => {
     try {
       const session = await createSession({ mode: selectedMode });
@@ -58,6 +44,15 @@ export default function DraftLauncherPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
+      {!isAuthenticated && (
+        <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-400">
+          Sign in to save drafts and see personalized comfort scores.{" "}
+          <Link href="/login" className="font-medium underline hover:text-blue-300">
+            Sign In
+          </Link>
+        </div>
+      )}
+
       <div>
         <h1 className="text-2xl font-bold text-white">Draft Assistant</h1>
         <p className="mt-1 text-sm text-slate-400">

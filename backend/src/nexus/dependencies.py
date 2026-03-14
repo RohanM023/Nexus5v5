@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
-from typing import Any
 
 import redis.asyncio as aioredis
 from arq.connections import ArqRedis, create_pool

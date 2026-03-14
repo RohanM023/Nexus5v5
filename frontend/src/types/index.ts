@@ -24,8 +24,16 @@ export interface RiotAccount {
 export interface MasterProfile {
   user: User;
   accounts: RiotAccount[];
-  stats: AggregatedStats;
-  champion_pool: ChampionPoolEntry[];
+  total_accounts: number;
+}
+
+export interface PublicSummonerProfile {
+  puuid: string;
+  game_name: string;
+  tag_line: string;
+  region: string;
+  summoner_level: number;
+  profile_icon_id: number;
 }
 
 export interface AuthTokens {
@@ -55,8 +63,15 @@ export interface LinkAccountRequest {
 
 export interface MatchSummary {
   match_id: string;
-  champion_name: string;
+  platform_id: string;
+  queue_id: number;
+  game_version: string;
+  game_duration: number;
+  game_start: string;
+  puuid: string;
   champion_id: number;
+  champion_name: string;
+  team_id: number;
   role: string;
   win: boolean;
   kills: number;
@@ -65,15 +80,20 @@ export interface MatchSummary {
   cs: number;
   gold_earned: number;
   damage_dealt: number;
+  damage_taken: number;
   vision_score: number;
-  game_duration: number;
-  game_start: string;
-  queue_id: number;
+}
+
+export interface GoldDiffParticipant {
+  puuid: string;
+  champion_name: string;
+  team_id: number;
+  timeline: { minute: number; gold_diff: number }[];
 }
 
 export interface GoldDiffTimeline {
   match_id: string;
-  timeline: number[];
+  participants: GoldDiffParticipant[];
 }
 
 // ---- Analytics ----
@@ -83,26 +103,23 @@ export interface ChampionPoolEntry {
   champion_name: string;
   games_played: number;
   wins: number;
+  losses: number;
   win_rate: number;
+  avg_kills: number;
+  avg_deaths: number;
+  avg_assists: number;
   avg_kda: number;
   avg_cs_per_min: number;
   avg_vision_score: number;
   true_mastery: number;
   comfort_score: number;
   tier: "S" | "A" | "B" | "C";
-  last_played: string;
-  roles: string[];
 }
 
-export interface AggregatedStats {
-  total_games: number;
-  overall_win_rate: number;
-  avg_kda: number;
-  avg_cs_per_min: number;
-  avg_vision_score: number;
-  role_distribution: RoleDistribution[];
-  top_champions: ChampionPoolEntry[];
-  recent_form: RecentFormPoint[];
+export interface ChampionPoolResponse {
+  user_id: string;
+  champions: ChampionPoolEntry[];
+  total_champions: number;
 }
 
 export interface RoleDistribution {
@@ -119,7 +136,25 @@ export interface RecentFormPoint {
 
 export interface PerformanceStats {
   user_id: string;
-  stats: AggregatedStats;
+  total_games: number;
+  total_wins: number;
+  total_losses: number;
+  overall_win_rate: number;
+  avg_kills: number;
+  avg_deaths: number;
+  avg_assists: number;
+  avg_kda: number;
+  avg_cs_per_min: number;
+  avg_vision_score: number;
+  role_distribution: RoleDistribution[];
+  top_champions: TopChampionEntry[];
+}
+
+export interface TopChampionEntry {
+  champion_id: number;
+  champion_name: string;
+  games_played: number;
+  win_rate: number;
 }
 
 // ---- Draft ----

@@ -77,6 +77,7 @@ class GoldDiffResponse(BaseModel):
 
 class ChampionPoolQueryParams(BaseModel):
     """Query parameters for champion pool endpoint."""
+
     patch: str | None = None
     queue_id: int | None = None
     role: str | None = None

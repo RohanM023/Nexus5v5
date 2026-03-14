@@ -76,9 +76,9 @@ export function RoleDistributionChart({ data }: RoleDistributionProps) {
                 borderRadius: "0.5rem",
                 color: "#e2e8f0",
               }}
-              formatter={(value: number, name: string) => [
-                `${value} games`,
-                name,
+              formatter={(value, name) => [
+                `${Number(value)} games`,
+                String(name),
               ]}
             />
             <Legend

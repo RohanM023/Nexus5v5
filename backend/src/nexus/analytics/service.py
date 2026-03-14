@@ -28,18 +28,14 @@ logger = logging.getLogger(__name__)
 
 async def _get_puuids_for_user(db: AsyncSession, user_id: UUID) -> list[str]:
     """Resolve all linked PUUIDs for a user."""
-    result = await db.execute(
-        select(RiotAccount.puuid).where(RiotAccount.user_id == user_id)
-    )
+    result = await db.execute(select(RiotAccount.puuid).where(RiotAccount.user_id == user_id))
     puuids = [row[0] for row in result.all()]
     if not puuids:
         raise NotFoundError("No linked accounts found for this user")
     return puuids
 
 
-def _run_ch_query(
-    sql: str, parameters: dict[str, Any] | None = None
-) -> list[dict[str, Any]]:
+def _run_ch_query(sql: str, parameters: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """Run a ClickHouse query (sync wrapper for use with run_in_executor)."""
     return ch.query(sql, parameters)
 
@@ -104,7 +100,7 @@ async def get_champion_pool(
         f"count() AS games_played, sum(win) AS wins, "
         f"avg(kills) AS avg_kills, avg(deaths) AS avg_deaths, "
         f"avg(assists) AS avg_assists, "
-        f"avg(cs / (game_duration / 60.0)) AS avg_cs_per_min, "
+        f"avg(cs / (greatest(game_duration, 1) / 60.0)) AS avg_cs_per_min, "
         f"avg(vision_score) AS avg_vision_score, "
         f"max(game_start) AS last_played "
         f"FROM matches WHERE {where} "
@@ -155,9 +151,7 @@ async def get_champion_pool(
 
         last_played = row.get("last_played")
         if last_played and hasattr(last_played, "timestamp"):
-            days_since = (
-                (now - last_played.replace(tzinfo=UTC)).total_seconds() / 86400
-            )
+            days_since = (now - last_played.replace(tzinfo=UTC)).total_seconds() / 86400
         else:
             days_since = 30.0
 
@@ -183,15 +177,11 @@ async def get_champion_pool(
             recent_kdas = []
             for rr in recent_rows:
                 d = max(1.0, float(rr["deaths"]))
-                recent_kdas.append(
-                    (float(rr["kills"]) + float(rr["assists"])) / d
-                )
+                recent_kdas.append((float(rr["kills"]) + float(rr["assists"])) / d)
             # kda_trend: normalized difference between recent avg KDA and
             # overall avg KDA — clamped to [0, 1]
             recent_avg_kda = sum(recent_kdas) / len(recent_kdas)
-            kda_trend_norm = max(
-                0.0, min(1.0, (recent_avg_kda - avg_kda + 5.0) / 10.0)
-            )
+            kda_trend_norm = max(0.0, min(1.0, (recent_avg_kda - avg_kda + 5.0) / 10.0))
         else:
             win_rate_last_20 = win_rate
             kda_trend_norm = min(1.0, avg_kda / 5.0)
@@ -249,7 +239,7 @@ async def get_performance(
         "SELECT count() AS total_games, sum(win) AS total_wins, "
         "avg(kills) AS avg_kills, avg(deaths) AS avg_deaths, "
         "avg(assists) AS avg_assists, "
-        "avg(cs / (game_duration / 60.0)) AS avg_cs_per_min, "
+        "avg(cs / (greatest(game_duration, 1) / 60.0)) AS avg_cs_per_min, "
         "avg(vision_score) AS avg_vision_score "
         "FROM matches WHERE puuid IN %(puuids)s"
     )
@@ -350,10 +340,7 @@ async def get_gold_diff(match_id: str) -> dict[str, Any]:
         except (json.JSONDecodeError, TypeError):
             timeline_data = []
 
-        timeline = [
-            {"minute": i, "gold_diff": v}
-            for i, v in enumerate(timeline_data)
-        ]
+        timeline = [{"minute": i, "gold_diff": v} for i, v in enumerate(timeline_data)]
 
         participants.append(
             {

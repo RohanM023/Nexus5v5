@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Image from "next/image";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
@@ -84,7 +85,25 @@ export default function MatchHistoryPage() {
     queue !== undefined || championSearch || startDate || endDate;
 
   if (!isAuthenticated) {
-    return <ErrorDisplay message="Please sign in to view match history." />;
+    return (
+      <div className="mx-auto max-w-4xl">
+        <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
+          <p className="text-lg text-slate-300">Sign in and link your Riot account to see your match history</p>
+          <p className="text-slate-400">
+            Or{" "}
+            <Link href="/" className="text-blue-400 hover:text-blue-300">
+              search for a summoner
+            </Link>
+          </p>
+          <Link
+            href="/login"
+            className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-500"
+          >
+            Sign In
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   if (!puuid) {

@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS nexus.matches (
 ENGINE = MergeTree()
 PARTITION BY toYYYYMM(game_start)
 ORDER BY (puuid, game_start, match_id)
-TTL game_start + INTERVAL 2 YEAR;
+TTL toDateTime(game_start) + INTERVAL 2 YEAR;
 
 -- Precomputed Synergy Matrix (champion pair win rates)
 CREATE TABLE IF NOT EXISTS nexus.synergy_matrix (

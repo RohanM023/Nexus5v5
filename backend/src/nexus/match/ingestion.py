@@ -73,9 +73,7 @@ async def set_watermark(puuid: str, match_id: str) -> None:
     )
 
 
-async def _get_existing_match_ids(
-    puuid: str, match_ids: list[str]
-) -> set[str]:
+async def _get_existing_match_ids(puuid: str, match_ids: list[str]) -> set[str]:
     """Check which match IDs already exist in ClickHouse for this PUUID.
 
     Runs the synchronous ClickHouse query in an executor to avoid
@@ -142,10 +140,7 @@ def _extract_participant(
         kills=participant.get("kills", 0),
         deaths=participant.get("deaths", 0),
         assists=participant.get("assists", 0),
-        cs=(
-            participant.get("totalMinionsKilled", 0)
-            + participant.get("neutralMinionsKilled", 0)
-        ),
+        cs=(participant.get("totalMinionsKilled", 0) + participant.get("neutralMinionsKilled", 0)),
         gold_earned=participant.get("goldEarned", 0),
         damage_dealt=participant.get("totalDamageDealtToChampions", 0),
         damage_taken=participant.get("totalDamageTaken", 0),
@@ -193,9 +188,7 @@ async def _insert_rows_async(
 ) -> None:
     """Run the synchronous ClickHouse insert in an executor."""
     loop = asyncio.get_running_loop()
-    await loop.run_in_executor(
-        None, ch.insert_rows, table, data, column_names
-    )
+    await loop.run_in_executor(None, ch.insert_rows, table, data, column_names)
 
 
 async def ingest_matches(
@@ -242,9 +235,7 @@ async def _do_ingest(
 
     for queue_id in queue_ids:
         try:
-            ids = await client.get_match_ids(
-                puuid, region, queue=queue_id, count=count
-            )
+            ids = await client.get_match_ids(puuid, region, queue=queue_id, count=count)
         except Exception:
             INGESTION_ERRORS.labels(region=region, stage="fetch_ids").inc()
             raise
@@ -283,9 +274,7 @@ async def _do_ingest(
         try:
             timeline_data = await client.get_match_timeline(match_id, region)
         except Exception:
-            INGESTION_ERRORS.labels(
-                region=region, stage="fetch_timeline"
-            ).inc()
+            INGESTION_ERRORS.labels(region=region, stage="fetch_timeline").inc()
             raise
 
         for participant in match_data.get("info", {}).get("participants", []):
@@ -303,22 +292,16 @@ async def _do_ingest(
         # Batch insert when we hit the threshold
         if len(rows_to_insert) >= BATCH_SIZE:
             try:
-                await _insert_rows_async(
-                    "matches", rows_to_insert, CLICKHOUSE_COLUMNS
-                )
+                await _insert_rows_async("matches", rows_to_insert, CLICKHOUSE_COLUMNS)
             except Exception:
-                INGESTION_ERRORS.labels(
-                    region=region, stage="insert"
-                ).inc()
+                INGESTION_ERRORS.labels(region=region, stage="insert").inc()
                 raise
             rows_to_insert = []
 
     # Insert remaining rows
     if rows_to_insert:
         try:
-            await _insert_rows_async(
-                "matches", rows_to_insert, CLICKHOUSE_COLUMNS
-            )
+            await _insert_rows_async("matches", rows_to_insert, CLICKHOUSE_COLUMNS)
         except Exception:
             INGESTION_ERRORS.labels(region=region, stage="insert").inc()
             raise

@@ -83,10 +83,13 @@ export function GoldDiffChart({ timeline, matchId }: GoldDiffChartProps) {
                 color: "#e2e8f0",
               }}
               labelFormatter={(label) => `Minute ${label}`}
-              formatter={(value: number) => [
-                `${value > 0 ? "+" : ""}${value.toLocaleString()}`,
-                "Gold Diff",
-              ]}
+              formatter={(value) => {
+                const v = Number(value);
+                return [
+                  `${v > 0 ? "+" : ""}${v.toLocaleString()}`,
+                  "Gold Diff",
+                ];
+              }}
             />
             <ReferenceLine y={0} stroke="#475569" strokeDasharray="3 3" />
             <defs>

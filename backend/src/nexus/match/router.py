@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -53,11 +54,12 @@ async def trigger_ingestion(
     }
 
 
-@router.get("/history/{puuid}")
+@router.get("/history/{puuid}", response_model=schemas.MatchHistoryResponse)
 async def get_match_history(
     puuid: str,
-    queue_id: int | None = Query(default=None),
+    queue_id: int | None = Query(default=None, alias="queue"),
     champion_id: int | None = Query(default=None),
+    champion: str | None = Query(default=None),
     start_date: str | None = Query(default=None),
     end_date: str | None = Query(default=None),
     cursor: str | None = Query(default=None),
@@ -66,8 +68,9 @@ async def get_match_history(
 ) -> dict[str, Any]:
     """Get paginated match history from ClickHouse.
 
-    Supports filtering by queue_id, champion_id, and date range.
-    Uses cursor-based pagination (cursor is a game_start timestamp).
+    Supports filtering by queue_id, champion_id or champion name, and
+    date range.  Uses cursor-based pagination (cursor is a game_start
+    timestamp).
     """
     conditions = ["puuid = %(puuid)s"]
     params: dict[str, Any] = {"puuid": puuid, "limit": limit + 1}
@@ -79,6 +82,9 @@ async def get_match_history(
     if champion_id is not None:
         conditions.append("champion_id = %(champion_id)s")
         params["champion_id"] = champion_id
+    elif champion is not None:
+        conditions.append("champion_name ILIKE %(champion)s")
+        params["champion"] = f"%{champion}%"
 
     if start_date is not None:
         conditions.append("game_start >= %(start_date)s")
@@ -94,11 +100,11 @@ async def get_match_history(
 
     where = " AND ".join(conditions)
     sql = (  # noqa: S608
-        f"SELECT * FROM matches WHERE {where} "
-        f"ORDER BY game_start DESC LIMIT %(limit)s"
+        f"SELECT * FROM matches WHERE {where} ORDER BY game_start DESC LIMIT %(limit)s"
     )
 
-    rows = ch.query(sql, params)
+    loop = asyncio.get_running_loop()
+    rows = await loop.run_in_executor(None, ch.query, sql, params)
 
     has_more = len(rows) > limit
     if has_more:

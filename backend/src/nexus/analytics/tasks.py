@@ -17,7 +17,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from nexus.analytics.metrics import (
-    assign_tier,
     compute_comfort,
     compute_recent_form,
     compute_true_mastery,
@@ -59,9 +58,7 @@ BATCH_USER_DURATION = Histogram(
 # ---------------------------------------------------------------------------
 # ClickHouse helpers (same pattern as analytics/service.py)
 # ---------------------------------------------------------------------------
-def _run_ch_query(
-    sql: str, parameters: dict[str, Any] | None = None
-) -> list[dict[str, Any]]:
+def _run_ch_query(sql: str, parameters: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     return ch.query(sql, parameters)
 
 
@@ -87,7 +84,7 @@ async def _refresh_user_scores(user_id: UUID, puuids: list[str]) -> int:
         "count() AS games_played, sum(win) AS wins, "
         "avg(kills) AS avg_kills, avg(deaths) AS avg_deaths, "
         "avg(assists) AS avg_assists, "
-        "avg(cs / (game_duration / 60.0)) AS avg_cs_per_min, "
+        "avg(cs / (greatest(game_duration, 1) / 60.0)) AS avg_cs_per_min, "
         "avg(vision_score) AS avg_vision_score, "
         "max(game_start) AS last_played "
         "FROM matches WHERE puuid IN %(puuids)s "
@@ -135,9 +132,7 @@ async def _refresh_user_scores(user_id: UUID, puuids: list[str]) -> int:
 
         last_played = row.get("last_played")
         if last_played and hasattr(last_played, "timestamp"):
-            days_since = (
-                (now - last_played.replace(tzinfo=UTC)).total_seconds() / 86400
-            )
+            days_since = (now - last_played.replace(tzinfo=UTC)).total_seconds() / 86400
         else:
             days_since = 30.0
 
@@ -173,21 +168,15 @@ async def _refresh_user_scores(user_id: UUID, puuids: list[str]) -> int:
             recent_kdas = []
             for rr in recent_rows:
                 d = max(1.0, float(rr["deaths"]))
-                recent_kdas.append(
-                    (float(rr["kills"]) + float(rr["assists"])) / d
-                )
+                recent_kdas.append((float(rr["kills"]) + float(rr["assists"])) / d)
             recent_avg_kda = sum(recent_kdas) / len(recent_kdas)
-            kda_trend_norm = max(
-                0.0, min(1.0, (recent_avg_kda - avg_kda + 5.0) / 10.0)
-            )
+            kda_trend_norm = max(0.0, min(1.0, (recent_avg_kda - avg_kda + 5.0) / 10.0))
         else:
             win_rate_last_20 = win_rate
             kda_trend_norm = min(1.0, avg_kda / 5.0)
 
         recent_form = compute_recent_form(win_rate_last_20, kda_trend_norm)
         comfort = compute_comfort(true_mastery, recent_form)
-        tier = assign_tier(true_mastery)
-
         # Cache comfort score per PUUID (key pattern from CLAUDE.md)
         for puuid in puuids:
             cache_key = f"score:comfort:{puuid}:{champion_id}"

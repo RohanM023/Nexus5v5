@@ -4,7 +4,19 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --ignore-scripts
 
-# Stage 2: Build the application
+# Stage 2: Development — live-reload with next dev
+FROM node:20-alpine AS development
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+ENV NEXT_TELEMETRY_DISABLED=1
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]
+
+# Stage 3: Build the application
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -15,8 +27,8 @@ ENV NODE_ENV=production
 
 RUN npm run build
 
-# Stage 3: Production runner
-FROM node:20-alpine AS runner
+# Stage 4: Production runner
+FROM node:20-alpine AS production
 WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1

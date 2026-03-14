@@ -68,9 +68,10 @@ export function PerformanceTrend({ data }: PerformanceTrendProps) {
                 borderRadius: "0.5rem",
                 color: "#e2e8f0",
               }}
-              formatter={(value: number, name: string) => {
-                if (name === "winRate") return [`${value}%`, "Win Rate"];
-                return [value, "Games"];
+              formatter={(value, name) => {
+                const v = Number(value);
+                if (name === "winRate") return [`${v}%`, "Win Rate"];
+                return [v, "Games"];
               }}
             />
             <Line

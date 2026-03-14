@@ -10,17 +10,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoggingIn, loginError } = useAuth();
+  const { signIn, isSigningIn, signInError } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login({ email, password });
+      await signIn({ email, password });
       router.push("/dashboard");
     } catch {
-      // Error handled via loginError
+      // Error handled via signInError
     }
   };
 
@@ -51,9 +51,9 @@ export default function LoginPage() {
             required
           />
 
-          {loginError && (
+          {signInError && (
             <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              {loginError.message}
+              {signInError.message}
             </div>
           )}
 
@@ -61,7 +61,7 @@ export default function LoginPage() {
             type="submit"
             className="w-full"
             size="lg"
-            isLoading={isLoggingIn}
+            isLoading={isSigningIn}
           >
             Sign In
           </Button>

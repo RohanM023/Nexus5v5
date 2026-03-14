@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import ValidationInfo, field_validator
+from pydantic import Field, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     # --- Application ---
     app_name: str = "Nexus-5v5"
     app_version: str = "0.1.0"
-    environment: Literal["local", "staging", "production"] = "local"
+    environment: Literal["development", "local", "staging", "production"] = "local"
     debug: bool = False
     log_level: str = "INFO"
 
@@ -83,14 +83,15 @@ class Settings(BaseSettings):
     riot_api_max_retries: int = 3
 
     # --- CORS ---
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins_str: str = Field(
+        default="http://localhost:3000",
+        alias="CORS_ORIGINS",
+        validation_alias="CORS_ORIGINS",
+    )
 
-    @field_validator("cors_origins", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
-        if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
-        return v
+    @property
+    def cors_origins(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins_str.split(",") if o.strip()]
 
     # --- Encryption ---
     encryption_key: str = ""  # AES-256 key for identity link data

@@ -15,6 +15,8 @@ export default function ProfilePage() {
     profile,
     profileLoading,
     profileError,
+    championPool,
+    performance,
     verifyAccount,
     isVerifying,
   } = useProfile(user?.id);
@@ -22,10 +24,16 @@ export default function ProfilePage() {
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-        <p className="text-slate-400">Please sign in to view your profile.</p>
+        <p className="text-lg text-slate-300">Sign in to view your Master Profile</p>
+        <p className="text-slate-400">
+          Or{" "}
+          <Link href="/" className="text-blue-400 hover:text-blue-300">
+            search for any summoner
+          </Link>
+        </p>
         <Link
           href="/login"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+          className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-500"
         >
           Sign In
         </Link>
@@ -56,7 +64,7 @@ export default function ProfilePage() {
         </Link>
       </div>
 
-      <StatsOverview stats={profile.stats} />
+      {performance && <StatsOverview stats={performance} />}
 
       <Card>
         <CardHeader>
@@ -83,7 +91,7 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      <ChampionPoolGrid champions={profile.champion_pool} />
+      {championPool && <ChampionPoolGrid champions={championPool.champions} />}
     </div>
   );
 }
