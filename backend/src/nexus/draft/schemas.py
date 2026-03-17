@@ -49,33 +49,25 @@ class ChampionSlot(BaseModel):
     role: str | None = None
 
 
+class ComfortEntry(BaseModel):
+    puuid: str
+    champion_id: int
+    champion_name: str
+    comfort_score: float
+
+
 class DraftScoresResponse(BaseModel):
-    session_id: UUID
-    pick_number: int
     synergy_score: float
     counter_score: float
-    comfort_score: float
+    comfort_scores: list[ComfortEntry]
     total_score: float
-    breakdown: ScoreBreakdown
-
-
-class ScoreBreakdown(BaseModel):
-    synergy_contribution: float
-    counter_contribution: float
-    comfort_contribution: float
 
 
 class ChampionSuggestion(BaseModel):
     champion_id: int
     champion_name: str
     composite_score: float
-    synergy_score: float
-    counter_score: float
-    comfort_score: float
+    synergy_contribution: float
+    counter_contribution: float
+    comfort_contribution: float
     role: str | None = None
-
-
-class SuggestionsResponse(BaseModel):
-    session_id: UUID
-    suggestions: list[ChampionSuggestion]
-    pick_number: int

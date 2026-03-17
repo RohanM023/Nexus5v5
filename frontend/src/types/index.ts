@@ -227,6 +227,32 @@ export interface DraftBanRequest {
   side: "blue" | "red";
 }
 
+// ---- Clash Dashboard ----
+
+export type TeamRole = "TOP" | "JUNGLE" | "MID" | "BOT" | "SUPPORT";
+
+export interface TeamPlayer {
+  puuid: string;
+  game_name: string;
+  tag_line: string;
+  role: TeamRole;
+  selected_champion?: { id: number; name: string };
+  alt_accounts: { game_name: string; tag_line: string }[];
+  top_champions: {
+    champion_id: number;
+    champion_name: string;
+    true_mastery: number;
+  }[];
+}
+
+export interface RadarDataPoint {
+  axis: string;
+  yourTeam: number;
+  opponentTeam: number;
+}
+
+export type DashboardMode = "solo-queue" | "multisearch" | "clash";
+
 // ---- API ----
 
 export interface ApiError {

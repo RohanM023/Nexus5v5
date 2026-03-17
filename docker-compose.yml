@@ -49,6 +49,7 @@ services:
       - .env
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:${API_PORT:-8000}
+      - INTERNAL_API_URL=http://api:8000
     depends_on:
       api:
         condition: service_healthy

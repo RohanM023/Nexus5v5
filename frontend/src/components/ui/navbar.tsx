@@ -54,21 +54,19 @@ export function Navbar() {
           </Link>
 
           <div className="hidden items-center gap-1 md:flex">
-            <NavLink href="/" active={pathname === "/"}>
-              Search
+            <NavLink href="/dashboard" active={pathname.startsWith("/dashboard")}>
+              Dashboard
             </NavLink>
-            <NavLink href="/draft" active={pathname.startsWith("/draft")}>
-              Draft
+            <NavLink href="/teams" active={pathname.startsWith("/teams")}>
+              Teams
+            </NavLink>
+            <NavLink href="/leaderboards" active={pathname === "/leaderboards"}>
+              Leaderboards
             </NavLink>
             {isAuthenticated && (
-              <>
-                <NavLink href="/dashboard" active={pathname.startsWith("/dashboard")}>
-                  Dashboard
-                </NavLink>
-                <NavLink href="/profile" active={pathname === "/profile"}>
-                  Profile
-                </NavLink>
-              </>
+              <NavLink href="/settings" active={pathname === "/settings"}>
+                Settings
+              </NavLink>
             )}
           </div>
         </div>

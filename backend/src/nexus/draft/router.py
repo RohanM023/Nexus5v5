@@ -43,7 +43,7 @@ async def create_session(
             "red_picks": [],
             "blue_bans": [],
             "red_bans": [],
-            "current_phase": "ban_1",
+            "current_phase": "ban_phase_1",
             "pick_number": 0,
             "team_puuids": body.team_puuids,
         },
@@ -101,7 +101,19 @@ async def register_pick(
     await db.flush()
     await cache_set(f"draft:session:{session_id}", state, ttl_seconds=3600)
 
-    return {"status": "ok", "draft_state": state}
+    return {
+        "id": str(session.id),
+        "user_id": str(session.user_id),
+        "team_id": str(session.team_id) if session.team_id else None,
+        "mode": session.mode,
+        "status": session.status,
+        "blue_picks": state.get("blue_picks", []),
+        "red_picks": state.get("red_picks", []),
+        "blue_bans": state.get("blue_bans", []),
+        "red_bans": state.get("red_bans", []),
+        "current_phase": state["current_phase"],
+        "created_at": session.created_at.isoformat(),
+    }
 
 
 @router.put("/session/{session_id}/ban")
@@ -128,7 +140,19 @@ async def register_ban(
     await db.flush()
     await cache_set(f"draft:session:{session_id}", state, ttl_seconds=3600)
 
-    return {"status": "ok", "draft_state": state}
+    return {
+        "id": str(session.id),
+        "user_id": str(session.user_id),
+        "team_id": str(session.team_id) if session.team_id else None,
+        "mode": session.mode,
+        "status": session.status,
+        "blue_picks": state.get("blue_picks", []),
+        "red_picks": state.get("red_picks", []),
+        "blue_bans": state.get("blue_bans", []),
+        "red_bans": state.get("red_bans", []),
+        "current_phase": state["current_phase"],
+        "created_at": session.created_at.isoformat(),
+    }
 
 
 @router.get("/session/{session_id}/scores", response_model=schemas.DraftScoresResponse)
@@ -149,14 +173,21 @@ async def get_scores(
     synergy = await engine.compute_team_synergy(ally_ids, DEFAULT_PATCH)
     counter = await engine.compute_team_counter(blue_picks, red_picks, DEFAULT_PATCH)
 
-    comfort_scores = []
+    # Build per-player comfort entries
+    comfort_entries: list[dict[str, Any]] = []
+    comfort_values: list[float] = []
     for puuid in team_puuids:
         for pick in blue_picks:
             c = await engine.get_comfort_score(puuid, pick["champion_id"])
-            comfort_scores.append(c)
-    avg_comfort = sum(comfort_scores) / len(comfort_scores) if comfort_scores else 50.0
+            comfort_values.append(c)
+            comfort_entries.append({
+                "puuid": puuid,
+                "champion_id": pick["champion_id"],
+                "champion_name": pick.get("champion_name", ""),
+                "comfort_score": round(c, 2),
+            })
+    avg_comfort = sum(comfort_values) / len(comfort_values) if comfort_values else 50.0
 
-    settings = engine.get_settings()
     total = engine.compute_composite_score(synergy, counter, avg_comfort)
 
     # Save snapshot
@@ -171,26 +202,19 @@ async def get_scores(
     db.add(snapshot)
 
     return {
-        "session_id": session_id,
-        "pick_number": pick_number,
         "synergy_score": round(synergy, 2),
         "counter_score": round(counter, 2),
-        "comfort_score": round(avg_comfort, 2),
+        "comfort_scores": comfort_entries,
         "total_score": round(total, 2),
-        "breakdown": {
-            "synergy_contribution": round(settings.draft_synergy_weight * synergy, 2),
-            "counter_contribution": round(settings.draft_counter_weight * counter, 2),
-            "comfort_contribution": round(settings.draft_comfort_weight * avg_comfort, 2),
-        },
     }
 
 
-@router.get("/suggestions/{session_id}", response_model=schemas.SuggestionsResponse)
+@router.get("/suggestions/{session_id}")
 async def get_suggestions(
     session_id: UUID,
     current_user: dict[str, Any] = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
-) -> dict[str, Any]:
+) -> list[dict[str, Any]]:
     session = await _get_session(db, session_id, current_user["user_id"])
     state = session.draft_state
 
@@ -199,7 +223,7 @@ async def get_suggestions(
     team_puuids = state.get("team_puuids", [])
     all_bans = state.get("blue_bans", []) + state.get("red_bans", [])
 
-    suggestions = await engine.generate_suggestions(
+    return await engine.generate_suggestions(
         ally_champions=blue_picks,
         opponent_champions=red_picks,
         player_puuids=team_puuids,
@@ -207,12 +231,6 @@ async def get_suggestions(
         banned_champions=all_bans,
         top_n=10,
     )
-
-    return {
-        "session_id": session_id,
-        "suggestions": suggestions,
-        "pick_number": state.get("pick_number", 0),
-    }
 
 
 # --- WebSocket ---
@@ -288,11 +306,11 @@ def _determine_phase(state: dict[str, Any]) -> str:
     total_picks = blue_picks + red_picks
 
     if total_bans < 6:
-        return "ban_1"
+        return "ban_phase_1"
     if total_picks < 6:
-        return "pick_1"
+        return "pick_phase_1"
     if total_bans < 10:
-        return "ban_2"
+        return "ban_phase_2"
     if total_picks < 10:
-        return "pick_2"
-    return "complete"
+        return "pick_phase_2"
+    return "completed"

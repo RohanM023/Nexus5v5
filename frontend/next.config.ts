@@ -15,10 +15,16 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
+    // Server-side rewrites use INTERNAL_API_URL (Docker service name),
+    // falling back to NEXT_PUBLIC_API_URL, then localhost for local dev.
+    const apiUrl =
+      process.env.INTERNAL_API_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:8000";
     return [
       {
         source: "/api/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/:path*`,
+        destination: `${apiUrl}/api/v1/:path*`,
       },
     ];
   },

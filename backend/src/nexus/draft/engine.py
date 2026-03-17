@@ -322,9 +322,9 @@ async def generate_suggestions(
                 "champion_id": champ_id,
                 "champion_name": "",
                 "composite_score": round(composite, 2),
-                "synergy_score": round(syn, 2),
-                "counter_score": round(ctr, 2),
-                "comfort_score": round(avg_comfort, 2),
+                "synergy_contribution": round(syn, 2),
+                "counter_contribution": round(ctr, 2),
+                "comfort_contribution": round(avg_comfort, 2),
             }
         )
 
