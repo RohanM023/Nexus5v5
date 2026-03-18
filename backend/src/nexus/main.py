@@ -102,6 +102,8 @@ def create_app() -> FastAPI:
     from nexus.draft.router import router as draft_router
     from nexus.identity.router import auth_router, identity_router
     from nexus.match.router import router as match_router
+    from nexus.summoner.router import router as summoner_router
+    from nexus.widgets.router import router as widgets_router
 
     app.include_router(auth_router)
     app.include_router(identity_router)
@@ -109,6 +111,8 @@ def create_app() -> FastAPI:
     app.include_router(match_router)
     app.include_router(analytics_router)
     app.include_router(admin_router)
+    app.include_router(summoner_router)
+    app.include_router(widgets_router)
 
     return app
 

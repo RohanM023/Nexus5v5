@@ -9,7 +9,7 @@ from typing import Any
 from urllib.parse import quote
 
 import httpx
-from prometheus_client import Counter
+from prometheus_client import Counter, Gauge
 
 from nexus.config import get_settings
 from nexus.shared.exceptions import RateLimitError, RiotAPIError
@@ -21,6 +21,12 @@ RATE_LIMIT_HITS = Counter(
     "rate_limit_hits_total",
     "Total Riot API 429 rate-limit responses observed",
     ["region"],
+)
+
+RIOT_API_QUOTA = Gauge(
+    "riot_api_quota_percentage",
+    "Current Riot API quota usage percentage (0-100)",
+    ["bucket"],
 )
 
 REGION_ROUTING: dict[str, str] = {
@@ -76,6 +82,11 @@ class TokenBucket:
             else:
                 self.tokens -= 1
 
+    @property
+    def usage_ratio(self) -> float:
+        """Return 0.0 (idle) to 1.0 (fully consumed)."""
+        return max(0.0, 1.0 - (self.tokens / self.rate))
+
 
 class RiotAPIClient:
     """Async Riot API client with rate limiting, retries, and caching."""
@@ -88,6 +99,16 @@ class RiotAPIClient:
         self._per_second = TokenBucket(settings.riot_api_rate_limit_per_second, 1.0)
         self._per_2min = TokenBucket(settings.riot_api_rate_limit_per_2min, 120.0)
         self._client: httpx.AsyncClient | None = None
+
+    @property
+    def per_second_bucket(self) -> TokenBucket:
+        """Public access to the per-second rate limiter."""
+        return self._per_second
+
+    @property
+    def per_2min_bucket(self) -> TokenBucket:
+        """Public access to the per-2-minute rate limiter."""
+        return self._per_2min
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
@@ -103,6 +124,16 @@ class RiotAPIClient:
             await self._client.aclose()
             self._client = None
 
+    async def _check_quota_backoff(self) -> None:
+        """Add linear delay when quota usage exceeds 80%."""
+        ratio = self._per_2min.usage_ratio
+        RIOT_API_QUOTA.labels(bucket="per_second").set(self._per_second.usage_ratio * 100)
+        RIOT_API_QUOTA.labels(bucket="per_2min").set(ratio * 100)
+        if ratio >= 0.8:
+            delay = (ratio - 0.8) / 0.2 * 2.0  # 0-2s linear from 80-100%
+            logger.warning("Riot API quota at %.0f%%, backing off %.1fs", ratio * 100, delay)
+            await asyncio.sleep(delay)
+
     async def _request(
         self,
         method: str,
@@ -111,6 +142,8 @@ class RiotAPIClient:
         cache_key: str | None = None,
         cache_ttl: int = 300,
     ) -> Any:
+        await self._check_quota_backoff()
+
         if cache_key:
             cached = await cache_get(cache_key)
             if cached is not None:

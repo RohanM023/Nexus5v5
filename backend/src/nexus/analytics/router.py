@@ -63,3 +63,32 @@ async def get_gold_diff(
 ) -> dict[str, Any]:
     """Get gold diff timeline for a match."""
     return await service.get_gold_diff(match_id)
+
+
+@router.get("/champion-pool-by-puuid/{puuid}", response_model=ChampionPoolResponse)
+async def get_champion_pool_by_puuid(
+    puuid: str,
+    patch: str | None = Query(default=None),
+    queue_id: int | None = Query(default=None),
+    role: str | None = Query(default=None),
+    sort_by: str = Query(
+        default="games_played",
+        pattern=r"^(games_played|win_rate|true_mastery|comfort_score)$",
+    ),
+    sort_order: str = Query(default="desc", pattern=r"^(asc|desc)$"),
+) -> dict[str, Any]:
+    """Public: champion pool for a single PUUID."""
+    return await service.get_champion_pool_by_puuid(
+        puuid,
+        patch=patch,
+        queue_id=queue_id,
+        role=role,
+        sort_by=sort_by,
+        sort_order=sort_order,
+    )
+
+
+@router.get("/performance-by-puuid/{puuid}", response_model=PerformanceStats)
+async def get_performance_by_puuid(puuid: str) -> dict[str, Any]:
+    """Public: performance stats for a single PUUID."""
+    return await service.get_performance_by_puuid(puuid)

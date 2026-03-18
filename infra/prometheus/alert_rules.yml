@@ -1,0 +1,20 @@
+groups:
+  - name: riot_api
+    rules:
+      - alert: RiotApiQuotaHigh
+        expr: riot_api_quota_percentage{bucket="per_2min"} > 80
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Riot API quota usage above 80%"
+          description: "{{ $labels.bucket }} quota is at {{ $value }}%"
+
+      - alert: RiotApiQuotaCritical
+        expr: riot_api_quota_percentage{bucket="per_2min"} > 95
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Riot API quota critically high"
+          description: "{{ $labels.bucket }} quota is at {{ $value }}%"

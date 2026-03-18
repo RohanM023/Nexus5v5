@@ -226,6 +226,159 @@ async def get_champion_pool(
     }
 
 
+async def get_champion_pool_by_puuid(
+    puuid: str,
+    *,
+    patch: str | None = None,
+    queue_id: int | None = None,
+    role: str | None = None,
+    sort_by: str = "games_played",
+    sort_order: str = "desc",
+) -> dict[str, Any]:
+    """Compute champion pool for a single PUUID (public lookup use-case)."""
+    # Reuse the same ClickHouse-backed computation, just scoped to one PUUID.
+    puuids = [puuid]
+
+    conditions = ["puuid IN %(puuids)s"]
+    params: dict[str, Any] = {"puuids": puuids}
+
+    if patch is not None:
+        conditions.append("game_version LIKE %(patch)s")
+        params["patch"] = f"{patch}%"
+    if queue_id is not None:
+        conditions.append("queue_id = %(queue_id)s")
+        params["queue_id"] = queue_id
+    if role is not None:
+        conditions.append("role = %(role)s")
+        params["role"] = role.upper()
+
+    where = " AND ".join(conditions)
+
+    sql = (
+        f"SELECT champion_id, champion_name, "
+        f"count() AS games_played, sum(win) AS wins, "
+        f"avg(kills) AS avg_kills, avg(deaths) AS avg_deaths, "
+        f"avg(assists) AS avg_assists, "
+        f"avg(cs / (greatest(game_duration, 1) / 60.0)) AS avg_cs_per_min, "
+        f"avg(vision_score) AS avg_vision_score, "
+        f"max(game_start) AS last_played "
+        f"FROM matches WHERE {where} "
+        f"GROUP BY champion_id, champion_name "
+        f"ORDER BY games_played DESC"
+    )
+    rows = await _async_ch_query(sql, params)
+
+    if not rows:
+        return {
+            "user_id": puuid,
+            "champions": [],
+            "total_champions": 0,
+        }
+
+    # Compute pool-level min/max for normalization
+    all_games = [r["games_played"] for r in rows]
+    all_kda = []
+    for r in rows:
+        deaths = max(1.0, float(r["avg_deaths"]))
+        kda = (float(r["avg_kills"]) + float(r["avg_assists"])) / deaths
+        all_kda.append(kda)
+    all_cs = [float(r["avg_cs_per_min"]) for r in rows]
+    all_vision = [float(r["avg_vision_score"]) for r in rows]
+
+    pool_stats = {
+        "games_min": min(all_games),
+        "games_max": max(all_games),
+        "kda_min": min(all_kda),
+        "kda_max": max(all_kda),
+        "cs_min": min(all_cs),
+        "cs_max": max(all_cs),
+        "vision_min": min(all_vision),
+        "vision_max": max(all_vision),
+    }
+
+    now = datetime.now(UTC)
+    champions = []
+
+    for row in rows:
+        games = int(row["games_played"])
+        wins = int(row["wins"])
+        losses = games - wins
+        win_rate = wins / games if games > 0 else 0.0
+
+        deaths = max(1.0, float(row["avg_deaths"]))
+        avg_kda = (float(row["avg_kills"]) + float(row["avg_assists"])) / deaths
+
+        last_played = row.get("last_played")
+        if last_played and hasattr(last_played, "timestamp"):
+            days_since = (now - last_played.replace(tzinfo=UTC)).total_seconds() / 86400
+        else:
+            days_since = 30.0
+
+        true_mastery = compute_true_mastery(
+            games_played=games,
+            win_rate=win_rate,
+            avg_kda=avg_kda,
+            avg_cs_per_min=float(row["avg_cs_per_min"]),
+            avg_vision_score=float(row["avg_vision_score"]),
+            days_since_last_played=days_since,
+            pool_stats=pool_stats,
+        )
+
+        champion_id = int(row["champion_id"])
+        recent_rows = await _fetch_recent_games(puuids, champion_id, limit=20)
+
+        if recent_rows:
+            recent_wins = sum(int(r["win"]) for r in recent_rows)
+            recent_total = len(recent_rows)
+            win_rate_last_20 = recent_wins / recent_total
+
+            recent_kdas = []
+            for rr in recent_rows:
+                d = max(1.0, float(rr["deaths"]))
+                recent_kdas.append((float(rr["kills"]) + float(rr["assists"])) / d)
+            recent_avg_kda = sum(recent_kdas) / len(recent_kdas)
+            kda_trend_norm = max(0.0, min(1.0, (recent_avg_kda - avg_kda + 5.0) / 10.0))
+        else:
+            win_rate_last_20 = win_rate
+            kda_trend_norm = min(1.0, avg_kda / 5.0)
+
+        recent_form = compute_recent_form(win_rate_last_20, kda_trend_norm)
+        comfort = compute_comfort(true_mastery, recent_form)
+
+        cache_key = f"score:comfort:{puuid}:{champion_id}"
+        await cache_set(cache_key, comfort, ttl_seconds=3600)
+
+        champions.append(
+            {
+                "champion_id": champion_id,
+                "champion_name": str(row["champion_name"]),
+                "games_played": games,
+                "wins": wins,
+                "losses": losses,
+                "win_rate": round(win_rate, 4),
+                "avg_kills": round(float(row["avg_kills"]), 2),
+                "avg_deaths": round(float(row["avg_deaths"]), 2),
+                "avg_assists": round(float(row["avg_assists"]), 2),
+                "avg_kda": round(avg_kda, 2),
+                "avg_cs_per_min": round(float(row["avg_cs_per_min"]), 2),
+                "avg_vision_score": round(float(row["avg_vision_score"]), 2),
+                "true_mastery": round(true_mastery, 2),
+                "comfort_score": round(comfort, 2),
+                "tier": assign_tier(true_mastery),
+            }
+        )
+
+    reverse = sort_order == "desc"
+    if sort_by in ("games_played", "win_rate", "true_mastery", "comfort_score"):
+        champions.sort(key=lambda c: c[sort_by], reverse=reverse)
+
+    return {
+        "user_id": puuid,
+        "champions": champions,
+        "total_champions": len(champions),
+    }
+
+
 async def get_performance(
     db: AsyncSession,
     user_id: UUID,
@@ -306,6 +459,94 @@ async def get_performance(
 
     return {
         "user_id": str(user_id),
+        "total_games": total_games,
+        "total_wins": total_wins,
+        "total_losses": total_games - total_wins,
+        "overall_win_rate": round(total_wins / total_games, 4),
+        "avg_kills": round(float(s["avg_kills"]), 2),
+        "avg_deaths": round(float(s["avg_deaths"]), 2),
+        "avg_assists": round(float(s["avg_assists"]), 2),
+        "avg_kda": round(avg_kda, 2),
+        "avg_cs_per_min": round(float(s["avg_cs_per_min"]), 2),
+        "avg_vision_score": round(float(s["avg_vision_score"]), 2),
+        "role_distribution": role_dist,
+        "top_champions": top_champs,
+    }
+
+
+async def get_performance_by_puuid(puuid: str) -> dict[str, Any]:
+    """Aggregate performance stats for a single PUUID (public lookup use-case)."""
+    params: dict[str, Any] = {"puuids": [puuid]}
+
+    stats_sql = (
+        "SELECT count() AS total_games, sum(win) AS total_wins, "
+        "avg(kills) AS avg_kills, avg(deaths) AS avg_deaths, "
+        "avg(assists) AS avg_assists, "
+        "avg(cs / (greatest(game_duration, 1) / 60.0)) AS avg_cs_per_min, "
+        "avg(vision_score) AS avg_vision_score "
+        "FROM matches WHERE puuid IN %(puuids)s"
+    )
+    stats_rows = await _async_ch_query(stats_sql, params)
+
+    if not stats_rows or stats_rows[0]["total_games"] == 0:
+        return {
+            "user_id": puuid,
+            "total_games": 0,
+            "total_wins": 0,
+            "total_losses": 0,
+            "overall_win_rate": 0.0,
+            "avg_kills": 0.0,
+            "avg_deaths": 0.0,
+            "avg_assists": 0.0,
+            "avg_kda": 0.0,
+            "avg_cs_per_min": 0.0,
+            "avg_vision_score": 0.0,
+            "role_distribution": [],
+            "top_champions": [],
+        }
+
+    s = stats_rows[0]
+    total_games = int(s["total_games"])
+    total_wins = int(s["total_wins"])
+    avg_deaths = max(1.0, float(s["avg_deaths"]))
+    avg_kda = (float(s["avg_kills"]) + float(s["avg_assists"])) / avg_deaths
+
+    role_sql = (
+        "SELECT role, count() AS games FROM matches "
+        "WHERE puuid IN %(puuids)s GROUP BY role ORDER BY games DESC"
+    )
+    role_rows = await _async_ch_query(role_sql, params)
+
+    role_dist = [
+        {
+            "role": str(r["role"]),
+            "games": int(r["games"]),
+            "percentage": round(int(r["games"]) / total_games * 100, 2),
+        }
+        for r in role_rows
+    ]
+
+    top_sql = (
+        "SELECT champion_id, champion_name, "
+        "count() AS games_played, sum(win) / count() AS win_rate "
+        "FROM matches WHERE puuid IN %(puuids)s "
+        "GROUP BY champion_id, champion_name "
+        "ORDER BY games_played DESC LIMIT 5"
+    )
+    top_rows = await _async_ch_query(top_sql, params)
+
+    top_champs = [
+        {
+            "champion_id": int(r["champion_id"]),
+            "champion_name": str(r["champion_name"]),
+            "games_played": int(r["games_played"]),
+            "win_rate": round(float(r["win_rate"]), 4),
+        }
+        for r in top_rows
+    ]
+
+    return {
+        "user_id": puuid,
         "total_games": total_games,
         "total_wins": total_wins,
         "total_losses": total_games - total_wins,

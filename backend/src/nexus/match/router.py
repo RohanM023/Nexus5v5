@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, Query
 from nexus.dependencies import get_arq_pool
 from nexus.match import schemas
 from nexus.match.tasks import enqueue_ingestion
-from nexus.middleware.auth import get_current_user
+from nexus.middleware.auth import get_optional_user
 from nexus.shared import clickhouse as ch
 from nexus.shared.pagination import paginated_response
 
@@ -25,7 +25,7 @@ router = APIRouter(prefix="/api/v1/match", tags=["match"])
 async def trigger_ingestion(
     puuid: str,
     body: schemas.IngestRequest | None = None,
-    current_user: dict[str, Any] = Depends(get_current_user),
+    current_user: dict[str, Any] | None = Depends(get_optional_user),
     arq_pool: ArqRedis = Depends(get_arq_pool),
 ) -> dict[str, Any]:
     """Trigger match history ingestion for a PUUID.
@@ -64,7 +64,7 @@ async def get_match_history(
     end_date: str | None = Query(default=None),
     cursor: str | None = Query(default=None),
     limit: int = Query(default=20, ge=1, le=100),
-    current_user: dict[str, Any] = Depends(get_current_user),
+    current_user: dict[str, Any] | None = Depends(get_optional_user),
 ) -> dict[str, Any]:
     """Get paginated match history from ClickHouse.
 

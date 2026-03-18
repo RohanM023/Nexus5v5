@@ -1,9 +1,17 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { DraftBoard } from "@/components/draft/draft-board";
 import { ScoreDisplay } from "@/components/draft/score-display";
 import { SuggestionPanel } from "@/components/draft/suggestion-panel";
 import { TeamComfortOverlay } from "@/components/draft/team-comfort-overlay";
-import type { ChampionSuggestion, ComfortEntry, DraftScores } from "@/types";
+import type {
+  ChampionSuggestion,
+  ComfortEntry,
+  DraftBan,
+  DraftPhase,
+  DraftPick,
+  DraftScores,
+} from "@/types";
 
 // Mock next/image to render a plain <img> in jsdom
 vi.mock("next/image", () => ({
@@ -152,5 +160,96 @@ describe("TeamComfortOverlay", () => {
     expect(
       screen.getByText("Comfort scores will appear as picks are made.")
     ).toBeDefined();
+  });
+});
+
+// ---- DraftBoard ----
+
+describe("DraftBoard", () => {
+  const noop = () => {};
+
+  const defaultProps = {
+    bluePicks: [] as DraftPick[],
+    redPicks: [] as DraftPick[],
+    blueBans: [] as DraftBan[],
+    redBans: [] as DraftBan[],
+    currentPhase: "ban_phase_1" as DraftPhase,
+    activeSide: "blue" as const,
+    onPick: noop,
+    onBan: noop,
+    isAddingPick: false,
+    isAddingBan: false,
+  };
+
+  it("renders pick slots for all 5 roles on each side", () => {
+    render(<DraftBoard {...defaultProps} />);
+
+    // Each role label appears twice (blue + red side)
+    const roles = ["TOP", "JUNGLE", "MID", "BOT", "SUPPORT"];
+    for (const role of roles) {
+      const matches = screen.getAllByText(role);
+      expect(matches.length).toBe(2);
+    }
+  });
+
+  it("renders Blue Side and Red Side labels", () => {
+    render(<DraftBoard {...defaultProps} />);
+
+    expect(screen.getByText("Blue Side")).toBeDefined();
+    expect(screen.getByText("Red Side")).toBeDefined();
+  });
+
+  it("renders ban slots (10 empty slots total)", () => {
+    const { container } = render(<DraftBoard {...defaultProps} />);
+
+    // Each ban slot shows "--" when empty; 5 blue + 5 red = 10
+    const emptySlots = screen.getAllByText("--");
+    expect(emptySlots.length).toBe(10);
+  });
+
+  it("displays phase badge with current phase", () => {
+    render(<DraftBoard {...defaultProps} currentPhase="pick_phase_2" />);
+
+    // Phase badge renders currentPhase with underscores replaced by spaces, uppercased
+    expect(screen.getByText("PICK PHASE 2")).toBeDefined();
+  });
+
+  it("displays Completed badge when phase is completed", () => {
+    render(<DraftBoard {...defaultProps} currentPhase="completed" />);
+
+    expect(screen.getByText("Completed")).toBeDefined();
+  });
+
+  it("renders picked champions in their slots", () => {
+    const bluePicks: DraftPick[] = [
+      { champion_id: 1, champion_name: "Annie", position: 1, role: "MID" },
+      { champion_id: 86, champion_name: "Garen", position: 2, role: "TOP" },
+    ];
+
+    render(<DraftBoard {...defaultProps} bluePicks={bluePicks} />);
+
+    expect(screen.getByText("Annie")).toBeDefined();
+    expect(screen.getByText("Garen")).toBeDefined();
+  });
+
+  it("hides action button when draft is completed", () => {
+    render(<DraftBoard {...defaultProps} currentPhase="completed" />);
+
+    expect(screen.queryByText(/Pick a Champion/)).toBeNull();
+    expect(screen.queryByText(/Ban a Champion/)).toBeNull();
+  });
+
+  it("shows ban action button during ban phase", () => {
+    render(<DraftBoard {...defaultProps} currentPhase="ban_phase_1" />);
+
+    expect(screen.getByText("Ban a Champion (blue side)")).toBeDefined();
+  });
+
+  it("shows pick action button during pick phase", () => {
+    render(
+      <DraftBoard {...defaultProps} currentPhase="pick_phase_1" />
+    );
+
+    expect(screen.getByText("Pick a Champion (blue side)")).toBeDefined();
   });
 });

@@ -7,9 +7,16 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Response
 
-from nexus.admin.schemas import HealthResponse, RiotQuotaResponse, SynergyRebuildResponse
+from nexus.admin.schemas import (
+    CreatePartnerKeyRequest,
+    HealthResponse,
+    PartnerKeyResponse,
+    RiotQuotaResponse,
+    SynergyRebuildResponse,
+)
 from nexus.config import get_settings
 from nexus.middleware.auth import get_current_user
+from nexus.shared.database import get_db_session
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +51,16 @@ async def prometheus_metrics(
 async def riot_quota(
     _current_user: dict[str, Any] = Depends(get_current_user),
 ) -> dict[str, Any]:
-    """Show current Riot API quota configuration. Requires authentication."""
-    settings = get_settings()
+    """Show current Riot API quota usage. Requires authentication."""
+    from nexus.shared.riot_api import get_riot_client
+
+    client = get_riot_client()
     return {
-        "per_second_limit": settings.riot_api_rate_limit_per_second,
-        "per_2min_limit": settings.riot_api_rate_limit_per_2min,
-        "estimated_usage": "nominal",
+        "per_second_limit": client.per_second_bucket.rate,
+        "per_2min_limit": client.per_2min_bucket.rate,
+        "per_second_used_pct": round(client.per_second_bucket.usage_ratio * 100, 1),
+        "per_2min_used_pct": round(client.per_2min_bucket.usage_ratio * 100, 1),
+        "auto_backoff_active": client.per_2min_bucket.usage_ratio >= 0.8,
     }
 
 
@@ -117,3 +128,37 @@ async def rebuild_synergy(
         "status": "completed",
         "message": "Synergy and counter matrices rebuilt successfully",
     }
+
+
+@router.post("/partner-keys", response_model=PartnerKeyResponse)
+async def create_partner_api_key(
+    body: CreatePartnerKeyRequest,
+    _current_user: dict[str, Any] = Depends(get_current_user),
+    db: Any = Depends(get_db_session),
+) -> dict[str, Any]:
+    """Create a new partner API key. Admin only."""
+    from nexus.admin.partner_keys import create_partner_key
+
+    return await create_partner_key(
+        db,
+        body.partner_name,
+        body.rate_limit_per_minute,
+        body.allowed_origins,
+    )
+
+
+@router.delete("/partner-keys/{key_id}")
+async def delete_partner_api_key(
+    key_id: str,
+    _current_user: dict[str, Any] = Depends(get_current_user),
+    db: Any = Depends(get_db_session),
+) -> dict[str, str]:
+    """Revoke a partner API key. Admin only."""
+    from nexus.admin.partner_keys import revoke_partner_key
+
+    success = await revoke_partner_key(db, key_id)
+    if not success:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Partner key not found")
+    return {"status": "revoked"}
