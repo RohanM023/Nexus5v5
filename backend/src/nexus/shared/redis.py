@@ -32,33 +32,48 @@ async def close_redis() -> None:
 
 
 async def cache_get(key: str) -> Any | None:
-    r = await get_redis()
-    value = await r.get(key)
-    if value is None:
+    if _pool is None:
         return None
     try:
+        value = await _pool.get(key)
+        if value is None:
+            return None
         return json.loads(value)
     except (json.JSONDecodeError, TypeError):
         return value
+    except Exception:
+        return None
 
 
 async def cache_set(key: str, value: Any, ttl_seconds: int = 300) -> None:
-    r = await get_redis()
-    serialized = json.dumps(value) if not isinstance(value, str) else value
-    await r.set(key, serialized, ex=ttl_seconds)
+    if _pool is None:
+        return
+    try:
+        serialized = json.dumps(value) if not isinstance(value, str) else value
+        await _pool.set(key, serialized, ex=ttl_seconds)
+    except Exception:
+        pass
 
 
 async def cache_delete(key: str) -> None:
-    r = await get_redis()
-    await r.delete(key)
+    if _pool is None:
+        return
+    try:
+        await _pool.delete(key)
+    except Exception:
+        pass
 
 
 async def rate_limit_check(key: str, max_requests: int, window_seconds: int) -> bool:
     """Return True if the request is allowed, False if rate limited."""
-    r = await get_redis()
-    pipe = r.pipeline()
-    pipe.incr(key)
-    pipe.expire(key, window_seconds)
-    results = await pipe.execute()
-    current_count: int = results[0]
-    return current_count <= max_requests
+    if _pool is None:
+        return True  # Allow all requests when Redis is unavailable
+    try:
+        pipe = _pool.pipeline()
+        pipe.incr(key)
+        pipe.expire(key, window_seconds)
+        results = await pipe.execute()
+        current_count: int = results[0]
+        return current_count <= max_requests
+    except Exception:
+        return True

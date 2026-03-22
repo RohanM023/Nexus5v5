@@ -53,19 +53,33 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     # Startup
     logger.info("Starting Nexus-5v5 application")
-    get_engine()
-    await get_redis()
+    try:
+        get_engine()
+    except Exception:
+        logger.warning("PostgreSQL engine unavailable — auth features disabled")
+    try:
+        await get_redis()
+    except Exception:
+        logger.warning("Redis unavailable — caching and background jobs disabled")
     get_clickhouse_client()
-    await get_arq_pool()
-    logger.info("All connections initialised")
+    try:
+        await get_arq_pool()
+    except Exception:
+        logger.warning("arq pool unavailable — background jobs disabled")
 
     yield
 
     # Shutdown
     logger.info("Shutting down Nexus-5v5 application")
-    await close_arq_pool()
+    try:
+        await close_arq_pool()
+    except Exception:
+        pass
     await close_riot_client()
-    await close_redis()
+    try:
+        await close_redis()
+    except Exception:
+        pass
     close_client()
     await dispose_engine()
     logger.info("All connections closed")
