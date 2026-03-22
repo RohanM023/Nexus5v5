@@ -4,21 +4,6 @@ import { test, expect, type Page } from "@playwright/test";
 // Mock data aligned with frontend/src/types/index.ts
 // ---------------------------------------------------------------------------
 
-const SUPABASE_SESSION = {
-  access_token: "mock-sb-access-token",
-  refresh_token: "mock-sb-refresh-token",
-  expires_in: 3600,
-  token_type: "bearer",
-  user: {
-    id: "sb-user-id",
-    email: "test@nexus.dev",
-    app_metadata: {},
-    user_metadata: { display_name: "TestUser" },
-    aud: "authenticated",
-    created_at: "2026-01-01T00:00:00Z",
-  },
-};
-
 const MOCK_PROFILE = {
   user: {
     id: "test-user-id",
@@ -105,34 +90,10 @@ const MOCK_SESSION_AFTER_PICK = {
 // Helpers
 // ---------------------------------------------------------------------------
 
-async function mockSupabaseAuth(page: Page) {
-  await page.route("**/auth/v1/token**", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(SUPABASE_SESSION),
-    });
-  });
-  await page.route("**/auth/v1/user**", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(SUPABASE_SESSION.user),
-    });
-  });
-  await page.route("**/auth/v1/session**", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(SUPABASE_SESSION),
-    });
-  });
-  await page.route("**/auth/v1/signup**", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(SUPABASE_SESSION),
-    });
+async function setAuthTokens(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.setItem("nexus_access_token", "mock-jwt-access-token");
+    localStorage.setItem("nexus_refresh_token", "mock-jwt-refresh-token");
   });
 }
 
@@ -251,7 +212,7 @@ async function mockDraftApis(page: Page) {
 
 test.describe("Draft Launcher Page", () => {
   test.beforeEach(async ({ page }) => {
-    await mockSupabaseAuth(page);
+    await setAuthTokens(page);
     await mockDraftApis(page);
   });
 
@@ -307,7 +268,7 @@ test.describe("Draft Launcher Page", () => {
 
     // Should navigate to /draft/{session-id}
     await page.waitForURL(/draft\/draft-session-abc123/, { timeout: 5000 }).catch(() => {
-      // Navigation may not complete if Supabase auth check blocks; verify button was clickable
+      // Navigation may not complete; verify button was clickable
     });
   });
 });
@@ -318,7 +279,7 @@ test.describe("Draft Launcher Page", () => {
 
 test.describe("Live Draft Page", () => {
   test.beforeEach(async ({ page }) => {
-    await mockSupabaseAuth(page);
+    await setAuthTokens(page);
     await mockDraftApis(page);
 
     // Mock WebSocket — just prevent connection errors
@@ -356,16 +317,10 @@ test.describe("Live Draft Page", () => {
   });
 
   test("shows sign-in prompt when not authenticated", async ({ page }) => {
-    // Override Supabase auth to return unauthenticated
-    await page.route("**/auth/v1/token**", async (route) => {
-      await route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({}) });
-    });
-    await page.route("**/auth/v1/session**", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ data: { session: null } }),
-      });
+    // Remove tokens for this test
+    await page.addInitScript(() => {
+      localStorage.removeItem("nexus_access_token");
+      localStorage.removeItem("nexus_refresh_token");
     });
 
     await page.goto("/draft/some-session-id");
@@ -401,9 +356,6 @@ test.describe("Live Draft Page", () => {
     // ScoreDisplay renders cards with labels: Total, Synergy, Counter, Comfort
     // These are shown even with null scores (value 0)
     const totalLabel = page.getByText("Total", { exact: false });
-    const synergyLabel = page.getByText("Synergy", { exact: false });
-    const counterLabel = page.getByText("Counter", { exact: false });
-    const comfortLabel = page.getByText("Comfort", { exact: false });
 
     // At least the score section should be visible
     await expect(
@@ -451,7 +403,7 @@ test.describe("Live Draft Page", () => {
 
 test.describe("Dashboard Clash View — Draft Elements", () => {
   test.beforeEach(async ({ page }) => {
-    await mockSupabaseAuth(page);
+    await setAuthTokens(page);
     await mockDraftApis(page);
   });
 

@@ -14,7 +14,7 @@ class IngestRequest(BaseModel):
         default=[420, 700],
         description="Queue IDs to ingest (420=Ranked Solo, 700=Clash)",
     )
-    count: int = Field(default=20, ge=1, le=100)
+    count: int = Field(default=10, ge=1, le=100)
     region: str = Field(
         default="na1",
         description="Riot platform region (e.g., na1, euw1)",
@@ -27,6 +27,13 @@ class IngestResponse(BaseModel):
     matches_fetched: int
     matches_inserted: int
     status: str
+
+
+class IngestStatusResponse(BaseModel):
+    job_id: str
+    status: str
+    matches_fetched: int | None = None
+    matches_inserted: int | None = None
 
 
 # --- Match History ---

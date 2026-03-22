@@ -227,6 +227,31 @@ export interface DraftBanRequest {
   side: "blue" | "red";
 }
 
+// --- Stateless Draft Analysis ---
+
+export interface AnalyzeChampionEntry {
+  champion_id: number;
+  champion_name: string;
+  role: string | null;
+}
+
+export interface AnalyzeDraftRequest {
+  ally_champions: AnalyzeChampionEntry[];
+  opponent_champions: AnalyzeChampionEntry[];
+  ally_bans: number[];
+  opponent_bans: number[];
+  team_puuids: string[];
+  patch: string;
+}
+
+export interface AnalyzeDraftResponse {
+  synergy_score: number;
+  counter_score: number;
+  comfort_scores: ComfortEntry[];
+  total_score: number;
+  suggestions: ChampionSuggestion[];
+}
+
 // ---- Clash Dashboard ----
 
 export type TeamRole = "TOP" | "JUNGLE" | "MID" | "BOT" | "SUPPORT";

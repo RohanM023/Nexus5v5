@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Response
 from nexus.admin.schemas import (
     CreatePartnerKeyRequest,
     HealthResponse,
+    PartnerKeyListResponse,
     PartnerKeyResponse,
     RiotQuotaResponse,
     SynergyRebuildResponse,
@@ -128,6 +129,17 @@ async def rebuild_synergy(
         "status": "completed",
         "message": "Synergy and counter matrices rebuilt successfully",
     }
+
+
+@router.get("/partner-keys", response_model=PartnerKeyListResponse)
+async def list_partner_api_keys(
+    _current_user: dict[str, Any] = Depends(get_current_user),
+    db: Any = Depends(get_db_session),
+) -> dict[str, Any]:
+    """List all partner API keys (name, usage, status). Admin only."""
+    from nexus.admin.partner_keys import list_partner_keys
+
+    return await list_partner_keys(db)
 
 
 @router.post("/partner-keys", response_model=PartnerKeyResponse)

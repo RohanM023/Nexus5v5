@@ -24,7 +24,7 @@ export function PerformanceTrend({ data }: PerformanceTrendProps) {
           <CardTitle>Performance Trend</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="py-8 text-center text-sm text-slate-500">
+          <p className="py-8 text-center text-xs text-[var(--color-text-muted)]">
             Not enough data to show a trend yet.
           </p>
         </CardContent>
@@ -47,26 +47,28 @@ export function PerformanceTrend({ data }: PerformanceTrendProps) {
         <CardTitle>Performance Trend</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={280}>
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#18181f" />
             <XAxis
               dataKey="date"
-              stroke="#64748b"
-              tick={{ fill: "#94a3b8", fontSize: 12 }}
+              stroke="#363640"
+              tick={{ fill: "#6a6a78", fontSize: 10, fontFamily: "var(--font-jetbrains-mono)" }}
             />
             <YAxis
-              stroke="#64748b"
-              tick={{ fill: "#94a3b8", fontSize: 12 }}
+              stroke="#363640"
+              tick={{ fill: "#6a6a78", fontSize: 10, fontFamily: "var(--font-jetbrains-mono)" }}
               domain={[0, 100]}
               tickFormatter={(value) => `${value}%`}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#0f172a",
-                border: "1px solid #1e293b",
-                borderRadius: "0.5rem",
-                color: "#e2e8f0",
+                backgroundColor: "#050507",
+                border: "1px solid #18181f",
+                borderRadius: "0",
+                color: "#d4d4dc",
+                fontFamily: "var(--font-jetbrains-mono)",
+                fontSize: 11,
               }}
               formatter={(value, name) => {
                 const v = Number(value);
@@ -77,29 +79,29 @@ export function PerformanceTrend({ data }: PerformanceTrendProps) {
             <Line
               type="monotone"
               dataKey="winRate"
-              stroke="#3b82f6"
-              strokeWidth={2}
-              dot={{ fill: "#3b82f6", stroke: "#0f172a", strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6, fill: "#60a5fa" }}
+              stroke="#d97706"
+              strokeWidth={1.5}
+              dot={{ fill: "#d97706", stroke: "#050507", strokeWidth: 2, r: 3 }}
+              activeDot={{ r: 5, fill: "#f59e0b" }}
             />
             <Line
               type="monotone"
               dataKey="games"
-              stroke="#8b5cf6"
-              strokeWidth={2}
-              strokeDasharray="5 5"
+              stroke="#6a6a78"
+              strokeWidth={1}
+              strokeDasharray="4 4"
               dot={false}
             />
           </LineChart>
         </ResponsiveContainer>
-        <div className="mt-3 flex items-center justify-center gap-6 text-xs text-slate-500">
+        <div className="mt-3 flex items-center justify-center gap-6 font-mono text-[9px] text-[var(--color-text-muted)]">
           <div className="flex items-center gap-2">
-            <div className="h-0.5 w-4 bg-blue-500" />
+            <div className="h-px w-4 bg-amber-600" />
             <span>Win Rate</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="h-0.5 w-4 border-t-2 border-dashed border-purple-500" />
-            <span>Games Played</span>
+            <div className="h-px w-4 border-t border-dashed border-[var(--color-text-muted)]" />
+            <span>Games</span>
           </div>
         </div>
       </CardContent>

@@ -1,4 +1,4 @@
-.PHONY: dev down test test-backend test-frontend lint lint-fix migrate migrate-create seed build logs shell-api shell-db worker
+.PHONY: dev down test test-backend test-frontend lint lint-fix migrate migrate-create seed build logs shell-api shell-db worker load-test-ingestion load-test-draft load-test-ws
 
 # ── Development ──────────────────────────────────────────────
 
@@ -26,6 +26,17 @@ test-backend: ## Run backend tests
 
 test-frontend: ## Run frontend tests
 	docker compose exec web npm test -- --run
+
+# ── Load Testing ────────────────────────────────────────────
+
+load-test-ingestion: ## Load test: match ingestion (100 users, 2 min)
+	cd backend && uv run locust -f tests/load/locustfile_ingestion.py --headless -u 100 -r 10 -t 2m
+
+load-test-draft: ## Load test: draft scoring (500 users, 2 min)
+	cd backend && uv run locust -f tests/load/locustfile_draft.py --headless -u 500 -r 50 -t 2m
+
+load-test-ws: ## Load test: WebSocket draft (200 users, 2 min)
+	cd backend && uv run locust -f tests/load/locustfile_websocket.py --headless -u 200 -r 20 -t 2m
 
 # ── Linting ──────────────────────────────────────────────────
 

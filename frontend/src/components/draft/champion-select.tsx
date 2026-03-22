@@ -11,23 +11,24 @@ interface ChampionSelectProps {
   mode: "pick" | "ban";
 }
 
-// Static champion data for the select grid. In production this would come from
-// DDragon / an API endpoint. This is a representative subset for the UI.
+// Complete champion data from DDragon patch 16.6.1 (172 champions)
 const CHAMPION_LIST = [
   { id: 266, name: "Aatrox", roles: ["TOP"] },
   { id: 103, name: "Ahri", roles: ["MID"] },
   { id: 84, name: "Akali", roles: ["MID", "TOP"] },
   { id: 166, name: "Akshan", roles: ["MID"] },
   { id: 12, name: "Alistar", roles: ["SUPPORT"] },
+  { id: 799, name: "Ambessa", roles: ["TOP"] },
   { id: 32, name: "Amumu", roles: ["JUNGLE", "SUPPORT"] },
   { id: 34, name: "Anivia", roles: ["MID"] },
   { id: 1, name: "Annie", roles: ["MID", "SUPPORT"] },
   { id: 523, name: "Aphelios", roles: ["BOT"] },
   { id: 22, name: "Ashe", roles: ["BOT", "SUPPORT"] },
   { id: 136, name: "AurelionSol", roles: ["MID"] },
+  { id: 893, name: "Aurora", roles: ["MID", "TOP"] },
   { id: 268, name: "Azir", roles: ["MID"] },
   { id: 432, name: "Bard", roles: ["SUPPORT"] },
-  { id: 200, name: "BelVeth", roles: ["JUNGLE"] },
+  { id: 200, name: "Belveth", roles: ["JUNGLE"] },
   { id: 53, name: "Blitzcrank", roles: ["SUPPORT"] },
   { id: 63, name: "Brand", roles: ["SUPPORT", "MID"] },
   { id: 201, name: "Braum", roles: ["SUPPORT"] },
@@ -39,8 +40,8 @@ const CHAMPION_LIST = [
   { id: 42, name: "Corki", roles: ["MID"] },
   { id: 122, name: "Darius", roles: ["TOP"] },
   { id: 131, name: "Diana", roles: ["JUNGLE", "MID"] },
-  { id: 119, name: "Draven", roles: ["BOT"] },
   { id: 36, name: "DrMundo", roles: ["TOP", "JUNGLE"] },
+  { id: 119, name: "Draven", roles: ["BOT"] },
   { id: 245, name: "Ekko", roles: ["JUNGLE", "MID"] },
   { id: 60, name: "Elise", roles: ["JUNGLE"] },
   { id: 28, name: "Evelynn", roles: ["JUNGLE"] },
@@ -57,6 +58,7 @@ const CHAMPION_LIST = [
   { id: 887, name: "Gwen", roles: ["TOP"] },
   { id: 120, name: "Hecarim", roles: ["JUNGLE"] },
   { id: 74, name: "Heimerdinger", roles: ["MID", "SUPPORT"] },
+  { id: 910, name: "Hwei", roles: ["MID", "SUPPORT"] },
   { id: 420, name: "Illaoi", roles: ["TOP"] },
   { id: 39, name: "Irelia", roles: ["TOP", "MID"] },
   { id: 427, name: "Ivern", roles: ["JUNGLE"] },
@@ -66,6 +68,7 @@ const CHAMPION_LIST = [
   { id: 126, name: "Jayce", roles: ["TOP", "MID"] },
   { id: 202, name: "Jhin", roles: ["BOT"] },
   { id: 222, name: "Jinx", roles: ["BOT"] },
+  { id: 897, name: "KSante", roles: ["TOP"] },
   { id: 145, name: "Kaisa", roles: ["BOT"] },
   { id: 429, name: "Kalista", roles: ["BOT"] },
   { id: 43, name: "Karma", roles: ["SUPPORT"] },
@@ -79,7 +82,6 @@ const CHAMPION_LIST = [
   { id: 203, name: "Kindred", roles: ["JUNGLE"] },
   { id: 240, name: "Kled", roles: ["TOP"] },
   { id: 96, name: "KogMaw", roles: ["BOT"] },
-  { id: 897, name: "KSante", roles: ["TOP"] },
   { id: 7, name: "Leblanc", roles: ["MID"] },
   { id: 64, name: "LeeSin", roles: ["JUNGLE"] },
   { id: 89, name: "Leona", roles: ["SUPPORT"] },
@@ -92,15 +94,19 @@ const CHAMPION_LIST = [
   { id: 90, name: "Malzahar", roles: ["MID"] },
   { id: 57, name: "Maokai", roles: ["SUPPORT", "JUNGLE"] },
   { id: 11, name: "MasterYi", roles: ["JUNGLE"] },
+  { id: 800, name: "Mel", roles: ["MID", "SUPPORT"] },
+  { id: 902, name: "Milio", roles: ["SUPPORT"] },
   { id: 21, name: "MissFortune", roles: ["BOT"] },
   { id: 62, name: "MonkeyKing", roles: ["JUNGLE", "TOP"] },
   { id: 82, name: "Mordekaiser", roles: ["TOP"] },
   { id: 25, name: "Morgana", roles: ["SUPPORT"] },
+  { id: 950, name: "Naafiri", roles: ["MID", "JUNGLE"] },
   { id: 267, name: "Nami", roles: ["SUPPORT"] },
   { id: 75, name: "Nasus", roles: ["TOP"] },
   { id: 111, name: "Nautilus", roles: ["SUPPORT"] },
   { id: 518, name: "Neeko", roles: ["MID", "SUPPORT"] },
   { id: 76, name: "Nidalee", roles: ["JUNGLE"] },
+  { id: 895, name: "Nilah", roles: ["BOT"] },
   { id: 56, name: "Nocturne", roles: ["JUNGLE"] },
   { id: 20, name: "Nunu", roles: ["JUNGLE"] },
   { id: 2, name: "Olaf", roles: ["TOP", "JUNGLE"] },
@@ -133,6 +139,7 @@ const CHAMPION_LIST = [
   { id: 14, name: "Sion", roles: ["TOP"] },
   { id: 15, name: "Sivir", roles: ["BOT"] },
   { id: 72, name: "Skarner", roles: ["JUNGLE"] },
+  { id: 901, name: "Smolder", roles: ["BOT", "MID"] },
   { id: 37, name: "Sona", roles: ["SUPPORT"] },
   { id: 16, name: "Soraka", roles: ["SUPPORT"] },
   { id: 50, name: "Swain", roles: ["SUPPORT", "MID"] },
@@ -154,7 +161,7 @@ const CHAMPION_LIST = [
   { id: 110, name: "Varus", roles: ["BOT"] },
   { id: 67, name: "Vayne", roles: ["BOT", "TOP"] },
   { id: 45, name: "Veigar", roles: ["MID"] },
-  { id: 161, name: "VelKoz", roles: ["SUPPORT", "MID"] },
+  { id: 161, name: "Velkoz", roles: ["SUPPORT", "MID"] },
   { id: 711, name: "Vex", roles: ["MID"] },
   { id: 254, name: "Vi", roles: ["JUNGLE"] },
   { id: 234, name: "Viego", roles: ["JUNGLE"] },
@@ -168,7 +175,9 @@ const CHAMPION_LIST = [
   { id: 157, name: "Yasuo", roles: ["MID", "BOT"] },
   { id: 777, name: "Yone", roles: ["MID", "TOP"] },
   { id: 83, name: "Yorick", roles: ["TOP"] },
+  { id: 804, name: "Yunara", roles: ["BOT"] },
   { id: 350, name: "Yuumi", roles: ["SUPPORT"] },
+  { id: 904, name: "Zaahen", roles: ["TOP", "JUNGLE"] },
   { id: 154, name: "Zac", roles: ["JUNGLE"] },
   { id: 238, name: "Zed", roles: ["MID"] },
   { id: 221, name: "Zeri", roles: ["BOT"] },
@@ -202,51 +211,41 @@ export function ChampionSelect({
   }, [search, roleFilter]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-xl border border-slate-800 bg-slate-950 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
-          <h2 className="text-lg font-semibold text-white">
-            {mode === "ban" ? "Ban Champion" : "Pick Champion"}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-2xl bg-[var(--background)]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4">
+          <h2 className="font-mono text-xs font-bold tracking-[0.2em] uppercase text-white">
+            {mode === "ban" ? "Ban" : "Pick"}
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+            className="font-mono text-[9px] tracking-wider text-[var(--color-text-muted)] transition-colors hover:text-white"
           >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            ESC
           </button>
         </div>
 
-        <div className="border-b border-slate-800 px-6 py-3">
+        {/* Search + Filters */}
+        <div className="px-6 pb-3">
           <input
             type="text"
-            placeholder="Search champions..."
+            placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+            className="w-full border-b border-[var(--color-border)] bg-transparent py-2 font-mono text-sm text-white placeholder-[var(--color-text-muted)] focus:border-amber-600 focus:outline-none"
             autoFocus
           />
-          <div className="mt-2 flex gap-1">
+          <div className="mt-3 flex gap-1">
             {ROLE_FILTERS.map((role) => (
               <button
                 key={role}
                 onClick={() => setRoleFilter(role)}
                 className={cn(
-                  "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                  "font-mono text-[9px] tracking-wider uppercase transition-colors px-2 py-1",
                   roleFilter === role
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                    ? "text-amber-500"
+                    : "text-[var(--color-text-muted)] hover:text-white"
                 )}
               >
                 {role === "ALL"
@@ -257,7 +256,8 @@ export function ChampionSelect({
           </div>
         </div>
 
-        <div className="grid max-h-[400px] grid-cols-5 gap-2 overflow-y-auto p-4 sm:grid-cols-7 md:grid-cols-8">
+        {/* Champion grid */}
+        <div className="grid max-h-[400px] grid-cols-5 gap-1 overflow-y-auto px-6 pb-6 sm:grid-cols-7 md:grid-cols-8">
           {filteredChampions.map((champ) => {
             const isUnavailable = unavailableIds.includes(champ.id);
             return (
@@ -266,25 +266,25 @@ export function ChampionSelect({
                 onClick={() => !isUnavailable && onSelect(champ.id)}
                 disabled={isUnavailable}
                 className={cn(
-                  "group flex flex-col items-center gap-1 rounded-lg p-1.5 transition-all",
+                  "group flex flex-col items-center gap-1 rounded-sm p-1.5 transition-all",
                   isUnavailable
-                    ? "cursor-not-allowed opacity-30"
-                    : "cursor-pointer hover:bg-slate-800"
+                    ? "cursor-not-allowed opacity-20"
+                    : "cursor-pointer hover:bg-[var(--color-surface)]"
                 )}
                 title={champ.name}
               >
                 <Image
                   src={getChampionIconUrl(champ.name)}
                   alt={champ.name}
-                  width={40}
-                  height={40}
+                  width={36}
+                  height={36}
                   className={cn(
-                    "rounded-lg",
+                    "rounded-sm",
                     isUnavailable && "grayscale"
                   )}
                   unoptimized
                 />
-                <span className="w-full truncate text-center text-[10px] text-slate-400 group-hover:text-white">
+                <span className="w-full truncate text-center font-mono text-[7px] text-[var(--color-text-muted)] group-hover:text-white">
                   {champ.name}
                 </span>
               </button>

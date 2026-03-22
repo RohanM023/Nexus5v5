@@ -22,40 +22,41 @@ export function AccountCard({
   return (
     <div
       className={cn(
-        "flex items-center justify-between rounded-lg border p-4 transition-colors",
+        "flex items-center justify-between rounded-sm p-4 transition-colors",
         account.verified
-          ? "border-green-500/30 bg-green-500/5"
-          : "border-slate-700 bg-slate-800/30"
+          ? "bg-emerald-500/[0.03]"
+          : "bg-[var(--color-surface)]"
       )}
     >
       <div className="flex items-center gap-4">
         <div
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold",
+            "flex h-9 w-9 items-center justify-center rounded-sm font-mono text-sm font-bold",
             account.is_primary
-              ? "bg-blue-600 text-white"
-              : "bg-slate-700 text-slate-300"
+              ? "bg-amber-600 text-black"
+              : "bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]"
           )}
         >
           {account.game_name[0]?.toUpperCase()}
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-medium text-white">
-              {account.game_name}#{account.tag_line}
+            <span className="text-sm font-medium text-white">
+              {account.game_name}
+              <span className="text-[var(--color-text-muted)]">#{account.tag_line}</span>
             </span>
             {account.is_primary && (
-              <span className="rounded bg-blue-600/20 px-1.5 py-0.5 text-xs font-medium text-blue-400">
+              <span className="font-mono text-[7px] tracking-[0.2em] uppercase text-amber-500">
                 Primary
               </span>
             )}
             {account.verified && (
-              <span className="rounded bg-green-600/20 px-1.5 py-0.5 text-xs font-medium text-green-400">
+              <span className="font-mono text-[7px] tracking-[0.2em] uppercase text-emerald-500">
                 Verified
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="mt-0.5 font-mono text-[9px] text-[var(--color-text-muted)]">
             {account.region.toUpperCase()} &middot; Linked{" "}
             {new Date(account.linked_at).toLocaleDateString()}
           </p>

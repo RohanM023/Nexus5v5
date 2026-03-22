@@ -68,7 +68,7 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: nexus-worker
-    command: ["uv", "run", "arq", "nexus.worker.WorkerSettings"]
+    command: ["arq", "nexus.worker.WorkerSettings"]
     volumes:
       - ./backend/src:/app/src
     env_file:

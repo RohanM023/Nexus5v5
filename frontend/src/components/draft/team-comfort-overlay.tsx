@@ -13,11 +13,11 @@ export function TeamComfortOverlay({ comfortScores }: TeamComfortOverlayProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Team Comfort</CardTitle>
+          <CardTitle>Team Comfort</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="py-4 text-center text-sm text-slate-500">
-            Comfort scores will appear as picks are made.
+          <p className="py-4 text-center text-xs text-[var(--color-text-muted)]">
+            Scores appear as picks are made.
           </p>
         </CardContent>
       </Card>
@@ -27,45 +27,45 @@ export function TeamComfortOverlay({ comfortScores }: TeamComfortOverlayProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Team Comfort</CardTitle>
+        <CardTitle>Team Comfort</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2">
         {comfortScores.map((entry) => {
           const isPerfectFit = entry.comfort_score >= 80;
           return (
             <div
               key={`${entry.puuid}-${entry.champion_id}`}
               className={cn(
-                "rounded-lg border p-3 transition-colors",
+                "rounded px-3 py-2.5",
                 isPerfectFit
-                  ? "border-green-500/30 bg-green-500/5"
-                  : "border-slate-800 bg-slate-800/30"
+                  ? "bg-emerald-500/5"
+                  : "bg-transparent"
               )}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-xs font-medium text-white">
                     {entry.champion_name}
                   </span>
                   {isPerfectFit && (
-                    <span className="rounded bg-green-500/20 px-1.5 py-0.5 text-[10px] font-bold text-green-400">
-                      PERFECT FIT
+                    <span className="font-mono text-[7px] tracking-wider uppercase text-emerald-500">
+                      Perfect
                     </span>
                   )}
                 </div>
                 <span
                   className={cn(
-                    "text-sm font-bold",
+                    "font-mono text-xs font-bold",
                     getScoreColor(entry.comfort_score)
                   )}
                 >
                   {entry.comfort_score.toFixed(0)}
                 </span>
               </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-700">
+              <div className="mt-1.5 h-px overflow-hidden bg-[var(--color-border)]">
                 <div
                   className={cn(
-                    "h-full rounded-full transition-all duration-500",
+                    "h-full transition-all duration-500",
                     getScoreBarColor(entry.comfort_score)
                   )}
                   style={{
@@ -73,8 +73,8 @@ export function TeamComfortOverlay({ comfortScores }: TeamComfortOverlayProps) {
                   }}
                 />
               </div>
-              <p className="mt-1 text-[10px] text-slate-500">
-                {entry.puuid.slice(0, 8)}...
+              <p className="mt-1 font-mono text-[7px] text-[var(--color-text-muted)]">
+                {entry.puuid.slice(0, 8)}
               </p>
             </div>
           );

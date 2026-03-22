@@ -71,3 +71,29 @@ class ChampionSuggestion(BaseModel):
     counter_contribution: float
     comfort_contribution: float
     role: str | None = None
+
+
+# --- Stateless Draft Analysis (public, no auth) ---
+
+
+class AnalyzeChampionEntry(BaseModel):
+    champion_id: int
+    champion_name: str = ""
+    role: str | None = None
+
+
+class AnalyzeDraftRequest(BaseModel):
+    ally_champions: list[AnalyzeChampionEntry] = Field(default_factory=list)
+    opponent_champions: list[AnalyzeChampionEntry] = Field(default_factory=list)
+    ally_bans: list[int] = Field(default_factory=list)
+    opponent_bans: list[int] = Field(default_factory=list)
+    team_puuids: list[str] = Field(default_factory=list, max_length=5)
+    patch: str = "16.6"
+
+
+class AnalyzeDraftResponse(BaseModel):
+    synergy_score: float
+    counter_score: float
+    comfort_scores: list[ComfortEntry]
+    total_score: float
+    suggestions: list[ChampionSuggestion]

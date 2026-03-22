@@ -20,11 +20,11 @@ export function BanPriority({
 }: BanPriorityProps) {
   if (bans.length === 0) {
     return (
-      <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+      <div className="rounded-md bg-[var(--color-surface)] p-4">
+        <p className="font-mono text-[9px] tracking-wider uppercase text-[var(--color-text-muted)]">
           {label}
         </p>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-xs text-[var(--color-text-muted)]">
           Add opponent players to see ban recommendations.
         </p>
       </div>
@@ -32,29 +32,26 @@ export function BanPriority({
   }
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-      <p className="mb-3 text-xs font-bold uppercase tracking-wider text-red-400">
+    <div className="rounded-md bg-[var(--color-surface)] p-4">
+      <p className="mb-3 font-mono text-[9px] tracking-wider uppercase text-red-400/80">
         {label}
       </p>
-      <p className="mb-2 text-[10px] uppercase tracking-wide text-slate-500">
-        Opponent Champion Pools
-      </p>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {bans.slice(0, 10).map((ban) => (
           <div
             key={ban.champion_id}
-            className="group relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-red-500/30 bg-red-500/10 transition-colors hover:border-red-400/50"
+            className="group relative flex h-10 w-10 items-center justify-center overflow-hidden rounded transition-opacity hover:opacity-80"
           >
             <Image
               src={getChampionIconUrl(ban.champion_name)}
               alt={ban.champion_name}
-              width={44}
-              height={44}
+              width={40}
+              height={40}
               className="rounded"
               unoptimized
             />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-0.5 py-0.5">
-              <span className="block truncate text-center text-[8px] font-medium text-white">
+              <span className="block truncate text-center font-mono text-[7px] font-medium text-white">
                 {Math.round(ban.comfort_score)}
               </span>
             </div>

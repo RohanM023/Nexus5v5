@@ -3,14 +3,14 @@
 export function MultisearchView() {
   return (
     <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-      <p className="text-lg font-medium text-white">Multisearch</p>
-      <p className="max-w-md text-center text-sm text-slate-400">
+      <p className="text-xs font-medium text-white">Multisearch</p>
+      <p className="max-w-sm text-center text-[10px] text-[var(--color-text-muted)]">
         Paste multiple summoner names to compare champion pools and find team
-        synergies at a glance.
+        synergies.
       </p>
-      <div className="rounded-lg border border-slate-700 bg-slate-800/50 px-6 py-3 text-sm text-slate-500">
+      <span className="font-mono text-[9px] tracking-wider uppercase text-[var(--color-text-muted)]">
         Coming Soon
-      </div>
+      </span>
     </div>
   );
 }

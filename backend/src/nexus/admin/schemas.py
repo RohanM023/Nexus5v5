@@ -37,3 +37,17 @@ class PartnerKeyResponse(BaseModel):
     rate_limit_per_minute: int
     allowed_origins: list[str]
     created_at: str | None = None
+
+
+class PartnerKeySummary(BaseModel):
+    id: str
+    partner_name: str
+    rate_limit_per_minute: int
+    usage_count: int
+    is_active: bool
+    created_at: str | None = None
+
+
+class PartnerKeyListResponse(BaseModel):
+    keys: list[PartnerKeySummary]
+    total: int

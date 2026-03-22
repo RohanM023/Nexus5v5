@@ -9,11 +9,11 @@ interface RoleDistributionProps {
 }
 
 const ROLE_COLORS: Record<string, string> = {
-  TOP: "#f59e0b",
+  TOP: "#d97706",
   JUNGLE: "#10b981",
-  MID: "#3b82f6",
+  MID: "#f59e0b",
   BOT: "#ef4444",
-  SUPPORT: "#8b5cf6",
+  SUPPORT: "#6a6a78",
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -32,7 +32,7 @@ export function RoleDistributionChart({ data }: RoleDistributionProps) {
           <CardTitle>Role Distribution</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="py-8 text-center text-sm text-slate-500">
+          <p className="py-8 text-center text-xs text-[var(--color-text-muted)]">
             No role data available yet.
           </p>
         </CardContent>
@@ -44,7 +44,7 @@ export function RoleDistributionChart({ data }: RoleDistributionProps) {
     name: ROLE_LABELS[item.role] || item.role,
     value: item.games,
     percentage: item.percentage,
-    fill: ROLE_COLORS[item.role] || "#64748b",
+    fill: ROLE_COLORS[item.role] || "#363640",
   }));
 
   return (
@@ -53,15 +53,15 @@ export function RoleDistributionChart({ data }: RoleDistributionProps) {
         <CardTitle>Role Distribution</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={280}>
           <PieChart>
             <Pie
               data={chartData}
               cx="50%"
               cy="50%"
-              innerRadius={60}
-              outerRadius={100}
-              paddingAngle={3}
+              innerRadius={65}
+              outerRadius={95}
+              paddingAngle={2}
               dataKey="value"
               stroke="none"
             >
@@ -71,10 +71,12 @@ export function RoleDistributionChart({ data }: RoleDistributionProps) {
             </Pie>
             <Tooltip
               contentStyle={{
-                backgroundColor: "#0f172a",
-                border: "1px solid #1e293b",
-                borderRadius: "0.5rem",
-                color: "#e2e8f0",
+                backgroundColor: "#050507",
+                border: "1px solid #18181f",
+                borderRadius: "0",
+                color: "#d4d4dc",
+                fontFamily: "var(--font-jetbrains-mono)",
+                fontSize: 11,
               }}
               formatter={(value, name) => [
                 `${Number(value)} games`,
@@ -83,7 +85,7 @@ export function RoleDistributionChart({ data }: RoleDistributionProps) {
             />
             <Legend
               formatter={(value) => (
-                <span className="text-sm text-slate-300">{value}</span>
+                <span className="font-mono text-[10px] text-[var(--color-text-muted)]">{value}</span>
               )}
             />
           </PieChart>

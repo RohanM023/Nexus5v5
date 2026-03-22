@@ -9,11 +9,11 @@ export function Spinner({ size = "md", className }: SpinnerProps) {
   return (
     <svg
       className={cn(
-        "animate-spin text-blue-500",
+        "animate-spin text-amber-600",
         {
-          "h-4 w-4": size === "sm",
-          "h-6 w-6": size === "md",
-          "h-8 w-8": size === "lg",
+          "h-3.5 w-3.5": size === "sm",
+          "h-5 w-5": size === "md",
+          "h-6 w-6": size === "lg",
         },
         className
       )}
@@ -21,7 +21,7 @@ export function Spinner({ size = "md", className }: SpinnerProps) {
       viewBox="0 0 24 24"
     >
       <circle
-        className="opacity-25"
+        className="opacity-20"
         cx="12"
         cy="12"
         r="10"
@@ -29,7 +29,7 @@ export function Spinner({ size = "md", className }: SpinnerProps) {
         strokeWidth="4"
       />
       <path
-        className="opacity-75"
+        className="opacity-80"
         fill="currentColor"
         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
       />
@@ -45,7 +45,7 @@ export function Skeleton({ className }: SkeletonProps) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-lg bg-slate-800/50",
+        "animate-pulse rounded bg-[var(--color-surface-hover)]",
         className
       )}
     />
@@ -60,7 +60,7 @@ export function PageLoader({ message = "Loading..." }: PageLoaderProps) {
   return (
     <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
       <Spinner size="lg" />
-      <p className="text-sm text-slate-400">{message}</p>
+      <p className="text-xs tracking-wider uppercase text-[var(--color-text-muted)]">{message}</p>
     </div>
   );
 }
@@ -76,9 +76,9 @@ export function ErrorDisplay({
 }: ErrorDisplayProps) {
   return (
     <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-      <div className="rounded-full bg-red-500/10 p-4">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10">
         <svg
-          className="h-8 w-8 text-red-400"
+          className="h-5 w-5 text-red-400"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -86,18 +86,18 @@ export function ErrorDisplay({
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={2}
+            strokeWidth={1.5}
             d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
           />
         </svg>
       </div>
-      <p className="text-sm text-slate-400">{message}</p>
+      <p className="text-sm text-[var(--color-text-secondary)]">{message}</p>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="rounded-lg bg-slate-800 px-4 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-700"
+          className="rounded-md bg-[var(--color-surface-hover)] px-4 py-1.5 text-xs tracking-wider uppercase text-[var(--color-text-secondary)] transition-colors hover:text-white"
         >
-          Try Again
+          Retry
         </button>
       )}
     </div>

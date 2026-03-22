@@ -7,6 +7,7 @@ import logging
 from typing import Any
 
 from arq.connections import ArqRedis
+from arq.jobs import Job
 from fastapi import APIRouter, Depends, Query
 
 from nexus.dependencies import get_arq_pool
@@ -52,6 +53,40 @@ async def trigger_ingestion(
         "matches_inserted": 0,
         "status": "queued",
     }
+
+
+@router.get(
+    "/ingest/status/{job_id}",
+    response_model=schemas.IngestStatusResponse,
+)
+async def get_ingest_status(
+    job_id: str,
+    arq_pool: ArqRedis = Depends(get_arq_pool),
+) -> dict[str, Any]:
+    """Check the status of an ingestion job by job ID."""
+    job = Job(job_id, redis=arq_pool)
+    status = await job.status()
+
+    status_map = {
+        "deferred": "queued",
+        "queued": "queued",
+        "in_progress": "in_progress",
+        "complete": "complete",
+        "not_found": "not_found",
+    }
+    mapped = status_map.get(status.value, "not_found")
+
+    result: dict[str, Any] = {"job_id": job_id, "status": mapped}
+    if mapped == "complete":
+        try:
+            job_result = await job.result(timeout=1)
+            if isinstance(job_result, dict):
+                result["matches_fetched"] = job_result.get("matches_fetched")
+                result["matches_inserted"] = job_result.get("matches_inserted")
+        except Exception:
+            logger.debug("Could not retrieve result for job %s", job_id)
+
+    return result
 
 
 @router.get("/history/{puuid}", response_model=schemas.MatchHistoryResponse)

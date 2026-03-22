@@ -15,6 +15,37 @@ from nexus.shared.redis import cache_get, cache_set
 
 logger = logging.getLogger(__name__)
 
+# --- Champion ID → Name Lookup (lazy-loaded) ---
+
+_champion_name_cache: dict[int, str] | None = None
+
+
+async def _get_champion_names() -> dict[int, str]:
+    """Build champion_id → champion_name map from ClickHouse match data."""
+    global _champion_name_cache  # noqa: PLW0603
+    if _champion_name_cache is not None:
+        return _champion_name_cache
+
+    try:
+        rows = ch.query(
+            "SELECT DISTINCT champion_id, champion_name "
+            "FROM matches WHERE champion_name != '' "
+            "ORDER BY champion_id"
+        )
+        _champion_name_cache = {int(r["champion_id"]): r["champion_name"] for r in rows}
+    except Exception:
+        logger.warning("Failed to load champion names from ClickHouse, using empty map")
+        _champion_name_cache = {}
+
+    return _champion_name_cache
+
+
+def get_champion_name_sync(champion_id: int) -> str:
+    """Get champion name from cache (non-async, returns '' if cache not loaded)."""
+    if _champion_name_cache is None:
+        return ""
+    return _champion_name_cache.get(champion_id, "")
+
 
 # --- Synergy Score ---
 
@@ -285,6 +316,9 @@ async def generate_suggestions(
     picked_ids = {c["champion_id"] for c in ally_champions + opponent_champions}
     unavailable = picked_ids | set(banned_champions)
 
+    # Ensure champion name cache is loaded
+    champ_names = await _get_champion_names()
+
     # Get all champion IDs from synergy matrix for this patch
     all_champs_rows = ch.query(
         "SELECT DISTINCT champion_a AS cid FROM synergy_matrix WHERE patch = %(patch)s "
@@ -320,7 +354,7 @@ async def generate_suggestions(
         suggestions.append(
             {
                 "champion_id": champ_id,
-                "champion_name": "",
+                "champion_name": champ_names.get(champ_id, ""),
                 "composite_score": round(composite, 2),
                 "synergy_contribution": round(syn, 2),
                 "counter_contribution": round(ctr, 2),

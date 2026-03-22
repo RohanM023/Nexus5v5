@@ -196,12 +196,17 @@ async def ingest_matches(
     region: str = "na1",
     queue_ids: list[int] | None = None,
     count: int = 20,
+    *,
+    fetch_timelines: bool = False,
 ) -> dict[str, int]:
     """Fetch, transform, and load match history for a PUUID.
 
     Supports incremental ingestion via Redis watermarks and ClickHouse
     deduplication.  Returns dict with matches_fetched and matches_inserted
     counts.
+
+    Set ``fetch_timelines=True`` to also pull per-minute gold-diff data
+    (doubles the number of Riot API calls).
     """
     if queue_ids is None:
         queue_ids = [420, 700]
@@ -211,7 +216,7 @@ async def ingest_matches(
     timer.__enter__()
 
     try:
-        return await _do_ingest(puuid, region, queue_ids, count)
+        return await _do_ingest(puuid, region, queue_ids, count, fetch_timelines=fetch_timelines)
     except Exception:
         INGESTION_ERRORS.labels(region=region, stage="job").inc()
         raise
@@ -225,6 +230,8 @@ async def _do_ingest(
     region: str,
     queue_ids: list[int],
     count: int,
+    *,
+    fetch_timelines: bool = False,
 ) -> dict[str, int]:
     """Inner ingestion logic, separated for clean metrics wrapping."""
     client = get_riot_client()
@@ -271,11 +278,13 @@ async def _do_ingest(
         if match_data is None:
             continue
 
-        try:
-            timeline_data = await client.get_match_timeline(match_id, region)
-        except Exception:
-            INGESTION_ERRORS.labels(region=region, stage="fetch_timeline").inc()
-            raise
+        timeline_data = None
+        if fetch_timelines:
+            try:
+                timeline_data = await client.get_match_timeline(match_id, region)
+            except Exception:
+                INGESTION_ERRORS.labels(region=region, stage="fetch_timeline").inc()
+                raise
 
         for participant in match_data.get("info", {}).get("participants", []):
             row = _extract_participant(match_data, participant)

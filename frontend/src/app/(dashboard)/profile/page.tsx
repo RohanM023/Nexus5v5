@@ -24,16 +24,16 @@ export default function ProfilePage() {
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-        <p className="text-lg text-slate-300">Sign in to view your Master Profile</p>
-        <p className="text-slate-400">
+        <p className="text-xs text-[var(--color-text-muted)]">Sign in to view your Master Profile</p>
+        <p className="text-xs text-[var(--color-text-muted)]">
           Or{" "}
-          <Link href="/" className="text-blue-400 hover:text-blue-300">
+          <Link href="/" className="text-amber-500 hover:text-amber-400">
             search for any summoner
           </Link>
         </p>
         <Link
           href="/login"
-          className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-500"
+          className="rounded-md bg-amber-600 px-5 py-2 text-xs font-medium text-black hover:bg-amber-500"
         >
           Sign In
         </Link>
@@ -46,21 +46,19 @@ export default function ProfilePage() {
     return <ErrorDisplay message="Could not load profile." />;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Master Profile</h1>
-          <p className="mt-1 text-sm text-slate-400">
-            {profile.user.display_name} &middot;{" "}
-            {profile.accounts.length} linked account
-            {profile.accounts.length !== 1 ? "s" : ""}
+          <h1 className="text-lg font-semibold tracking-tight text-white">Master Profile</h1>
+          <p className="mt-0.5 font-mono text-[10px] tracking-wider text-[var(--color-text-muted)]">
+            {profile.user.display_name} · {profile.accounts.length} account{profile.accounts.length !== 1 ? "s" : ""}
           </p>
         </div>
         <Link
           href="/settings"
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:border-slate-600 hover:bg-slate-800"
+          className="text-[10px] tracking-wider uppercase text-[var(--color-text-muted)] transition-colors hover:text-white"
         >
-          Manage Accounts
+          Manage
         </Link>
       </div>
 
@@ -70,11 +68,11 @@ export default function ProfilePage() {
         <CardHeader>
           <CardTitle>Linked Accounts</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2">
           {profile.accounts.length === 0 ? (
-            <p className="py-4 text-center text-sm text-slate-500">
+            <p className="py-6 text-center text-xs text-[var(--color-text-muted)]">
               No accounts linked.{" "}
-              <Link href="/settings" className="text-blue-400 hover:text-blue-300">
+              <Link href="/settings" className="text-amber-500 hover:text-amber-400">
                 Link one now
               </Link>
             </p>

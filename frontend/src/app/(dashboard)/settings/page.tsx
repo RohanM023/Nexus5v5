@@ -7,7 +7,7 @@ import { AccountCard } from "@/components/profile/account-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PageLoader, ErrorDisplay } from "@/components/ui/loading";
+import { PageLoader } from "@/components/ui/loading";
 import Link from "next/link";
 
 const REGIONS = [
@@ -46,10 +46,10 @@ export default function SettingsPage() {
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-        <p className="text-slate-400">Please sign in to access settings.</p>
+        <p className="text-xs text-[var(--color-text-muted)]">Sign in to access settings.</p>
         <Link
           href="/login"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+          className="rounded-md bg-amber-600 px-4 py-1.5 text-xs font-medium text-black hover:bg-amber-500"
         >
           Sign In
         </Link>
@@ -57,7 +57,7 @@ export default function SettingsPage() {
     );
   }
 
-  if (profileLoading) return <PageLoader message="Loading settings..." />;
+  if (profileLoading) return <PageLoader message="Loading..." />;
 
   const handleLinkAccount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,10 +77,10 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-lg space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <h1 className="text-lg font-semibold tracking-tight text-white">Settings</h1>
+        <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
           Manage your account and linked Riot accounts
         </p>
       </div>
@@ -127,16 +127,16 @@ export default function SettingsPage() {
                 required
               />
               <div className="w-full">
-                <label className="mb-1.5 block text-sm font-medium text-slate-300">
+                <label className="mb-1.5 block text-xs font-medium tracking-wider uppercase text-[var(--color-text-muted)]">
                   Region
                 </label>
                 <select
                   value={region}
                   onChange={(e) => setRegion(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full border-b border-[var(--color-border)] bg-transparent py-2 text-sm text-white focus:border-amber-600 focus:outline-none"
                 >
                   {REGIONS.map((r) => (
-                    <option key={r.value} value={r.value}>
+                    <option key={r.value} value={r.value} className="bg-[var(--color-surface)]">
                       {r.label}
                     </option>
                   ))}
@@ -145,14 +145,14 @@ export default function SettingsPage() {
             </div>
 
             {linkError && (
-              <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              <div className="border-l-2 border-red-500/60 bg-red-500/5 px-3 py-2 text-xs text-red-400">
                 {linkError.message}
               </div>
             )}
 
             {linkSuccess && (
-              <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
-                Account linked successfully. Verify it below.
+              <div className="border-l-2 border-emerald-500/60 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-400">
+                Account linked. Verify it below.
               </div>
             )}
 
@@ -167,9 +167,9 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle>Linked Accounts</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2">
           {!profile?.accounts.length ? (
-            <p className="py-4 text-center text-sm text-slate-500">
+            <p className="py-6 text-center text-xs text-[var(--color-text-muted)]">
               No accounts linked yet.
             </p>
           ) : (
@@ -189,23 +189,14 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Verification Instructions</CardTitle>
+          <CardTitle>Verification</CardTitle>
         </CardHeader>
         <CardContent>
-          <ol className="list-inside list-decimal space-y-2 text-sm text-slate-400">
+          <ol className="list-inside list-decimal space-y-2 text-xs text-[var(--color-text-secondary)]">
             <li>Click &quot;Verify&quot; next to the account you want to verify.</li>
-            <li>
-              The system will assign a specific summoner icon number for you to
-              equip.
-            </li>
-            <li>
-              Open League of Legends, go to your profile, and change your
-              summoner icon to the assigned icon.
-            </li>
-            <li>
-              Return here and click &quot;Verify&quot; again. The system will check your
-              icon and mark the account as verified.
-            </li>
+            <li>The system will assign a specific summoner icon to equip.</li>
+            <li>Open League of Legends, change your summoner icon to the assigned one.</li>
+            <li>Return here and click &quot;Verify&quot; again to confirm.</li>
           </ol>
         </CardContent>
       </Card>

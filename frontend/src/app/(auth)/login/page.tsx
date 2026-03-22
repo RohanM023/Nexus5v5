@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,58 +24,55 @@ export default function LoginPage() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-center text-2xl">Welcome Back</CardTitle>
-        <p className="text-center text-sm text-slate-400">
-          Sign in to your Nexus account
-        </p>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Email"
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <Input
-            label="Password"
-            type="password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+    <div className="animate-fade-in">
+      <h2 className="text-center text-lg font-semibold tracking-tight text-white">Welcome back</h2>
+      <p className="mt-1 text-center text-xs text-[var(--color-text-muted)]">
+        Sign in to your Nexus account
+      </p>
 
-          {signInError && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              {signInError.message}
-            </div>
-          )}
+      <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+        <Input
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <Input
+          label="Password"
+          type="password"
+          placeholder="Enter your password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
 
-          <Button
-            type="submit"
-            className="w-full"
-            size="lg"
-            isLoading={isSigningIn}
-          >
-            Sign In
-          </Button>
-        </form>
+        {signInError && (
+          <div className="border-l-2 border-red-500/60 bg-red-500/5 px-3 py-2 text-xs text-red-400">
+            {signInError.message}
+          </div>
+        )}
 
-        <p className="mt-6 text-center text-sm text-slate-500">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/register"
-            className="font-medium text-blue-400 hover:text-blue-300"
-          >
-            Create one
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+        <Button
+          type="submit"
+          className="w-full"
+          size="lg"
+          isLoading={isSigningIn}
+        >
+          Sign In
+        </Button>
+      </form>
+
+      <p className="mt-8 text-center text-xs text-[var(--color-text-muted)]">
+        No account?{" "}
+        <Link
+          href="/register"
+          className="text-amber-500 hover:text-amber-400"
+        >
+          Create one
+        </Link>
+      </p>
+    </div>
   );
 }

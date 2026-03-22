@@ -4,21 +4,6 @@ import { test, expect, type Page } from "@playwright/test";
 // Mock data aligned with frontend/src/types/index.ts
 // ---------------------------------------------------------------------------
 
-const SUPABASE_SESSION = {
-  access_token: "mock-sb-access-token",
-  refresh_token: "mock-sb-refresh-token",
-  expires_in: 3600,
-  token_type: "bearer",
-  user: {
-    id: "sb-user-id",
-    email: "test@nexus.dev",
-    app_metadata: {},
-    user_metadata: { display_name: "TestUser" },
-    aud: "authenticated",
-    created_at: "2026-01-01T00:00:00Z",
-  },
-};
-
 const MOCK_PROFILE = {
   user: {
     id: "test-user-id",
@@ -195,44 +180,10 @@ const MOCK_MATCH_HISTORY = {
 // Helpers
 // ---------------------------------------------------------------------------
 
-async function mockSupabaseAuth(page: Page, authenticated: boolean = true) {
-  await page.route("**/auth/v1/token**", async (route) => {
-    if (authenticated) {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(SUPABASE_SESSION),
-      });
-    } else {
-      await route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({}) });
-    }
-  });
-  await page.route("**/auth/v1/user**", async (route) => {
-    if (authenticated) {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(SUPABASE_SESSION.user),
-      });
-    } else {
-      await route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({}) });
-    }
-  });
-  await page.route("**/auth/v1/session**", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: authenticated
-        ? JSON.stringify(SUPABASE_SESSION)
-        : JSON.stringify({ data: { session: null } }),
-    });
-  });
-  await page.route("**/auth/v1/signup**", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(SUPABASE_SESSION),
-    });
+async function setAuthTokens(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.setItem("nexus_access_token", "mock-jwt-access-token");
+    localStorage.setItem("nexus_refresh_token", "mock-jwt-refresh-token");
   });
 }
 
@@ -338,12 +289,16 @@ async function mockProfileApis(page: Page) {
 
 test.describe("Profile Page", () => {
   test.beforeEach(async ({ page }) => {
-    await mockSupabaseAuth(page, true);
+    await setAuthTokens(page);
     await mockProfileApis(page);
   });
 
   test("shows sign-in prompt when not authenticated", async ({ page }) => {
-    await mockSupabaseAuth(page, false);
+    // Override — don't set tokens for this test
+    await page.addInitScript(() => {
+      localStorage.removeItem("nexus_access_token");
+      localStorage.removeItem("nexus_refresh_token");
+    });
 
     await page.goto("/profile");
 
@@ -398,12 +353,15 @@ test.describe("Profile Page", () => {
 
 test.describe("Settings Page", () => {
   test.beforeEach(async ({ page }) => {
-    await mockSupabaseAuth(page, true);
+    await setAuthTokens(page);
     await mockProfileApis(page);
   });
 
   test("shows sign-in prompt when not authenticated", async ({ page }) => {
-    await mockSupabaseAuth(page, false);
+    await page.addInitScript(() => {
+      localStorage.removeItem("nexus_access_token");
+      localStorage.removeItem("nexus_refresh_token");
+    });
 
     await page.goto("/settings");
 
@@ -521,12 +479,15 @@ test.describe("Settings Page", () => {
 
 test.describe("Match History Page", () => {
   test.beforeEach(async ({ page }) => {
-    await mockSupabaseAuth(page, true);
+    await setAuthTokens(page);
     await mockProfileApis(page);
   });
 
   test("shows sign-in prompt when not authenticated", async ({ page }) => {
-    await mockSupabaseAuth(page, false);
+    await page.addInitScript(() => {
+      localStorage.removeItem("nexus_access_token");
+      localStorage.removeItem("nexus_refresh_token");
+    });
 
     await page.goto("/dashboard/matches");
 

@@ -87,9 +87,11 @@ def create_app() -> FastAPI:
     # --- Middleware ---
     from nexus.middleware.cors import add_cors_middleware
     from nexus.middleware.rate_limit import RateLimitMiddleware
+    from nexus.middleware.security_headers import SecurityHeadersMiddleware
 
     add_cors_middleware(app)
     app.add_middleware(RateLimitMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware)
 
     # --- Exception handlers ---
     @app.exception_handler(NexusError)

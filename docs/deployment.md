@@ -1,6 +1,6 @@
 # Nexus-5v5 Deployment Guide
 
-This document covers deploying Nexus-5v5 to production using **Vercel** (frontend) and **Supabase** (database + auth).
+This document covers deploying Nexus-5v5 to production using **Vercel** (frontend) and **FastAPI** (backend) with managed database services.
 
 ---
 
@@ -8,13 +8,14 @@ This document covers deploying Nexus-5v5 to production using **Vercel** (fronten
 
 1. [Architecture Overview](#1-architecture-overview)
 2. [Prerequisites](#2-prerequisites)
-3. [Supabase Setup](#3-supabase-setup)
+3. [Backend Setup](#3-backend-setup)
 4. [Vercel Setup](#4-vercel-setup)
 5. [Environment Variables](#5-environment-variables)
 6. [CI/CD Pipeline](#6-cicd-pipeline)
 7. [Local Development](#7-local-development)
-8. [Monitoring & Observability](#8-monitoring--observability)
-9. [Troubleshooting](#9-troubleshooting)
+8. [ClickHouse Cloud](#8-clickhouse-cloud)
+9. [Monitoring & Observability](#9-monitoring--observability)
+10. [Troubleshooting](#10-troubleshooting)
 
 ---
 
@@ -26,24 +27,32 @@ This document covers deploying Nexus-5v5 to production using **Vercel** (fronten
                     │  (Next.js)   │
                     │  SSR + Edge  │
                     └──────┬───────┘
+                           │  /api/* rewrites
+                           ▼
+                    ┌──────────────┐
+                    │   FastAPI    │
+                    │  (Backend)   │
+                    │  Auth + API  │
+                    └──────┬───────┘
                            │
               ┌────────────┼────────────┐
               │            │            │
               ▼            ▼            ▼
      ┌────────────┐ ┌───────────┐ ┌──────────┐
-     │  Supabase  │ │ Riot API  │ │  Redis   │
-     │  Postgres  │ │ (Match,   │ │  (Cache) │
-     │  + Auth    │ │  Account) │ │          │
+     │ PostgreSQL │ │ClickHouse │ │  Redis   │
+     │  Users,    │ │  Matches, │ │  Cache,  │
+     │  Identity  │ │  Matrices │ │  Sessions│
      └────────────┘ └───────────┘ └──────────┘
 ```
 
 | Component | Service | Purpose |
 |-----------|---------|---------|
-| Frontend + Server Logic | Vercel | Next.js SSR, API Routes, Edge Functions |
-| Database | Supabase PostgreSQL | Users, teams, identity links, draft sessions |
-| Auth | Supabase Auth | User registration, login, JWT tokens |
+| Frontend | Vercel (Next.js) | SSR, static pages, API proxy via rewrites |
+| Backend | FastAPI (Docker/cloud host) | Auth (JWT RS256), identity, draft, analytics, match ingestion |
+| Database | PostgreSQL | Users, teams, identity links, draft sessions |
+| Analytics DB | ClickHouse (Cloud or Docker) | Match data, synergy/counter matrices |
+| Cache | Redis | API caching, rate limit counters, session store |
 | External API | Riot Games API | Match data, account info, champion mastery |
-| Cache | Redis (Upstash or self-hosted) | API response caching, rate limit counters |
 
 ---
 
@@ -51,72 +60,37 @@ This document covers deploying Nexus-5v5 to production using **Vercel** (fronten
 
 - **GitHub account** with repository access
 - **Vercel account** (free tier sufficient for staging)
-- **Supabase account** (free tier: 500MB database, 50K auth users)
 - **Riot Games API key** (development or production tier)
 - **Node.js 20+** and **npm/pnpm** for local builds
+- **Python 3.12+** and **uv** for backend development
 
 ---
 
-## 3. Supabase Setup
+## 3. Backend Setup
 
-### 3.1 Create Project
+### 3.1 Docker Deployment
 
-1. Go to [supabase.com](https://supabase.com) and create a new project.
-2. Choose a region close to your users (e.g., `us-east-1` for NA players).
-3. Set a strong database password — save it securely.
+The FastAPI backend runs as a Docker container:
 
-### 3.2 Database Schema
-
-Run the following SQL in the Supabase SQL Editor (or apply via migrations):
-
-```sql
--- Enable required extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
--- Apply the schema from CLAUDE.md section 5.1
--- Tables: users, riot_accounts, teams, team_members,
---         identity_links, refresh_tokens, draft_sessions, score_snapshots
+```bash
+cd backend
+docker build -t nexus-api .
+docker run -p 8000:8000 --env-file .env nexus-api
 ```
 
-Refer to [CLAUDE.md Section 5.1](../CLAUDE.md) for the complete schema.
+### 3.2 Database Migrations
 
-### 3.3 Row Level Security (RLS)
-
-Enable RLS on all tables so users can only access their own data:
-
-```sql
--- Enable RLS
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE riot_accounts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
-ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
-
--- Users can read their own profile
-CREATE POLICY "Users can read own profile"
-  ON users FOR SELECT
-  USING (auth.uid() = id);
-
--- Users can read their own linked accounts
-CREATE POLICY "Users can read own accounts"
-  ON riot_accounts FOR SELECT
-  USING (user_id = auth.uid());
-
--- Users can read teams they belong to
-CREATE POLICY "Members can read team"
-  ON teams FOR SELECT
-  USING (id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()));
+```bash
+cd backend
+uv run alembic upgrade head
 ```
 
-### 3.4 Collect Keys
+### 3.3 Auth Architecture
 
-From your Supabase project settings, collect:
-
-| Key | Location | Usage |
-|-----|----------|-------|
-| **Project URL** | Settings > API | `NEXT_PUBLIC_SUPABASE_URL` |
-| **Anon Key** | Settings > API | `NEXT_PUBLIC_SUPABASE_ANON_KEY` (safe for browser) |
-| **Service Role Key** | Settings > API | `SUPABASE_SERVICE_ROLE_KEY` (server-only, bypasses RLS) |
+- **JWT RS256**: Access tokens (15-min expiry) + refresh tokens (7-day expiry)
+- **Endpoints**: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/logout`
+- **Frontend storage**: Tokens stored in `localStorage` (`nexus_access_token`, `nexus_refresh_token`)
+- **API client**: Automatically adds `Authorization: Bearer <token>` header, with automatic token refresh on 401
 
 ---
 
@@ -138,14 +112,27 @@ From your Supabase project settings, collect:
 | Output Directory | `.next` (auto-detected) |
 | Node.js Version | 20.x |
 
-### 4.3 Environments
+### 4.3 API Proxy
+
+The Next.js `next.config.ts` rewrites all `/api/*` requests to the FastAPI backend:
+
+```ts
+async rewrites() {
+  const apiUrl = process.env.INTERNAL_API_URL
+    || process.env.NEXT_PUBLIC_API_URL
+    || "http://localhost:8000";
+  return [{ source: "/api/:path*", destination: `${apiUrl}/api/v1/:path*` }];
+}
+```
+
+Set `NEXT_PUBLIC_API_URL` in Vercel to point to your production FastAPI instance.
+
+### 4.4 Environments
 
 Set up two environments in Vercel:
 
 - **Preview** (staging): Deploys on PRs and non-main branches
 - **Production**: Deploys on merge to `main`
-
-Each environment gets its own set of environment variables (see Section 5).
 
 ---
 
@@ -153,49 +140,30 @@ Each environment gets its own set of environment variables (see Section 5).
 
 ### 5.1 Required Variables
 
-Set these in both Vercel project settings and your local `.env.local`:
+**Vercel (frontend)**:
 
 | Variable | Scope | Description |
 |----------|-------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Client + Server | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client + Server | Supabase anonymous/public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server only | Supabase service role key (bypasses RLS) |
-| `RIOT_API_KEY` | Server only | Riot Games API key |
+| `NEXT_PUBLIC_API_URL` | Client + Server | Public URL of the FastAPI backend |
+| `INTERNAL_API_URL` | Server only | Internal backend URL (for Docker networking) |
 
-### 5.2 Environment-Specific Variables
+**Backend (FastAPI)**:
 
-**Staging** (Vercel Preview):
-```
-NEXT_PUBLIC_SUPABASE_URL=https://<staging-project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...staging
-SUPABASE_SERVICE_ROLE_KEY=eyJ...staging-service
-RIOT_API_KEY=RGAPI-...
-```
+| Variable | Description |
+|----------|-------------|
+| `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | PostgreSQL connection |
+| `CLICKHOUSE_HOST`, `CLICKHOUSE_PORT`, `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD`, `CLICKHOUSE_DB` | ClickHouse connection |
+| `CLICKHOUSE_SECURE` | Set `true` for ClickHouse Cloud (HTTPS) |
+| `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` | Redis connection |
+| `JWT_SECRET_KEY` | JWT signing key (must change from default in production) |
+| `RIOT_API_KEY` | Riot Games API key |
+| `CORS_ORIGINS` | Comma-separated allowed origins |
 
-**Production** (Vercel Production):
-```
-NEXT_PUBLIC_SUPABASE_URL=https://<prod-project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...prod
-SUPABASE_SERVICE_ROLE_KEY=eyJ...prod-service
-RIOT_API_KEY=RGAPI-...
-```
+### 5.2 Security Rules
 
-### 5.3 Local Development
-
-Create `frontend/.env.local` (git-ignored):
-
-```bash
-NEXT_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-RIOT_API_KEY=RGAPI-...
-```
-
-### 5.4 Security Rules
-
-- `NEXT_PUBLIC_*` variables are exposed to the browser — only use for public keys.
-- `SUPABASE_SERVICE_ROLE_KEY` and `RIOT_API_KEY` must **never** appear in client-side code.
-- Use Next.js API Routes / Route Handlers for server-side operations that need these keys.
+- `NEXT_PUBLIC_*` variables are exposed to the browser — only use for public values.
+- `JWT_SECRET_KEY`, `RIOT_API_KEY`, database passwords must **never** appear in client-side code.
+- All sensitive API calls go through the FastAPI backend.
 
 ---
 
@@ -222,26 +190,13 @@ CI Gate (ci.yml must pass)
 
 ### 6.3 GitHub Secrets Required
 
-Configure these in your GitHub repository settings (Settings > Secrets and variables > Actions):
-
 | Secret | Description |
 |--------|-------------|
-| `VERCEL_TOKEN` | Vercel API token (from Vercel account settings) |
+| `VERCEL_TOKEN` | Vercel API token |
 | `VERCEL_ORG_ID` | Vercel organization/team ID |
 | `VERCEL_PROJECT_ID` | Vercel project ID |
-| `STAGING_SUPABASE_URL` | Staging Supabase project URL |
-| `STAGING_SUPABASE_ANON_KEY` | Staging Supabase anon key |
-| `PROD_SUPABASE_URL` | Production Supabase project URL |
-| `PROD_SUPABASE_ANON_KEY` | Production Supabase anon key |
-
-> `GITHUB_TOKEN` is automatically available and used for GHCR authentication.
-
-### 6.4 Environment Protection
-
-Configure GitHub Environments (Settings > Environments):
-
-- **staging**: No required reviewers (auto-deploys)
-- **production**: Require 1 reviewer approval before deploy
+| `STAGING_API_URL` | Staging FastAPI backend URL |
+| `PROD_API_URL` | Production FastAPI backend URL |
 
 ---
 
@@ -257,9 +212,8 @@ cd Nexus5v5
 # Start all services with Docker Compose
 docker-compose up -d
 
-# Or run frontend only (connects to remote Supabase)
+# Or run frontend only (connects to local backend)
 cd frontend
-cp .env.example .env.local  # Edit with your Supabase keys
 npm install
 npm run dev
 ```
@@ -292,23 +246,34 @@ npm run lint                     # ESLint
 
 ---
 
-## 8. Monitoring & Observability
+## 8. ClickHouse Cloud
 
-### 8.1 Vercel Analytics
+For production, use ClickHouse Cloud instead of self-hosted Docker:
+
+1. Create a ClickHouse Cloud service at [clickhouse.cloud](https://clickhouse.cloud)
+2. Set environment variables:
+   ```
+   CLICKHOUSE_HOST=your-instance.clickhouse.cloud
+   CLICKHOUSE_PORT=8443
+   CLICKHOUSE_SECURE=true
+   CLICKHOUSE_USER=default
+   CLICKHOUSE_PASSWORD=your-password
+   CLICKHOUSE_DB=nexus
+   ```
+3. The `clickhouse_connect` client will automatically use HTTPS with TLS verification.
+
+---
+
+## 9. Monitoring & Observability
+
+### 9.1 Vercel Analytics
 
 Vercel provides built-in analytics:
 - **Web Vitals**: LCP, FID, CLS
 - **Function logs**: Serverless function invocations and errors
 - **Deployment logs**: Build output and runtime errors
 
-### 8.2 Supabase Dashboard
-
-Monitor via the Supabase dashboard:
-- **Database**: Query performance, connection count, storage usage
-- **Auth**: Active users, sign-up rates, failed auth attempts
-- **Logs**: Database and API request logs
-
-### 8.3 Application Metrics
+### 9.2 Application Metrics
 
 For the FastAPI backend (when running in Docker):
 - **Prometheus** scrapes `/api/v1/admin/metrics`
@@ -323,19 +288,19 @@ Key metrics:
 
 ---
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 ### Common Issues
 
 **Build fails on Vercel**
 - Check that `frontend/` is set as the root directory
-- Verify all `NEXT_PUBLIC_*` env vars are set in Vercel project settings
+- Verify `NEXT_PUBLIC_API_URL` env var is set in Vercel project settings
 - Check Node.js version matches (20.x)
 
-**Supabase connection errors**
-- Verify `NEXT_PUBLIC_SUPABASE_URL` is correct (includes `https://`)
-- Check that RLS policies allow the operation you're attempting
-- For server-side operations, ensure `SUPABASE_SERVICE_ROLE_KEY` is set
+**API proxy not working**
+- Verify `NEXT_PUBLIC_API_URL` or `INTERNAL_API_URL` is set correctly
+- Check that the FastAPI backend is reachable from Vercel
+- Test directly: `curl https://your-backend/api/v1/admin/health`
 
 **Riot API 429 (Rate Limited)**
 - The application uses token-bucket rate limiting with exponential backoff

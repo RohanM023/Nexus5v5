@@ -1,22 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
 
 // ---------------------------------------------------------------------------
-// Helpers – mock Supabase and app API responses
+// Helpers – mock API responses and set up auth via localStorage
 // ---------------------------------------------------------------------------
 
-const SUPABASE_SESSION = {
-  access_token: "mock-sb-access-token",
-  refresh_token: "mock-sb-refresh-token",
-  expires_in: 3600,
+const MOCK_TOKENS = {
+  access_token: "mock-jwt-access-token",
+  refresh_token: "mock-jwt-refresh-token",
   token_type: "bearer",
-  user: {
-    id: "sb-user-id",
-    email: "test@nexus.dev",
-    app_metadata: {},
-    user_metadata: { display_name: "TestUser" },
-    aud: "authenticated",
-    created_at: "2026-01-01T00:00:00Z",
-  },
 };
 
 const MOCK_PROFILE = {
@@ -32,85 +23,17 @@ const MOCK_PROFILE = {
 };
 
 /**
- * Intercept Supabase auth endpoints so the browser client sees a valid
- * session without needing a real Supabase project running.
+ * Set JWT tokens in localStorage so the app considers the user authenticated.
  */
-async function mockSupabaseAuth(page: Page, authenticated: boolean) {
-  // Match any request to a supabase domain for auth
-  await page.route("**/auth/v1/token**", async (route) => {
-    if (authenticated) {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(SUPABASE_SESSION),
-      });
-    } else {
-      await route.fulfill({
-        status: 401,
-        contentType: "application/json",
-        body: JSON.stringify({ error: "invalid_grant", error_description: "Invalid login credentials" }),
-      });
-    }
-  });
-
-  await page.route("**/auth/v1/user**", async (route) => {
-    if (authenticated) {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(SUPABASE_SESSION.user),
-      });
-    } else {
-      await route.fulfill({
-        status: 401,
-        contentType: "application/json",
-        body: JSON.stringify({ message: "not authenticated" }),
-      });
-    }
-  });
-
-  // Supabase getSession calls
-  await page.route("**/auth/v1/session**", async (route) => {
-    if (authenticated) {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(SUPABASE_SESSION),
-      });
-    } else {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ data: { session: null } }),
-      });
-    }
-  });
-
-  // Supabase signup endpoint
-  await page.route("**/auth/v1/signup**", async (route) => {
-    if (authenticated) {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(SUPABASE_SESSION),
-      });
-    } else {
-      await route.fulfill({
-        status: 400,
-        contentType: "application/json",
-        body: JSON.stringify({ error: "signup_disabled" }),
-      });
-    }
-  });
-
-  // Supabase logout
-  await page.route("**/auth/v1/logout**", async (route) => {
-    await route.fulfill({ status: 204 });
+async function setAuthTokens(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.setItem("nexus_access_token", "mock-jwt-access-token");
+    localStorage.setItem("nexus_refresh_token", "mock-jwt-refresh-token");
   });
 }
 
 /**
- * Mock the Next.js Route Handler endpoints that the ApiClient calls.
+ * Mock the API endpoints that the ApiClient calls.
  */
 async function mockAppApi(page: Page, overrides?: { loginStatus?: number; registerStatus?: number }) {
   const loginStatus = overrides?.loginStatus ?? 200;
@@ -122,7 +45,7 @@ async function mockAppApi(page: Page, overrides?: { loginStatus?: number; regist
         await route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify({ user: SUPABASE_SESSION.user, session: SUPABASE_SESSION }),
+          body: JSON.stringify(MOCK_TOKENS),
         });
       } else {
         await route.fulfill({
@@ -144,7 +67,7 @@ async function mockAppApi(page: Page, overrides?: { loginStatus?: number; regist
         await route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify({ user: SUPABASE_SESSION.user, session: SUPABASE_SESSION }),
+          body: JSON.stringify(MOCK_TOKENS),
         });
       } else {
         await route.fulfill({
@@ -187,7 +110,6 @@ async function mockAppApi(page: Page, overrides?: { loginStatus?: number; regist
 
 test.describe("Authentication Flow", () => {
   test("login page renders with form elements", async ({ page }) => {
-    await mockSupabaseAuth(page, false);
     await mockAppApi(page);
 
     await page.goto("/login");
@@ -208,7 +130,6 @@ test.describe("Authentication Flow", () => {
   });
 
   test("register page renders with form elements and password strength meter", async ({ page }) => {
-    await mockSupabaseAuth(page, false);
     await mockAppApi(page);
 
     await page.goto("/register");
@@ -233,7 +154,7 @@ test.describe("Authentication Flow", () => {
   });
 
   test("successful login submits form and navigates to dashboard", async ({ page }) => {
-    await mockSupabaseAuth(page, true);
+    await setAuthTokens(page);
     await mockAppApi(page);
 
     await page.goto("/login");
@@ -246,13 +167,11 @@ test.describe("Authentication Flow", () => {
 
     // Wait for potential navigation to dashboard
     await page.waitForURL(/\/(dashboard|login)/, { timeout: 5000 }).catch(() => {
-      // If navigation doesn't happen (due to Supabase auth mocking complexity),
-      // verify the form was at least submitted without client-side errors
+      // If navigation doesn't happen, verify the form was at least submitted
     });
   });
 
   test("login shows error on invalid credentials", async ({ page }) => {
-    await mockSupabaseAuth(page, false);
     await mockAppApi(page, { loginStatus: 401 });
 
     await page.goto("/login");
@@ -268,7 +187,7 @@ test.describe("Authentication Flow", () => {
   });
 
   test("successful registration submits form", async ({ page }) => {
-    await mockSupabaseAuth(page, true);
+    await setAuthTokens(page);
     await mockAppApi(page);
 
     await page.goto("/register");
@@ -284,12 +203,11 @@ test.describe("Authentication Flow", () => {
 
     // Should attempt navigation to dashboard
     await page.waitForURL(/\/(dashboard|register)/, { timeout: 5000 }).catch(() => {
-      // Accepted — full Supabase session mock may not trigger the redirect
+      // Accepted — mock may not trigger full redirect
     });
   });
 
   test("registration disables submit when passwords do not match", async ({ page }) => {
-    await mockSupabaseAuth(page, false);
     await mockAppApi(page);
 
     await page.goto("/register");
@@ -308,7 +226,6 @@ test.describe("Authentication Flow", () => {
   });
 
   test("registration disables submit when display name is too short", async ({ page }) => {
-    await mockSupabaseAuth(page, false);
     await mockAppApi(page);
 
     await page.goto("/register");
@@ -324,7 +241,6 @@ test.describe("Authentication Flow", () => {
   });
 
   test("login page links to register page", async ({ page }) => {
-    await mockSupabaseAuth(page, false);
     await mockAppApi(page);
 
     await page.goto("/login");
@@ -333,7 +249,6 @@ test.describe("Authentication Flow", () => {
   });
 
   test("register page links to login page", async ({ page }) => {
-    await mockSupabaseAuth(page, false);
     await mockAppApi(page);
 
     await page.goto("/register");

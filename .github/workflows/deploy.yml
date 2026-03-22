@@ -72,7 +72,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: ./frontend
-          vercel-args: "--env NEXT_PUBLIC_SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL }} --env NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.STAGING_SUPABASE_ANON_KEY }}"
+          vercel-args: "--env NEXT_PUBLIC_API_URL=${{ secrets.STAGING_API_URL }}"
 
       - name: Summary
         run: |
@@ -95,7 +95,7 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: "--prod --env NEXT_PUBLIC_SUPABASE_URL=${{ secrets.PROD_SUPABASE_URL }} --env NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.PROD_SUPABASE_ANON_KEY }}"
+          vercel-args: "--prod --env NEXT_PUBLIC_API_URL=${{ secrets.PROD_API_URL }}"
           working-directory: ./frontend
 
       - name: Summary

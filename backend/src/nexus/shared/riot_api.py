@@ -196,10 +196,10 @@ class RiotAPIClient:
 
             except httpx.HTTPStatusError as exc:
                 last_error = exc
-                if exc.response.status_code == 403:
+                if exc.response.status_code in (401, 403):
                     raise RiotAPIError(
                         "Invalid or expired Riot API key",
-                        status_code=403,
+                        status_code=502,
                     ) from exc
                 raise RiotAPIError(
                     f"Riot API error: {exc.response.status_code}",

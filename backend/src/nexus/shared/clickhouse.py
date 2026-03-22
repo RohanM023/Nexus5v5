@@ -25,6 +25,8 @@ def get_clickhouse_client() -> Client:
             username=settings.clickhouse_user,
             password=settings.clickhouse_password,
             database=settings.clickhouse_db,
+            secure=settings.clickhouse_secure,
+            verify=settings.clickhouse_verify_tls,
         )
     return _client
 

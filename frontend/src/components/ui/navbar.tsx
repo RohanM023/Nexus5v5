@@ -4,9 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { cn } from "@/lib/utils";
-import { Button } from "./button";
-import { usePathname } from "next/navigation";
 
 const REGIONS = [
   { value: "na1", label: "NA" },
@@ -25,7 +22,6 @@ const REGIONS = [
 export function Navbar() {
   const router = useRouter();
   const { user, isAuthenticated, signOut } = useAuth();
-  const pathname = usePathname();
   const [searchInput, setSearchInput] = useState("");
   const [region, setRegion] = useState("na1");
 
@@ -43,108 +39,73 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 font-bold text-white">
-              N
-            </div>
-            <span className="text-lg font-bold text-white">Nexus</span>
-          </Link>
+    <nav className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--background)]/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-12 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="shrink-0 font-mono text-xs font-bold tracking-widest uppercase text-amber-500">
+          Nexus
+        </Link>
 
-          <div className="hidden items-center gap-1 md:flex">
-            <NavLink href="/dashboard" active={pathname.startsWith("/dashboard")}>
-              Dashboard
-            </NavLink>
-            <NavLink href="/teams" active={pathname.startsWith("/teams")}>
-              Teams
-            </NavLink>
-            <NavLink href="/leaderboards" active={pathname === "/leaderboards"}>
-              Leaderboards
-            </NavLink>
-            {isAuthenticated && (
-              <NavLink href="/settings" active={pathname === "/settings"}>
-                Settings
-              </NavLink>
-            )}
-          </div>
+        <div className="hidden items-center gap-1 sm:flex">
+          <Link
+            href="/dashboard"
+            className="px-3 py-1 text-xs tracking-wide text-[var(--color-text-muted)] transition-colors hover:text-white"
+          >
+            Clash
+          </Link>
+          <Link
+            href="/draft"
+            className="px-3 py-1 text-xs tracking-wide text-[var(--color-text-muted)] transition-colors hover:text-white"
+          >
+            Draft
+          </Link>
         </div>
 
-        <div className="flex flex-1 items-center justify-end gap-3">
-          <form onSubmit={handleSearch} className="hidden items-center gap-2 lg:flex">
-            <input
-              type="text"
-              placeholder="Name#TAG"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="w-40 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-sm text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
-            />
+        <form onSubmit={handleSearch} className="flex flex-1 items-center justify-center">
+          <div className="flex w-full max-w-md items-center border-b border-[var(--color-border)] transition-colors focus-within:border-amber-600/50">
             <select
               value={region}
               onChange={(e) => setRegion(e.target.value)}
-              className="rounded-lg border border-slate-700 bg-slate-800/50 px-2 py-1.5 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+              className="h-7 bg-transparent pr-1 font-mono text-[10px] font-medium tracking-wider text-[var(--color-text-muted)] focus:outline-none"
             >
               {REGIONS.map((r) => (
-                <option key={r.value} value={r.value}>
+                <option key={r.value} value={r.value} className="bg-[var(--color-surface)]">
                   {r.label}
                 </option>
               ))}
             </select>
-          </form>
+            <input
+              type="text"
+              placeholder="Search Riot ID..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="h-7 flex-1 bg-transparent px-2 text-xs text-white placeholder:text-[var(--color-text-muted)] focus:outline-none"
+            />
+          </div>
+        </form>
 
+        <div className="flex shrink-0 items-center gap-4">
           {isAuthenticated ? (
             <>
-              <span className="hidden text-sm text-slate-400 sm:block">
+              <span className="hidden font-mono text-[10px] tracking-wider text-[var(--color-text-muted)] sm:block">
                 {user?.display_name}
               </span>
-              <Link href="/settings">
-                <Button variant="ghost" size="sm">
-                  Settings
-                </Button>
-              </Link>
-              <Button variant="ghost" size="sm" onClick={signOut}>
+              <button
+                onClick={signOut}
+                className="text-[10px] tracking-wider uppercase text-[var(--color-text-muted)] transition-colors hover:text-white"
+              >
                 Sign Out
-              </Button>
+              </button>
             </>
           ) : (
-            <>
-              <Link href="/login">
-                <Button variant="ghost" size="sm">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button variant="primary" size="sm">
-                  Get Started
-                </Button>
-              </Link>
-            </>
+            <Link
+              href="/login"
+              className="text-[10px] tracking-wider uppercase text-[var(--color-text-muted)] transition-colors hover:text-white"
+            >
+              Sign In
+            </Link>
           )}
         </div>
       </div>
     </nav>
-  );
-}
-
-interface NavLinkProps {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}
-
-function NavLink({ href, active, children }: NavLinkProps) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-        active
-          ? "bg-slate-800 text-white"
-          : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
-      )}
-    >
-      {children}
-    </Link>
   );
 }

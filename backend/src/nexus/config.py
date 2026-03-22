@@ -54,6 +54,8 @@ class Settings(BaseSettings):
     clickhouse_user: str = "default"
     clickhouse_password: str = ""
     clickhouse_db: str = "nexus"
+    clickhouse_secure: bool = False
+    clickhouse_verify_tls: bool = True
 
     # --- Redis ---
     redis_host: str = "localhost"

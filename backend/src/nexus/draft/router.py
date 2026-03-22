@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/draft", tags=["draft"])
 
-DEFAULT_PATCH = "14.10"
+DEFAULT_PATCH = "16.6"
 
 
 # --- Draft Session CRUD ---
@@ -206,6 +206,62 @@ async def get_scores(
         "counter_score": round(counter, 2),
         "comfort_scores": comfort_entries,
         "total_score": round(total, 2),
+    }
+
+
+@router.post("/analyze", response_model=schemas.AnalyzeDraftResponse)
+async def analyze_draft(body: schemas.AnalyzeDraftRequest) -> dict[str, Any]:
+    """Stateless draft analysis — no auth, no session required.
+
+    Computes synergy/counter/comfort scores and champion suggestions
+    from the provided draft state.
+    """
+    ally_dicts = [
+        {"champion_id": c.champion_id, "champion_name": c.champion_name, "role": c.role}
+        for c in body.ally_champions
+    ]
+    opponent_dicts = [
+        {"champion_id": c.champion_id, "champion_name": c.champion_name, "role": c.role}
+        for c in body.opponent_champions
+    ]
+
+    ally_ids = [c.champion_id for c in body.ally_champions]
+    all_bans = body.ally_bans + body.opponent_bans
+
+    synergy = await engine.compute_team_synergy(ally_ids, body.patch)
+    counter = await engine.compute_team_counter(ally_dicts, opponent_dicts, body.patch)
+
+    comfort_entries: list[dict[str, Any]] = []
+    comfort_values: list[float] = []
+    for puuid in body.team_puuids:
+        for pick in body.ally_champions:
+            c = await engine.get_comfort_score(puuid, pick.champion_id)
+            comfort_values.append(c)
+            comfort_entries.append({
+                "puuid": puuid,
+                "champion_id": pick.champion_id,
+                "champion_name": pick.champion_name,
+                "comfort_score": round(c, 2),
+            })
+    avg_comfort = sum(comfort_values) / len(comfort_values) if comfort_values else 50.0
+
+    total = engine.compute_composite_score(synergy, counter, avg_comfort)
+
+    suggestions = await engine.generate_suggestions(
+        ally_champions=ally_dicts,
+        opponent_champions=opponent_dicts,
+        player_puuids=body.team_puuids,
+        patch=body.patch,
+        banned_champions=all_bans,
+        top_n=10,
+    )
+
+    return {
+        "synergy_score": round(synergy, 2),
+        "counter_score": round(counter, 2),
+        "comfort_scores": comfort_entries,
+        "total_score": round(total, 2),
+        "suggestions": suggestions,
     }
 
 

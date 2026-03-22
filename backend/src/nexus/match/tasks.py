@@ -18,6 +18,7 @@ async def run_ingest_matches(
     region: str = "na1",
     queue_ids: list[int] | None = None,
     count: int = 20,
+    fetch_timelines: bool = False,
 ) -> dict[str, int]:
     """arq job: fetch, transform, and load match history for a PUUID."""
     logger.info("Starting ingestion job for puuid=%s region=%s", puuid, region)
@@ -27,6 +28,7 @@ async def run_ingest_matches(
             region=region,
             queue_ids=queue_ids,
             count=count,
+            fetch_timelines=fetch_timelines,
         )
         logger.info(
             "Ingestion job completed for puuid=%s: fetched=%d inserted=%d",
@@ -46,6 +48,7 @@ async def enqueue_ingestion(
     region: str = "na1",
     queue_ids: list[int] | None = None,
     count: int = 20,
+    fetch_timelines: bool = False,
 ) -> Job:
     """Enqueue a match ingestion job and return the arq Job handle."""
     from arq.connections import ArqRedis
@@ -57,6 +60,7 @@ async def enqueue_ingestion(
         region,
         queue_ids,
         count,
+        fetch_timelines,
     )
     if job is None:
         raise RuntimeError(f"Failed to enqueue ingestion job for {puuid}")

@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 
 interface WinProbabilityProps {
-  probability: number; // 0-100
+  probability: number;
 }
 
 export function WinProbability({ probability }: WinProbabilityProps) {
@@ -12,31 +12,29 @@ export function WinProbability({ probability }: WinProbabilityProps) {
 
   return (
     <div className="space-y-2 text-center">
-      <p className="text-sm font-bold tracking-wide text-white">
-        WIN PROBABILITY:{" "}
-        <span
-          className={cn(
-            "text-lg",
-            isAhead ? "text-teal-400" : "text-red-400"
-          )}
-        >
-          {Math.round(clamped)}%
-        </span>{" "}
-        <span className="text-slate-400">
-          for {isAhead ? "YOUR TEAM" : "OPPONENT"}
-        </span>
+      <p className="font-mono text-[9px] tracking-wider uppercase text-[var(--color-text-muted)]">
+        Win Probability
       </p>
-      <div className="mx-auto h-2.5 max-w-sm overflow-hidden rounded-full bg-slate-700">
+      <p
+        className={cn(
+          "font-mono text-2xl font-bold tracking-tight",
+          isAhead ? "text-amber-400" : "text-red-400"
+        )}
+      >
+        {Math.round(clamped)}%
+      </p>
+      <div className="mx-auto h-0.5 max-w-[200px] overflow-hidden rounded-full bg-[var(--color-border)]">
         <div
           className={cn(
             "h-full rounded-full transition-all duration-500",
-            isAhead
-              ? "bg-gradient-to-r from-teal-500 to-teal-400"
-              : "bg-gradient-to-r from-red-500 to-red-400"
+            isAhead ? "bg-amber-500" : "bg-red-500"
           )}
           style={{ width: `${clamped}%` }}
         />
       </div>
+      <p className="font-mono text-[8px] tracking-wider uppercase text-[var(--color-text-muted)]">
+        {isAhead ? "Your Team" : "Opponent"}
+      </p>
     </div>
   );
 }

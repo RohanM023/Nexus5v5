@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/loading";
 import { cn, getScoreColor, getScoreBarColor } from "@/lib/utils";
 import type { DraftScores } from "@/types";
@@ -13,14 +12,12 @@ interface ScoreDisplayProps {
 export function ScoreDisplay({ scores, loading }: ScoreDisplayProps) {
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i}>
-            <CardContent className="py-4">
-              <Skeleton className="mb-2 h-3 w-16" />
-              <Skeleton className="h-8 w-12" />
-            </CardContent>
-          </Card>
+          <div key={i} className="rounded-md bg-[var(--color-surface)] p-4">
+            <Skeleton className="mb-2 h-2 w-12" />
+            <Skeleton className="h-6 w-8" />
+          </div>
         ))}
       </div>
     );
@@ -28,7 +25,7 @@ export function ScoreDisplay({ scores, loading }: ScoreDisplayProps) {
 
   if (!scores) {
     return (
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <ScoreCard label="Total" value={0} />
         <ScoreCard label="Synergy" value={0} />
         <ScoreCard label="Counter" value={0} />
@@ -44,7 +41,7 @@ export function ScoreDisplay({ scores, loading }: ScoreDisplayProps) {
       : 0;
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <ScoreCard label="Total" value={scores.total_score} />
       <ScoreCard label="Synergy" value={scores.synergy_score} />
       <ScoreCard label="Counter" value={scores.counter_score} />
@@ -63,27 +60,23 @@ function ScoreCard({
   isAvg?: boolean;
 }) {
   return (
-    <Card>
-      <CardContent className="py-4">
-        <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
-          {label}
-          {isAvg && (
-            <span className="ml-1 normal-case text-slate-600">(avg)</span>
+    <div className="rounded-md bg-[var(--color-surface)] p-4">
+      <p className="font-mono text-[8px] tracking-wider uppercase text-[var(--color-text-muted)]">
+        {label}
+        {isAvg && <span className="ml-1 lowercase">(avg)</span>}
+      </p>
+      <p className={cn("mt-1 font-mono text-2xl font-bold tracking-tight", getScoreColor(value))}>
+        {value.toFixed(0)}
+      </p>
+      <div className="mt-2 h-px overflow-hidden bg-[var(--color-border)]">
+        <div
+          className={cn(
+            "h-full transition-all duration-500",
+            getScoreBarColor(value)
           )}
-        </p>
-        <p className={cn("mt-1 text-2xl font-bold", getScoreColor(value))}>
-          {value.toFixed(0)}
-        </p>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-700">
-          <div
-            className={cn(
-              "h-full rounded-full transition-all duration-500",
-              getScoreBarColor(value)
-            )}
-            style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
-          />
-        </div>
-      </CardContent>
-    </Card>
+          style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
+        />
+      </div>
+    </div>
   );
 }

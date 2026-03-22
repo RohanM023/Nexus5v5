@@ -9,58 +9,95 @@ interface StatsOverviewProps {
 }
 
 export function StatsOverview({ stats }: StatsOverviewProps) {
-  const statCards = [
+  const statItems = [
+    {
+      label: "Games",
+      value: stats.total_games.toString(),
+      color: "text-white",
+      subtext: `${stats.total_wins}W ${stats.total_losses}L`,
+    },
     {
       label: "Win Rate",
       value: formatWinRate(stats.overall_win_rate),
-      color: stats.overall_win_rate >= 0.5 ? "text-green-400" : "text-red-400",
-      subtext: `${stats.total_games} games`,
+      color: stats.overall_win_rate >= 0.5 ? "text-emerald-400" : "text-red-400",
+      subtext: "",
     },
     {
-      label: "Avg KDA",
+      label: "KDA",
       value: stats.avg_kda.toFixed(2),
       color:
         stats.avg_kda >= 3
-          ? "text-green-400"
+          ? "text-emerald-400"
           : stats.avg_kda >= 2
-            ? "text-blue-400"
+            ? "text-amber-400"
             : "text-yellow-400",
-      subtext: "K+A / D",
+      subtext: `${stats.avg_kills.toFixed(1)} / ${stats.avg_deaths.toFixed(1)} / ${stats.avg_assists.toFixed(1)}`,
     },
     {
-      label: "CS/min",
+      label: "CS/Min",
       value: stats.avg_cs_per_min.toFixed(1),
       color:
         stats.avg_cs_per_min >= 8
-          ? "text-green-400"
+          ? "text-emerald-400"
           : stats.avg_cs_per_min >= 6
-            ? "text-blue-400"
+            ? "text-amber-400"
             : "text-yellow-400",
-      subtext: "avg",
+      subtext: "",
     },
     {
-      label: "Vision Score",
+      label: "Vision",
       value: stats.avg_vision_score.toFixed(0),
-      color: stats.avg_vision_score >= 30 ? "text-green-400" : "text-blue-400",
+      color: stats.avg_vision_score >= 30 ? "text-emerald-400" : "text-amber-400",
       subtext: "per game",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-      {statCards.map((stat) => (
-        <Card key={stat.label}>
-          <CardContent className="py-4">
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
-              {stat.label}
-            </p>
-            <p className={cn("mt-1 text-2xl font-bold", stat.color)}>
-              {stat.value}
-            </p>
-            <p className="mt-0.5 text-xs text-slate-600">{stat.subtext}</p>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+    <Card>
+      <CardContent className="py-4">
+        {/* Desktop: horizontal bar */}
+        <div className="hidden items-center sm:flex">
+          {statItems.map((stat, idx) => (
+            <div
+              key={stat.label}
+              className={cn(
+                "flex-1 px-4 text-center",
+                idx > 0 && "border-l border-[var(--color-border)]"
+              )}
+            >
+              <p className="font-mono text-[8px] tracking-[0.2em] uppercase text-[var(--color-text-muted)]">
+                {stat.label}
+              </p>
+              <p className={cn("mt-0.5 font-mono text-xl font-bold tracking-tight", stat.color)}>
+                {stat.value}
+              </p>
+              {stat.subtext && (
+                <p className="mt-0.5 font-mono text-[9px] text-[var(--color-text-muted)]">
+                  {stat.subtext}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+        {/* Mobile: 2x2 + 1 grid */}
+        <div className="grid grid-cols-2 gap-4 sm:hidden">
+          {statItems.map((stat) => (
+            <div key={stat.label} className="text-center">
+              <p className="font-mono text-[8px] tracking-[0.2em] uppercase text-[var(--color-text-muted)]">
+                {stat.label}
+              </p>
+              <p className={cn("mt-0.5 font-mono text-lg font-bold tracking-tight", stat.color)}>
+                {stat.value}
+              </p>
+              {stat.subtext && (
+                <p className="mt-0.5 font-mono text-[9px] text-[var(--color-text-muted)]">
+                  {stat.subtext}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

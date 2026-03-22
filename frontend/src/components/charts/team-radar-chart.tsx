@@ -20,10 +20,10 @@ export function TeamRadarChart({ data }: TeamRadarChartProps) {
     <div className="flex flex-col items-center">
       <ResponsiveContainer width="100%" height={280}>
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
-          <PolarGrid stroke="#1e293b" />
+          <PolarGrid stroke="#18181f" />
           <PolarAngleAxis
             dataKey="axis"
-            tick={{ fill: "#94a3b8", fontSize: 10 }}
+            tick={{ fill: "#6a6a78", fontSize: 9, fontFamily: "var(--font-jetbrains-mono)" }}
           />
           <PolarRadiusAxis
             angle={90}
@@ -34,21 +34,21 @@ export function TeamRadarChart({ data }: TeamRadarChartProps) {
           <Radar
             name="Your Team"
             dataKey="yourTeam"
-            stroke="#14b8a6"
-            fill="#14b8a6"
-            fillOpacity={0.25}
-            strokeWidth={2}
+            stroke="#d97706"
+            fill="#d97706"
+            fillOpacity={0.15}
+            strokeWidth={1.5}
           />
           <Radar
-            name="Opponent Team"
+            name="Opponent"
             dataKey="opponentTeam"
-            stroke="#6366f1"
-            fill="#6366f1"
-            fillOpacity={0.15}
-            strokeWidth={2}
+            stroke="#6a6a78"
+            fill="#6a6a78"
+            fillOpacity={0.08}
+            strokeWidth={1}
           />
           <Legend
-            wrapperStyle={{ fontSize: 11, color: "#94a3b8" }}
+            wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-jetbrains-mono)", color: "#6a6a78" }}
           />
         </RadarChart>
       </ResponsiveContainer>

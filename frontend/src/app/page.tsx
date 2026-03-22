@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { getRecentSearches, type RecentSearch } from "@/lib/recent-searches";
 
 const REGIONS = [
   { value: "na1", label: "NA" },
@@ -22,6 +23,11 @@ export default function Home() {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState("");
   const [region, setRegion] = useState("na1");
+  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
+
+  useEffect(() => {
+    setRecentSearches(getRecentSearches());
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,121 +44,116 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0a0e1a]">
-      <nav className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 font-bold text-white">
-              N
-            </div>
-            <span className="text-lg font-bold text-white">Nexus 5v5</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="rounded-lg px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/register"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-blue-600/25 transition-colors hover:bg-blue-500"
-            >
-              Get Started
-            </Link>
-          </div>
+    <div className="flex min-h-screen flex-col bg-[var(--background)]">
+      {/* Floating corner links */}
+      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-6 py-5">
+        <span className="font-mono text-[10px] font-bold tracking-[0.25em] uppercase text-amber-600/60">
+          Nexus 5v5
+        </span>
+        <div className="flex items-center gap-5">
+          <Link
+            href="/dashboard"
+            className="text-[10px] tracking-widest uppercase text-[var(--color-text-muted)] transition-colors hover:text-white"
+          >
+            Clash
+          </Link>
+          <Link
+            href="/draft"
+            className="text-[10px] tracking-widest uppercase text-[var(--color-text-muted)] transition-colors hover:text-white"
+          >
+            Draft
+          </Link>
+          <Link
+            href="/login"
+            className="text-[10px] tracking-widest uppercase text-[var(--color-text-muted)] transition-colors hover:text-white"
+          >
+            Sign In
+          </Link>
         </div>
-      </nav>
+      </div>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-24 text-center">
-        <div className="mb-6 inline-flex items-center rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-1.5 text-sm text-blue-400">
-          AI-Powered Draft Intelligence
-        </div>
-        <h1 className="max-w-3xl text-5xl font-bold leading-tight tracking-tight text-white sm:text-6xl">
-          Dominate Clash with{" "}
-          <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-            Smarter Drafts
-          </span>
-        </h1>
-        <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-400">
-          Search any summoner, analyze champion pools, and get real-time
-          synergy and counter scoring during champion select.
-        </p>
+      {/* Search-centric hero */}
+      <main className="flex flex-1 flex-col items-center justify-center px-4">
+        <div className="w-full max-w-[520px] animate-fade-in">
+          <h1 className="mb-12 text-center">
+            <span className="block font-mono text-3xl font-bold tracking-[0.2em] uppercase text-white sm:text-4xl">
+              Nexus
+            </span>
+            <span className="mt-1 block font-mono text-[10px] tracking-[0.5em] uppercase text-[var(--color-text-muted)]">
+              Draft Intelligence
+            </span>
+          </h1>
 
-        <form onSubmit={handleSearch} className="mt-10 w-full max-w-2xl">
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="flex-1">
+          <form onSubmit={handleSearch}>
+            <div className="flex items-center border-b border-[var(--color-border)] transition-colors focus-within:border-amber-600/60">
+              <select
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                className="h-10 bg-transparent pr-2 font-mono text-[10px] font-medium tracking-wider text-[var(--color-text-muted)] focus:outline-none"
+              >
+                {REGIONS.map((r) => (
+                  <option key={r.value} value={r.value} className="bg-[var(--color-surface)]">
+                    {r.label}
+                  </option>
+                ))}
+              </select>
               <input
                 type="text"
-                placeholder="Search summoner... (e.g., Faker#KR1)"
+                placeholder="Riot ID (e.g., Faker#KR1)"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-base text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                className="h-10 flex-1 bg-transparent px-3 text-sm text-white placeholder:text-[var(--color-text-muted)] focus:outline-none"
               />
+              <button
+                type="submit"
+                className="h-10 px-4 font-mono text-[10px] font-medium tracking-widest uppercase text-amber-500 transition-colors hover:text-amber-400"
+              >
+                Search
+              </button>
             </div>
-            <select
-              value={region}
-              onChange={(e) => setRegion(e.target.value)}
-              className="rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-base text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 sm:w-32"
-            >
-              {REGIONS.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="submit"
-              className="rounded-lg bg-blue-600 px-6 py-3 text-base font-medium text-white shadow-lg shadow-blue-600/25 transition-colors hover:bg-blue-500"
-            >
-              Search
-            </button>
-          </div>
-          <p className="mt-3 text-sm text-slate-500">
-            Or{" "}
-            <Link href="/login" className="text-blue-400 hover:text-blue-300">
-              sign in
-            </Link>{" "}
-            to link your accounts and unlock personalized features
-          </p>
-        </form>
+          </form>
 
-        <div className="mt-24 grid max-w-4xl grid-cols-1 gap-8 sm:grid-cols-3">
-          <FeatureCard
-            title="Identity Aggregation"
-            description="Link all your Riot accounts into one Master Profile with unified stats."
-          />
-          <FeatureCard
-            title="Draft Intelligence"
-            description="Real-time synergy, counter, and comfort scoring during champion select."
-          />
-          <FeatureCard
-            title="True Mastery"
-            description="Go beyond Mastery Points with data-driven champion proficiency scores."
-          />
+          {/* Recent searches */}
+          {recentSearches.length > 0 && (
+            <div className="mt-5 flex flex-wrap items-center gap-2 animate-fade-in stagger-2">
+              <span className="font-mono text-[9px] tracking-wider uppercase text-[var(--color-text-muted)]">Recent</span>
+              {recentSearches.map((s, i) => (
+                <Link
+                  key={i}
+                  href={`/summoner/${s.region}/${encodeURIComponent(s.gameName)}/${encodeURIComponent(s.tagLine)}`}
+                  className="font-mono text-[10px] tracking-wide text-[var(--color-text-muted)] transition-colors hover:text-white"
+                >
+                  {s.gameName}#{s.tagLine}
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Feature card */}
+          <Link
+            href="/dashboard"
+            className="mt-14 block border-t border-[var(--color-border)] pt-6 transition-colors group animate-fade-in stagger-3"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-white group-hover:text-amber-500 transition-colors">
+                  Clash / 5v5 Draft Assistant
+                </p>
+                <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)]">
+                  Build your team, scout opponents, get pick/ban intel
+                </p>
+              </div>
+              <svg className="h-3.5 w-3.5 text-[var(--color-text-muted)] group-hover:text-amber-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </Link>
         </div>
       </main>
 
-      <footer className="border-t border-slate-800 py-8 text-center text-sm text-slate-600">
-        Nexus 5v5 &middot; Not endorsed by Riot Games
+      <footer className="py-6 text-center font-mono text-[9px] tracking-wider text-[var(--color-text-muted)]">
+        Not endorsed by Riot Games
       </footer>
-    </div>
-  );
-}
-
-function FeatureCard({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 text-left backdrop-blur-sm">
-      <h3 className="text-base font-semibold text-white">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-slate-400">
-        {description}
-      </p>
     </div>
   );
 }

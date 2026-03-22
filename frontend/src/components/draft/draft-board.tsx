@@ -73,22 +73,22 @@ export function DraftBoard({
             <CardTitle>Draft Board</CardTitle>
             <span
               className={cn(
-                "rounded-full px-3 py-1 text-xs font-medium",
+                "font-mono text-[9px] tracking-[0.2em] uppercase",
                 isCompleted
-                  ? "bg-green-500/20 text-green-400"
-                  : "bg-blue-500/20 text-blue-400"
+                  ? "text-emerald-500"
+                  : "text-amber-500"
               )}
             >
               {isCompleted
-                ? "Completed"
-                : currentPhase.replace(/_/g, " ").toUpperCase()}
+                ? "Complete"
+                : currentPhase.replace(/_/g, " ")}
             </span>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Ban section */}
           <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-500">
+            <p className="mb-2 font-mono text-[8px] tracking-[0.3em] uppercase text-[var(--color-text-muted)]">
               Bans
             </p>
             <div className="grid grid-cols-2 gap-4">
@@ -100,10 +100,10 @@ export function DraftBoard({
           {/* Pick section */}
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <p className="mb-3 text-center text-sm font-semibold text-blue-400">
+              <p className="mb-3 text-center font-mono text-[9px] tracking-[0.2em] uppercase text-sky-400/70">
                 Blue Side
               </p>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {ROLES.map((role, idx) => {
                   const pick = bluePicks[idx];
                   return (
@@ -126,10 +126,10 @@ export function DraftBoard({
             </div>
 
             <div>
-              <p className="mb-3 text-center text-sm font-semibold text-red-400">
+              <p className="mb-3 text-center font-mono text-[9px] tracking-[0.2em] uppercase text-red-400/70">
                 Red Side
               </p>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {ROLES.map((role, idx) => {
                   const pick = redPicks[idx];
                   return (
@@ -154,17 +154,17 @@ export function DraftBoard({
 
           {/* Action button */}
           {!isCompleted && (
-            <div className="flex justify-center">
+            <div className="flex justify-center pt-2">
               <button
                 onClick={() => handleOpenSelect()}
                 disabled={isAddingPick || isAddingBan}
-                className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-600/25 transition-colors hover:bg-blue-500 disabled:opacity-50"
+                className="bg-amber-600 px-6 py-2 font-mono text-xs font-medium tracking-wider uppercase text-black transition-colors hover:bg-amber-500 disabled:opacity-40"
               >
                 {isAddingPick || isAddingBan
                   ? "Processing..."
                   : isBanPhase
-                    ? `Ban a Champion (${activeSide} side)`
-                    : `Pick a Champion (${activeSide} side)`}
+                    ? `Ban — ${activeSide}`
+                    : `Pick — ${activeSide}`}
               </button>
             </div>
           )}
@@ -193,19 +193,19 @@ function BanRow({
   maxBans: number;
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       {Array.from({ length: maxBans }).map((_, idx) => {
         const ban = bans[idx];
         return (
           <div
             key={idx}
             className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-lg border",
+              "flex h-9 w-9 items-center justify-center rounded-sm",
               ban
-                ? "border-slate-700 bg-slate-800"
+                ? "bg-[var(--color-surface)]"
                 : side === "blue"
-                  ? "border-blue-500/20 bg-blue-500/5"
-                  : "border-red-500/20 bg-red-500/5"
+                  ? "bg-sky-500/5"
+                  : "bg-red-500/5"
             )}
           >
             {ban ? (
@@ -214,11 +214,11 @@ function BanRow({
                 alt={ban.champion_name}
                 width={32}
                 height={32}
-                className="rounded opacity-50 grayscale"
+                className="rounded-sm opacity-40 grayscale"
                 unoptimized
               />
             ) : (
-              <span className="text-xs text-slate-600">--</span>
+              <span className="font-mono text-[8px] text-[var(--color-text-muted)]">—</span>
             )}
           </div>
         );
@@ -245,43 +245,43 @@ function PickSlot({
       onClick={onClick}
       disabled={!isActive}
       className={cn(
-        "flex w-full items-center gap-3 rounded-lg border p-3 transition-all",
+        "flex w-full items-center gap-3 rounded-sm px-3 py-2.5 transition-all",
         pick
-          ? "border-slate-700 bg-slate-800/50"
+          ? "bg-[var(--color-surface)]"
           : isActive
             ? side === "blue"
-              ? "border-blue-500/40 bg-blue-500/10 hover:border-blue-400 cursor-pointer"
-              : "border-red-500/40 bg-red-500/10 hover:border-red-400 cursor-pointer"
-            : "border-slate-800 bg-slate-900/30 cursor-default"
+              ? "bg-sky-500/5 hover:bg-sky-500/10 cursor-pointer"
+              : "bg-red-500/5 hover:bg-red-500/10 cursor-pointer"
+            : "bg-transparent cursor-default"
       )}
     >
       {pick ? (
         <Image
           src={getChampionIconUrl(pick.champion_name)}
           alt={pick.champion_name}
-          width={36}
-          height={36}
-          className="rounded-lg"
+          width={32}
+          height={32}
+          className="rounded-sm"
           unoptimized
         />
       ) : (
         <div
           className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-lg",
-            isActive ? "bg-slate-700/50" : "bg-slate-800/50"
+            "flex h-8 w-8 items-center justify-center rounded-sm",
+            isActive ? "bg-[var(--color-surface-hover)]" : "bg-[var(--color-surface)]"
           )}
         >
-          <span className="text-xs text-slate-600">?</span>
+          <span className="font-mono text-[8px] text-[var(--color-text-muted)]">?</span>
         </div>
       )}
       <div className="flex-1 text-left">
-        <p className="text-sm font-medium text-white">
-          {pick ? pick.champion_name : "Empty"}
+        <p className="text-xs font-medium text-white">
+          {pick ? pick.champion_name : "—"}
         </p>
-        <p className="text-xs text-slate-500">{role}</p>
+        <p className="font-mono text-[8px] tracking-wider text-[var(--color-text-muted)]">{role}</p>
       </div>
       {isActive && (
-        <span className="text-xs text-blue-400">Select</span>
+        <span className="font-mono text-[8px] tracking-wider text-amber-500">Select</span>
       )}
     </button>
   );

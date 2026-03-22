@@ -7,7 +7,7 @@ RUN pip install --no-cache-dir uv
 
 WORKDIR /app
 
-COPY pyproject.toml uv.lock* ./
+COPY pyproject.toml README.md uv.lock* ./
 RUN uv pip install --system --no-cache -r pyproject.toml
 
 COPY src/ src/
@@ -29,7 +29,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code (volumes override these in docker-compose)
 COPY --from=builder /app/src /app/src
 COPY --from=builder /app/alembic /app/alembic
-COPY pyproject.toml /app/
+COPY pyproject.toml README.md /app/
 
 ENV PYTHONPATH=/app/src
 ENV PYTHONUNBUFFERED=1
@@ -55,7 +55,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY --from=builder /app/src /app/src
 COPY --from=builder /app/alembic /app/alembic
-COPY pyproject.toml /app/
+COPY pyproject.toml README.md /app/
 
 ENV PYTHONPATH=/app/src
 ENV PYTHONUNBUFFERED=1

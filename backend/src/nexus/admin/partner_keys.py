@@ -58,6 +58,30 @@ async def create_partner_key(
     }
 
 
+async def list_partner_keys(db: AsyncSession) -> dict[str, Any]:
+    """Return all partner keys with summary info (no raw key exposed)."""
+    result = await db.execute(
+        text(
+            "SELECT id, partner_name, rate_limit_per_minute, "
+            "usage_count, is_active, created_at "
+            "FROM partner_api_keys ORDER BY created_at DESC"
+        )
+    )
+    rows = result.fetchall()
+    keys = [
+        {
+            "id": str(row[0]),
+            "partner_name": row[1],
+            "rate_limit_per_minute": row[2],
+            "usage_count": row[3],
+            "is_active": row[4],
+            "created_at": row[5].isoformat() if row[5] else None,
+        }
+        for row in rows
+    ]
+    return {"keys": keys, "total": len(keys)}
+
+
 async def revoke_partner_key(db: AsyncSession, key_id: str) -> bool:
     """Deactivate a partner API key."""
     result = await db.execute(

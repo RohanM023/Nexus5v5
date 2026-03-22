@@ -7,7 +7,7 @@ import { DraftBoard } from "@/components/draft/draft-board";
 import { SuggestionPanel } from "@/components/draft/suggestion-panel";
 import { ScoreDisplay } from "@/components/draft/score-display";
 import { TeamComfortOverlay } from "@/components/draft/team-comfort-overlay";
-import { PageLoader, ErrorDisplay } from "@/components/ui/loading";
+import { PageLoader } from "@/components/ui/loading";
 import Link from "next/link";
 
 export default function LiveDraftPage({
@@ -43,10 +43,10 @@ export default function LiveDraftPage({
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-        <p className="text-slate-400">Please sign in to use the draft assistant.</p>
+        <p className="text-xs text-[var(--color-text-muted)]">Sign in to use the draft assistant.</p>
         <Link
           href="/login"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+          className="rounded-md bg-amber-600 px-4 py-1.5 text-xs font-medium text-black hover:bg-amber-500"
         >
           Sign In
         </Link>
@@ -55,28 +55,26 @@ export default function LiveDraftPage({
   }
 
   if (!draft.sessionId) {
-    return <PageLoader message="Connecting to draft session..." />;
+    return <PageLoader message="Connecting..." />;
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Live Draft</h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Session: {id.slice(0, 8)}... &middot;{" "}
-            <span className="capitalize">{draft.mode}</span> &middot;{" "}
-            Phase:{" "}
-            <span className="text-blue-400">
+          <h1 className="text-lg font-semibold tracking-tight text-white">Live Draft</h1>
+          <p className="mt-0.5 font-mono text-[10px] tracking-wider text-[var(--color-text-muted)]">
+            {id.slice(0, 8)}... · {draft.mode} ·{" "}
+            <span className="text-amber-500">
               {draft.currentPhase.replace(/_/g, " ")}
             </span>
           </p>
         </div>
         <Link
           href="/draft"
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:border-slate-600 hover:bg-slate-800"
+          className="text-[10px] tracking-wider uppercase text-[var(--color-text-muted)] transition-colors hover:text-white"
         >
-          Exit Draft
+          Exit
         </Link>
       </div>
 

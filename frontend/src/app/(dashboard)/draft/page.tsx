@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDraft } from "@/lib/hooks/use-draft";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -43,55 +42,51 @@ export default function DraftLauncherPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-lg space-y-8">
       {!isAuthenticated && (
-        <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-400">
+        <div className="border-l-2 border-amber-600/50 bg-amber-600/5 px-4 py-2 text-xs text-amber-400">
           Sign in to save drafts and see personalized comfort scores.{" "}
-          <Link href="/login" className="font-medium underline hover:text-blue-300">
+          <Link href="/login" className="underline hover:text-amber-300">
             Sign In
           </Link>
         </div>
       )}
 
       <div>
-        <h1 className="text-2xl font-bold text-white">Draft Assistant</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Create a draft session with real-time synergy, counter, and comfort scoring.
+        <h1 className="text-lg font-semibold tracking-tight text-white">Draft Assistant</h1>
+        <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
+          Real-time synergy, counter, and comfort scoring.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Mode</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {MODES.map((mode) => (
-            <button
-              key={mode.value}
-              onClick={() => setSelectedMode(mode.value)}
-              className={cn(
-                "w-full rounded-lg border p-4 text-left transition-all",
-                selectedMode === mode.value
-                  ? "border-blue-500 bg-blue-500/10"
-                  : "border-slate-700 bg-slate-800/30 hover:border-slate-600"
-              )}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-white">{mode.label}</span>
-                <div
-                  className={cn(
-                    "h-4 w-4 rounded-full border-2",
-                    selectedMode === mode.value
-                      ? "border-blue-500 bg-blue-500"
-                      : "border-slate-600"
-                  )}
-                />
-              </div>
-              <p className="mt-1 text-sm text-slate-400">{mode.description}</p>
-            </button>
-          ))}
-        </CardContent>
-      </Card>
+      <div className="space-y-2">
+        <p className="text-[10px] font-medium tracking-wider uppercase text-[var(--color-text-muted)]">Select Mode</p>
+        {MODES.map((mode) => (
+          <button
+            key={mode.value}
+            onClick={() => setSelectedMode(mode.value)}
+            className={cn(
+              "w-full rounded-md p-4 text-left transition-all",
+              selectedMode === mode.value
+                ? "bg-[var(--color-surface)] ring-1 ring-amber-600/40"
+                : "bg-transparent hover:bg-[var(--color-surface)]"
+            )}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-white">{mode.label}</span>
+              <div
+                className={cn(
+                  "h-3 w-3 rounded-full border",
+                  selectedMode === mode.value
+                    ? "border-amber-500 bg-amber-500"
+                    : "border-[var(--color-text-muted)]"
+                )}
+              />
+            </div>
+            <p className="mt-1 text-[10px] text-[var(--color-text-muted)]">{mode.description}</p>
+          </button>
+        ))}
+      </div>
 
       <Button
         className="w-full"
@@ -99,7 +94,7 @@ export default function DraftLauncherPage() {
         onClick={handleCreateSession}
         isLoading={isCreatingSession}
       >
-        Start Draft Session
+        Start Draft
       </Button>
     </div>
   );
