@@ -24,6 +24,10 @@ class SynergyRebuildResponse(BaseModel):
     message: str
 
 
+class LatestPatchResponse(BaseModel):
+    patch: str
+
+
 class CreatePartnerKeyRequest(BaseModel):
     partner_name: str
     rate_limit_per_minute: int = 60

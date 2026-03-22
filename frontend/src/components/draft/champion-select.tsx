@@ -220,7 +220,7 @@ export function ChampionSelect({
           </h2>
           <button
             onClick={onClose}
-            className="font-mono text-[9px] tracking-wider text-[var(--color-text-muted)] transition-colors hover:text-white"
+            className="font-mono text-xs tracking-wider text-[var(--color-text-muted)] transition-colors hover:text-white"
           >
             ESC
           </button>
@@ -242,7 +242,7 @@ export function ChampionSelect({
                 key={role}
                 onClick={() => setRoleFilter(role)}
                 className={cn(
-                  "font-mono text-[9px] tracking-wider uppercase transition-colors px-2 py-1",
+                  "font-mono text-xs tracking-wider uppercase transition-colors px-2 py-1",
                   roleFilter === role
                     ? "text-amber-500"
                     : "text-[var(--color-text-muted)] hover:text-white"
@@ -284,7 +284,7 @@ export function ChampionSelect({
                   )}
                   unoptimized
                 />
-                <span className="w-full truncate text-center font-mono text-[7px] text-[var(--color-text-muted)] group-hover:text-white">
+                <span className="w-full truncate text-center font-mono text-[10px] text-[var(--color-text-muted)] group-hover:text-white">
                   {champ.name}
                 </span>
               </button>

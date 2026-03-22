@@ -21,7 +21,7 @@ export function BanPriority({
   if (bans.length === 0) {
     return (
       <div className="rounded-md bg-[var(--color-surface)] p-4">
-        <p className="font-mono text-[9px] tracking-wider uppercase text-[var(--color-text-muted)]">
+        <p className="font-mono text-xs tracking-wider uppercase text-[var(--color-text-muted)]">
           {label}
         </p>
         <p className="mt-2 text-xs text-[var(--color-text-muted)]">
@@ -33,7 +33,7 @@ export function BanPriority({
 
   return (
     <div className="rounded-md bg-[var(--color-surface)] p-4">
-      <p className="mb-3 font-mono text-[9px] tracking-wider uppercase text-red-400/80">
+      <p className="mb-3 font-mono text-xs tracking-wider uppercase text-red-400/80">
         {label}
       </p>
       <div className="flex flex-wrap gap-1.5">
@@ -51,7 +51,7 @@ export function BanPriority({
               unoptimized
             />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-0.5 py-0.5">
-              <span className="block truncate text-center font-mono text-[7px] font-medium text-white">
+              <span className="block truncate text-center font-mono text-[10px] font-medium text-white">
                 {Math.round(ban.comfort_score)}
               </span>
             </div>

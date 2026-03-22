@@ -48,10 +48,10 @@ export function RecommendationRow({ suggestions, loading }: RecommendationRowPro
             unoptimized
           />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[10px] font-medium text-white">
+            <p className="truncate text-xs font-medium text-white">
               {s.champion_name}
             </p>
-            <p className="font-mono text-[8px] text-[var(--color-text-muted)]">
+            <p className="font-mono text-[10px] text-[var(--color-text-muted)]">
               Syn <span className="text-amber-500">+{s.synergy_contribution.toFixed(1)}</span>{" "}
               Ctr <span className="text-amber-500">+{s.counter_contribution.toFixed(1)}</span>
             </p>

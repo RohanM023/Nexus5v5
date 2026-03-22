@@ -110,6 +110,9 @@ class Settings(BaseSettings):
             raise ValueError("JWT_SECRET_KEY must be changed from the default value in production")
         return v
 
+    # --- Matrix Rebuild ---
+    matrix_min_games: int = 2
+
     # --- Scoring Weights ---
     true_mastery_w1: float = 0.25  # games_played
     true_mastery_w2: float = 0.25  # win_rate

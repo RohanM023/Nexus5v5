@@ -77,3 +77,36 @@ class MatchPaginationMeta(BaseModel):
 class MatchHistoryResponse(BaseModel):
     data: list[MatchParticipant]
     pagination: MatchPaginationMeta
+
+
+# --- Match Detail ---
+
+
+class ParticipantDetail(BaseModel):
+    champion_id: int
+    champion_name: str
+    role: str
+    summoner_name: str
+    kills: int
+    deaths: int
+    assists: int
+    cs_per_min: float
+    gold_earned: int
+    total_damage_dealt: int
+    vision_score: int
+    win: bool
+
+
+class TeamDetail(BaseModel):
+    team_id: int
+    win: bool
+    participants: list[ParticipantDetail]
+
+
+class MatchDetailResponse(BaseModel):
+    match_id: str
+    game_duration: int
+    game_start: datetime
+    queue_id: int
+    blue_team: TeamDetail
+    red_team: TeamDetail

@@ -8,7 +8,7 @@ from typing import Any
 
 from arq.connections import ArqRedis
 from arq.jobs import Job
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from nexus.dependencies import get_arq_pool
 from nexus.match import schemas
@@ -87,6 +87,69 @@ async def get_ingest_status(
             logger.debug("Could not retrieve result for job %s", job_id)
 
     return result
+
+
+@router.get("/detail/{match_id}", response_model=schemas.MatchDetailResponse)
+async def get_match_detail(match_id: str) -> dict[str, Any]:
+    """Get detailed match data with all 10 participants grouped by team."""
+    sql = (  # noqa: S608
+        "SELECT match_id, game_duration, game_start, queue_id, puuid,"
+        " champion_id, champion_name, team_id, role, kills, deaths, assists,"
+        " cs, gold_earned, damage_dealt, vision_score, win"
+        " FROM matches WHERE match_id = %(match_id)s"
+    )
+    params: dict[str, Any] = {"match_id": match_id}
+
+    loop = asyncio.get_running_loop()
+    rows = await loop.run_in_executor(None, ch.query, sql, params)
+
+    if not rows:
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    first = rows[0]
+    blue_participants: list[dict[str, Any]] = []
+    red_participants: list[dict[str, Any]] = []
+
+    for row in rows:
+        duration_min = max(first.get("game_duration", 1), 1) / 60
+        participant = {
+            "champion_id": row.get("champion_id", 0),
+            "champion_name": row.get("champion_name", ""),
+            "role": row.get("role", ""),
+            "summoner_name": row.get("puuid", "")[:8],
+            "kills": row.get("kills", 0),
+            "deaths": row.get("deaths", 0),
+            "assists": row.get("assists", 0),
+            "cs_per_min": round(row.get("cs", 0) / duration_min, 1),
+            "gold_earned": row.get("gold_earned", 0),
+            "total_damage_dealt": row.get("damage_dealt", 0),
+            "vision_score": row.get("vision_score", 0),
+            "win": bool(row.get("win", 0)),
+        }
+        if row.get("team_id", 0) == 100:
+            blue_participants.append(participant)
+        else:
+            red_participants.append(participant)
+
+    blue_win = bool(blue_participants[0]["win"]) if blue_participants else False
+    red_win = bool(red_participants[0]["win"]) if red_participants else False
+
+    return {
+        "match_id": match_id,
+        "game_duration": first.get("game_duration", 0),
+        "game_start": first.get("game_start", ""),
+        "queue_id": first.get("queue_id", 0),
+        "blue_team": {
+            "team_id": 100,
+            "win": blue_win,
+            "participants": blue_participants,
+        },
+        "red_team": {
+            "team_id": 200,
+            "win": red_win,
+            "participants": red_participants,
+        },
+    }
 
 
 @router.get("/history/{puuid}", response_model=schemas.MatchHistoryResponse)

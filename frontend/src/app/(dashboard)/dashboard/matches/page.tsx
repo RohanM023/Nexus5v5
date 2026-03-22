@@ -2,22 +2,13 @@
 
 import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import Image from "next/image";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageLoader, ErrorDisplay } from "@/components/ui/loading";
-import {
-  cn,
-  formatKDA,
-  formatDuration,
-  formatTimeAgo,
-  formatCsPerMin,
-  getChampionIconUrl,
-} from "@/lib/utils";
-import type { MatchSummary } from "@/types";
+import { MatchRow } from "@/components/match/match-row";
+import { cn } from "@/lib/utils";
 
 const QUEUE_OPTIONS = [
   { value: undefined, label: "All" },
@@ -31,6 +22,7 @@ export default function MatchHistoryPage() {
   const [championSearch, setChampionSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
 
   const primaryAccount = profile?.accounts.find((a) => a.is_primary);
   const puuid = primaryAccount?.puuid;
@@ -195,7 +187,12 @@ export default function MatchHistoryPage() {
       ) : (
         <div className="space-y-1">
           {allMatches.map((match) => (
-            <MatchRow key={match.match_id} match={match} />
+            <MatchRow
+              key={match.match_id}
+              match={match}
+              expanded={expandedMatchId === match.match_id}
+              onToggle={() => setExpandedMatchId(expandedMatchId === match.match_id ? null : match.match_id)}
+            />
           ))}
 
           {hasNextPage && (
@@ -211,75 +208,6 @@ export default function MatchHistoryPage() {
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-function MatchRow({ match }: { match: MatchSummary }) {
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-4 rounded-md px-4 py-3 transition-colors hover:bg-[var(--color-surface)]",
-        match.win
-          ? "border-l-2 border-l-emerald-500/60"
-          : "border-l-2 border-l-red-500/40"
-      )}
-    >
-      <Image
-        src={getChampionIconUrl(match.champion_name)}
-        alt={match.champion_name}
-        width={40}
-        height={40}
-        className="rounded"
-        unoptimized
-      />
-
-      <div className="flex-1 space-y-0.5">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-white">
-            {match.champion_name}
-          </span>
-          <span
-            className={cn(
-              "font-mono text-[9px] tracking-wider uppercase",
-              match.win ? "text-emerald-500" : "text-red-400"
-            )}
-          >
-            {match.win ? "W" : "L"}
-          </span>
-        </div>
-        <p className="font-mono text-[10px] text-[var(--color-text-muted)]">
-          {match.role} · {formatDuration(match.game_duration)} · {formatTimeAgo(match.game_start)}
-        </p>
-      </div>
-
-      <div className="text-center">
-        <p className="font-mono text-xs font-medium text-white">
-          {formatKDA(match.kills, match.deaths, match.assists)}
-        </p>
-        <p className="font-mono text-[9px] text-[var(--color-text-muted)]">KDA</p>
-      </div>
-
-      <div className="hidden text-center sm:block">
-        <p className="font-mono text-xs font-medium text-white">
-          {formatCsPerMin(match.cs, match.game_duration)}
-        </p>
-        <p className="font-mono text-[9px] text-[var(--color-text-muted)]">CS/m</p>
-      </div>
-
-      <div className="hidden text-center sm:block">
-        <p className="font-mono text-xs font-medium text-white">
-          {match.gold_earned.toLocaleString()}
-        </p>
-        <p className="font-mono text-[9px] text-[var(--color-text-muted)]">Gold</p>
-      </div>
-
-      <div className="hidden text-center md:block">
-        <p className="font-mono text-xs font-medium text-white">
-          {match.vision_score}
-        </p>
-        <p className="font-mono text-[9px] text-[var(--color-text-muted)]">Vision</p>
-      </div>
     </div>
   );
 }

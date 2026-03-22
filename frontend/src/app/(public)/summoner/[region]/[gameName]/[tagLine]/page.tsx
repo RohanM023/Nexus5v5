@@ -29,6 +29,7 @@ export default function SummonerPage() {
   const queryClient = useQueryClient();
 
   const [queue, setQueue] = useState<number | undefined>(undefined);
+  const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const [ingestionJobId, setIngestionJobId] = useState<string | null>(null);
   const autoIngestTriggered = useRef(false);
   const recentSearchAdded = useRef(false);
@@ -297,7 +298,12 @@ export default function SummonerPage() {
             <div className="overflow-hidden rounded-sm bg-[var(--color-surface)]">
               <MatchListHeader className="border-b border-[var(--color-border)]" />
               {matches.slice(0, 20).map((match: MatchSummary) => (
-                <MatchRow key={match.match_id} match={match} />
+                <MatchRow
+                  key={match.match_id}
+                  match={match}
+                  expanded={expandedMatchId === match.match_id}
+                  onToggle={() => setExpandedMatchId(expandedMatchId === match.match_id ? null : match.match_id)}
+                />
               ))}
             </div>
           )}

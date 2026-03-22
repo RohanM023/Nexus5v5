@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Response
 from nexus.admin.schemas import (
     CreatePartnerKeyRequest,
     HealthResponse,
+    LatestPatchResponse,
     PartnerKeyListResponse,
     PartnerKeyResponse,
     RiotQuotaResponse,
@@ -70,65 +71,35 @@ async def rebuild_synergy(
     _current_user: dict[str, Any] = Depends(get_current_user),
 ) -> dict[str, str]:
     """Trigger a synergy/counter matrix rebuild from match data."""
-    from nexus.shared import clickhouse as ch
+    from nexus.draft.tasks import _rebuild_counter, _rebuild_synergy, _resolve_latest_patch
 
+    settings = get_settings()
     logger.info("Synergy matrix rebuild triggered")
 
-    # Rebuild synergy matrix from match data
-    ch.command(
-        """
-        INSERT INTO synergy_matrix
-        SELECT
-            extractAll(game_version, '^(\\d+\\.\\d+)')[1] AS patch,
-            least(a.champion_id, b.champion_id) AS champion_a,
-            greatest(a.champion_id, b.champion_id) AS champion_b,
-            a.queue_id AS queue_id,
-            count() AS games_played,
-            sum(a.win) AS wins,
-            avg(a.gold_earned - b.gold_earned) AS avg_gold_diff,
-            (sum(a.win) / count()) AS synergy_score,
-            now64(3)
-        FROM matches a
-        INNER JOIN matches b
-            ON a.match_id = b.match_id
-            AND a.team_id = b.team_id
-            AND a.puuid < b.puuid
-        GROUP BY patch, champion_a, champion_b, queue_id
-        HAVING games_played >= 10
-        """
-    )
+    patch = _resolve_latest_patch()
+    if patch == "unknown":
+        return {
+            "status": "completed",
+            "message": "No recent match data found — matrices not rebuilt",
+        }
 
-    # Rebuild counter matrix
-    ch.command(
-        """
-        INSERT INTO counter_matrix
-        SELECT
-            extractAll(a.game_version, '^(\\d+\\.\\d+)')[1] AS patch,
-            a.champion_id AS champion,
-            b.champion_id AS opponent,
-            a.role AS role,
-            a.queue_id AS queue_id,
-            count() AS games_played,
-            sum(a.win) AS wins,
-            avg(a.gold_earned - b.gold_earned) AS avg_gold_diff,
-            ((sum(a.win) / count()) - 0.5) * 100 AS counter_score,
-            now64(3)
-        FROM matches a
-        INNER JOIN matches b
-            ON a.match_id = b.match_id
-            AND a.team_id != b.team_id
-            AND a.role = b.role
-            AND a.role != ''
-        GROUP BY patch, champion, opponent, role, queue_id
-        HAVING games_played >= 5
-        """
-    )
+    for queue_id in (420, 700):
+        _rebuild_synergy(patch, queue_id, min_games=settings.matrix_min_games)
+        _rebuild_counter(patch, queue_id, min_games=settings.matrix_min_games)
 
     logger.info("Synergy and counter matrix rebuild completed")
     return {
         "status": "completed",
         "message": "Synergy and counter matrices rebuilt successfully",
     }
+
+
+@router.get("/latest-patch", response_model=LatestPatchResponse)
+async def latest_patch() -> dict[str, str]:
+    """Return the latest game patch version from match data. No auth required."""
+    from nexus.draft.tasks import _resolve_latest_patch
+
+    return {"patch": _resolve_latest_patch()}
 
 
 @router.get("/partner-keys", response_model=PartnerKeyListResponse)

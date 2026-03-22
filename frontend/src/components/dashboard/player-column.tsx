@@ -10,6 +10,7 @@ interface PlayerColumnProps {
   side: "your" | "opponent";
   championPool?: ChampionPoolEntry[] | null;
   poolLoading?: boolean;
+  ingesting?: boolean;
   onPickChampion?: () => void;
 }
 
@@ -27,13 +28,14 @@ export function PlayerColumn({
   side,
   championPool,
   poolLoading,
+  ingesting,
   onPickChampion,
 }: PlayerColumnProps) {
   const topChamps = championPool?.slice(0, 3) ?? player?.top_champions ?? [];
 
   return (
     <div className="flex min-w-[100px] flex-col items-center gap-2">
-      <span className="font-mono text-[9px] tracking-widest uppercase text-[var(--color-text-muted)]">
+      <span className="font-mono text-xs tracking-widest uppercase text-[var(--color-text-muted)]">
         {ROLE_LABELS[role]}
       </span>
 
@@ -66,7 +68,7 @@ export function PlayerColumn({
       </button>
 
       {player ? (
-        <p className="max-w-[100px] truncate text-center text-[10px] font-medium text-white">
+        <p className="max-w-[100px] truncate text-center text-xs font-medium text-white">
           {player.game_name}
         </p>
       ) : (
@@ -76,7 +78,7 @@ export function PlayerColumn({
       {player && player.alt_accounts.length > 0 && (
         <div className="flex flex-col items-center gap-0.5">
           {player.alt_accounts.map((alt, i) => (
-            <span key={i} className="flex items-center gap-1 font-mono text-[8px] text-[var(--color-text-muted)]">
+            <span key={i} className="flex items-center gap-1 font-mono text-[10px] text-[var(--color-text-muted)]">
               <span className="h-1 w-1 rounded-full bg-amber-600/50" />
               {alt.game_name}
             </span>
@@ -86,15 +88,15 @@ export function PlayerColumn({
 
       {player && poolLoading && (
         <div className="mt-1 w-full space-y-1">
-          <p className="text-center font-mono text-[8px] tracking-wider uppercase text-amber-600/60">
+          <p className="text-center font-mono text-[10px] tracking-wider uppercase text-amber-600/60">
             Mastery
           </p>
-          <p className="text-center text-[9px] text-[var(--color-text-muted)]">Loading...</p>
+          <p className="text-center text-xs text-[var(--color-text-muted)]">Loading...</p>
         </div>
       )}
       {player && !poolLoading && topChamps.length > 0 && (
         <div className="mt-1 w-full space-y-0.5">
-          <p className="text-center font-mono text-[8px] tracking-wider uppercase text-amber-600/60">
+          <p className="text-center font-mono text-[10px] tracking-wider uppercase text-amber-600/60">
             Mastery
           </p>
           {topChamps.slice(0, 3).map((champ) => (
@@ -110,10 +112,10 @@ export function PlayerColumn({
                 className="rounded-sm"
                 unoptimized
               />
-              <span className="flex-1 truncate text-[9px] text-[var(--color-text-muted)]">
+              <span className="flex-1 truncate text-xs text-[var(--color-text-muted)]">
                 {champ.champion_name}
               </span>
-              <span className="font-mono text-[9px] font-medium text-amber-500">
+              <span className="font-mono text-xs font-medium text-amber-500">
                 {Math.round(champ.true_mastery)}
               </span>
             </div>
@@ -122,10 +124,16 @@ export function PlayerColumn({
       )}
       {player && !poolLoading && topChamps.length === 0 && (
         <div className="mt-1 w-full">
-          <p className="text-center font-mono text-[8px] tracking-wider uppercase text-amber-600/60">
+          <p className="text-center font-mono text-[10px] tracking-wider uppercase text-amber-600/60">
             Mastery
           </p>
-          <p className="text-center text-[9px] text-[var(--color-text-muted)]">—</p>
+          {ingesting ? (
+            <p className="text-center text-xs text-amber-500/70 animate-pulse">
+              Ingesting...
+            </p>
+          ) : (
+            <p className="text-center text-xs text-[var(--color-text-muted)]">—</p>
+          )}
         </div>
       )}
     </div>

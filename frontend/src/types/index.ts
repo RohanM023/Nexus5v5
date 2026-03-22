@@ -96,6 +96,38 @@ export interface GoldDiffTimeline {
   participants: GoldDiffParticipant[];
 }
 
+// ---- Match Detail ----
+
+export interface MatchParticipant {
+  champion_id: number;
+  champion_name: string;
+  role: string;
+  summoner_name: string;
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs_per_min: number;
+  gold_earned: number;
+  total_damage_dealt: number;
+  vision_score: number;
+  win: boolean;
+}
+
+export interface MatchTeamDetail {
+  team_id: number;
+  win: boolean;
+  participants: MatchParticipant[];
+}
+
+export interface MatchDetailResponse {
+  match_id: string;
+  game_duration: number;
+  game_start: string;
+  queue_id: number;
+  blue_team: MatchTeamDetail;
+  red_team: MatchTeamDetail;
+}
+
 // ---- Analytics ----
 
 export interface ChampionPoolEntry {

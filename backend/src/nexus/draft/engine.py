@@ -328,6 +328,19 @@ async def generate_suggestions(
     )
     all_champion_ids = [row["cid"] for row in all_champs_rows if row["cid"] not in unavailable]
 
+    # Fallback: if synergy matrix is empty, pull champion IDs from match data
+    if not all_champion_ids:
+        logger.info("Synergy matrix empty for patch %s, falling back to matches table", patch)
+        fallback_rows = ch.query(
+            "SELECT DISTINCT champion_id AS cid FROM matches "
+            "WHERE game_version LIKE concat(%(patch)s, '%%') "
+            "ORDER BY cid",
+            {"patch": patch},
+        )
+        all_champion_ids = [
+            row["cid"] for row in fallback_rows if row["cid"] not in unavailable
+        ]
+
     if not all_champion_ids:
         return []
 

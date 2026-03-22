@@ -12,7 +12,7 @@ export function WinProbability({ probability }: WinProbabilityProps) {
 
   return (
     <div className="space-y-2 text-center">
-      <p className="font-mono text-[9px] tracking-wider uppercase text-[var(--color-text-muted)]">
+      <p className="font-mono text-xs tracking-wider uppercase text-[var(--color-text-muted)]">
         Win Probability
       </p>
       <p
@@ -32,7 +32,7 @@ export function WinProbability({ probability }: WinProbabilityProps) {
           style={{ width: `${clamped}%` }}
         />
       </div>
-      <p className="font-mono text-[8px] tracking-wider uppercase text-[var(--color-text-muted)]">
+      <p className="font-mono text-[10px] tracking-wider uppercase text-[var(--color-text-muted)]">
         {isAhead ? "Your Team" : "Opponent"}
       </p>
     </div>

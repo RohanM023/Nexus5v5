@@ -9,6 +9,7 @@ interface TeamPanelProps {
   label: string;
   pools?: (ChampionPoolResponse | null)[];
   poolsLoading?: boolean;
+  ingestingPuuids?: Set<string>;
   onPickChampion?: (role: TeamRole) => void;
 }
 
@@ -20,11 +21,12 @@ export function TeamPanel({
   label,
   pools,
   poolsLoading,
+  ingestingPuuids,
   onPickChampion,
 }: TeamPanelProps) {
   return (
     <div className="space-y-4">
-      <h2 className="text-center font-mono text-[9px] font-medium tracking-[0.3em] uppercase text-[var(--color-text-muted)]">
+      <h2 className="text-center font-mono text-xs font-medium tracking-[0.3em] uppercase text-[var(--color-text-muted)]">
         {label}
       </h2>
       <div className="flex justify-center gap-1">
@@ -38,6 +40,7 @@ export function TeamPanel({
               side={side}
               championPool={pool}
               poolLoading={poolsLoading}
+              ingesting={!!(players[idx] && ingestingPuuids?.has(players[idx]!.puuid))}
               onPickChampion={
                 onPickChampion && players[idx]
                   ? () => onPickChampion(role)

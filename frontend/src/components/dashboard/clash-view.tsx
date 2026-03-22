@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
+import Image from "next/image";
+import { useQueryClient } from "@tanstack/react-query";
 import { useClashDashboard } from "@/lib/hooks/use-clash-dashboard";
 import { api, ApiError } from "@/lib/api";
+import { getChampionIconUrl } from "@/lib/utils";
 import { TeamPanel } from "./team-panel";
 import { WinProbability } from "./win-probability";
 import { RecommendationRow } from "./recommendation-row";
@@ -31,9 +34,13 @@ export function ClashView() {
   const {
     yourTeam,
     opponentTeam,
+    yourBans,
+    opponentBans,
     addPlayer,
     removePlayer,
     setSelectedChampion,
+    addBan,
+    removeBan,
     radarData,
     winProbability,
     banTargets,
@@ -45,13 +52,52 @@ export function ClashView() {
     opponentPoolsLoading,
   } = useClashDashboard();
 
+  const queryClient = useQueryClient();
+  const activePolls = useRef<Set<string>>(new Set());
+
   const [addingRole, setAddingRole] = useState<{ side: "your" | "opponent"; role: TeamRole } | null>(null);
   const [nameInput, setNameInput] = useState("");
   const [regionInput, setRegionInput] = useState("na1");
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState("");
+  const [ingestingPuuids, setIngestingPuuids] = useState<Set<string>>(new Set());
 
   const [pickingFor, setPickingFor] = useState<{ side: "your" | "opponent"; role: TeamRole } | null>(null);
+  const [banningFor, setBanningFor] = useState<"your" | "opponent" | null>(null);
+
+  const pollIngestion = useCallback(
+    (jobId: string, puuid: string, side: "your" | "opponent") => {
+      if (activePolls.current.has(puuid)) return;
+      activePolls.current.add(puuid);
+      setIngestingPuuids((prev) => new Set(prev).add(puuid));
+
+      const poll = async () => {
+        for (let i = 0; i < 30; i++) {
+          await new Promise((r) => setTimeout(r, 2000));
+          try {
+            const status = await api.getIngestionStatus(jobId);
+            if (status.status === "completed" || status.status === "complete") {
+              break;
+            }
+            if (status.status === "failed") break;
+          } catch {
+            break;
+          }
+        }
+        activePolls.current.delete(puuid);
+        setIngestingPuuids((prev) => {
+          const next = new Set(prev);
+          next.delete(puuid);
+          return next;
+        });
+        // Invalidate pool caches so mastery data refetches
+        queryClient.invalidateQueries({ queryKey: [`clash-${side}-pools`] });
+      };
+
+      poll();
+    },
+    [queryClient]
+  );
 
   const handleAddPlayer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +125,11 @@ export function ClashView() {
         top_champions: [],
       });
 
-      api.triggerIngestion(summoner.puuid, { region: regionInput }).catch(() => {});
+      const side = addingRole.side;
+      api
+        .triggerIngestion(summoner.puuid, { region: regionInput })
+        .then((res) => pollIngestion(res.job_id, summoner.puuid, side))
+        .catch(() => {});
 
       setNameInput("");
       setAddingRole(null);
@@ -98,6 +148,8 @@ export function ClashView() {
   const unavailableChampionIds = [
     ...yourTeam.filter(Boolean).map((p) => p!.selected_champion?.id).filter((id): id is number => id !== undefined),
     ...opponentTeam.filter(Boolean).map((p) => p!.selected_champion?.id).filter((id): id is number => id !== undefined),
+    ...yourBans.filter((b): b is { id: number; name: string } => b !== null).map((b) => b.id),
+    ...opponentBans.filter((b): b is { id: number; name: string } => b !== null).map((b) => b.id),
   ];
 
   const handleChampionPicked = (championId: number) => {
@@ -105,6 +157,13 @@ export function ClashView() {
     const name = CHAMPION_ID_TO_NAME[championId] ?? "";
     setSelectedChampion(pickingFor.side, pickingFor.role, { id: championId, name });
     setPickingFor(null);
+  };
+
+  const handleBanPicked = (championId: number) => {
+    if (!banningFor) return;
+    const name = CHAMPION_ID_TO_NAME[championId] ?? "";
+    addBan(banningFor, { id: championId, name });
+    setBanningFor(null);
   };
 
   return (
@@ -131,11 +190,12 @@ export function ClashView() {
           label="Your Team"
           pools={yourPools}
           poolsLoading={yourPoolsLoading}
+          ingestingPuuids={ingestingPuuids}
           onPickChampion={(role) => setPickingFor({ side: "your", role })}
         />
 
         <div className="flex flex-col items-center gap-4">
-          <p className="font-mono text-[9px] tracking-[0.4em] uppercase text-[var(--color-text-muted)]">
+          <p className="font-mono text-xs tracking-[0.4em] uppercase text-[var(--color-text-muted)]">
             vs
           </p>
           <TeamRadarChart data={radarData} />
@@ -148,6 +208,7 @@ export function ClashView() {
           label="Opponent"
           pools={opponentPools}
           poolsLoading={opponentPoolsLoading}
+          ingestingPuuids={ingestingPuuids}
           onPickChampion={(role) => setPickingFor({ side: "opponent", role })}
         />
       </div>
@@ -158,6 +219,15 @@ export function ClashView() {
           onSelect={handleChampionPicked}
           onClose={() => setPickingFor(null)}
           mode="pick"
+        />
+      )}
+
+      {banningFor && (
+        <ChampionSelect
+          unavailableIds={unavailableChampionIds}
+          onSelect={handleBanPicked}
+          onClose={() => setBanningFor(null)}
+          mode="ban"
         />
       )}
 
@@ -194,7 +264,7 @@ export function ClashView() {
               />
             </div>
             {lookupError && (
-              <p className="text-[10px] text-red-400">{lookupError}</p>
+              <p className="text-xs text-red-400">{lookupError}</p>
             )}
             <div className="flex gap-2">
               <button
@@ -226,7 +296,7 @@ export function ClashView() {
       {/* Quick-add buttons */}
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-2">
-          <p className="font-mono text-[8px] tracking-wider uppercase text-[var(--color-text-muted)]">
+          <p className="font-mono text-[10px] tracking-wider uppercase text-[var(--color-text-muted)]">
             Your Players
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -235,7 +305,7 @@ export function ClashView() {
                 <button
                   key={role}
                   onClick={() => setAddingRole({ side: "your", role })}
-                  className="rounded px-2.5 py-1 font-mono text-[9px] text-amber-600/60 transition-colors hover:text-amber-500 hover:bg-amber-600/5"
+                  className="rounded px-2.5 py-1 font-mono text-xs text-amber-600/60 transition-colors hover:text-amber-500 hover:bg-amber-600/5"
                 >
                   + {role}
                 </button>
@@ -243,7 +313,7 @@ export function ClashView() {
                 <button
                   key={role}
                   onClick={() => removePlayer("your", role)}
-                  className="rounded px-2.5 py-1 text-[9px] text-[var(--color-text-muted)] hover:text-red-400"
+                  className="rounded px-2.5 py-1 text-xs text-[var(--color-text-muted)] hover:text-red-400"
                 >
                   {yourTeam[idx]!.game_name} ×
                 </button>
@@ -252,7 +322,7 @@ export function ClashView() {
           </div>
         </div>
         <div className="space-y-2">
-          <p className="font-mono text-[8px] tracking-wider uppercase text-[var(--color-text-muted)]">
+          <p className="font-mono text-[10px] tracking-wider uppercase text-[var(--color-text-muted)]">
             Opponent Players
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -261,7 +331,7 @@ export function ClashView() {
                 <button
                   key={role}
                   onClick={() => setAddingRole({ side: "opponent", role })}
-                  className="rounded px-2.5 py-1 font-mono text-[9px] text-red-400/50 transition-colors hover:text-red-400 hover:bg-red-500/5"
+                  className="rounded px-2.5 py-1 font-mono text-xs text-red-400/50 transition-colors hover:text-red-400 hover:bg-red-500/5"
                 >
                   + {role}
                 </button>
@@ -269,9 +339,91 @@ export function ClashView() {
                 <button
                   key={role}
                   onClick={() => removePlayer("opponent", role)}
-                  className="rounded px-2.5 py-1 text-[9px] text-[var(--color-text-muted)] hover:text-red-400"
+                  className="rounded px-2.5 py-1 text-xs text-[var(--color-text-muted)] hover:text-red-400"
                 >
                   {opponentTeam[idx]!.game_name} ×
+                </button>
+              )
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Bans */}
+      <div className="grid grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <p className="font-mono text-[10px] tracking-wider uppercase text-[var(--color-text-muted)]">
+            Your Bans
+          </p>
+          <div className="flex gap-1.5">
+            {yourBans.map((ban, idx) =>
+              ban ? (
+                <button
+                  key={idx}
+                  onClick={() => removeBan("your", ban.id)}
+                  className="group relative flex h-10 w-10 items-center justify-center overflow-hidden rounded transition-opacity hover:opacity-70"
+                  title={`Remove ${ban.name} ban`}
+                >
+                  <Image
+                    src={getChampionIconUrl(ban.name)}
+                    alt={ban.name}
+                    width={40}
+                    height={40}
+                    className="rounded grayscale"
+                    unoptimized
+                  />
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <span className="text-lg font-bold text-red-500/80">×</span>
+                  </div>
+                </button>
+              ) : (
+                <button
+                  key={idx}
+                  onClick={() => setBanningFor("your")}
+                  className="flex h-10 w-10 items-center justify-center rounded border border-dashed border-[var(--color-border)] text-[var(--color-text-muted)] transition-colors hover:border-red-500/40 hover:text-red-400"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                </button>
+              )
+            )}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className="font-mono text-[10px] tracking-wider uppercase text-[var(--color-text-muted)]">
+            Opponent Bans
+          </p>
+          <div className="flex gap-1.5">
+            {opponentBans.map((ban, idx) =>
+              ban ? (
+                <button
+                  key={idx}
+                  onClick={() => removeBan("opponent", ban.id)}
+                  className="group relative flex h-10 w-10 items-center justify-center overflow-hidden rounded transition-opacity hover:opacity-70"
+                  title={`Remove ${ban.name} ban`}
+                >
+                  <Image
+                    src={getChampionIconUrl(ban.name)}
+                    alt={ban.name}
+                    width={40}
+                    height={40}
+                    className="rounded grayscale"
+                    unoptimized
+                  />
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <span className="text-lg font-bold text-red-500/80">×</span>
+                  </div>
+                </button>
+              ) : (
+                <button
+                  key={idx}
+                  onClick={() => setBanningFor("opponent")}
+                  className="flex h-10 w-10 items-center justify-center rounded border border-dashed border-[var(--color-border)] text-[var(--color-text-muted)] transition-colors hover:border-red-500/40 hover:text-red-400"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
                 </button>
               )
             )}
@@ -285,7 +437,7 @@ export function ClashView() {
           <h3 className="text-xs font-semibold tracking-wide text-white">
             Draft Assistant
           </h3>
-          <span className="font-mono text-[8px] tracking-wider uppercase text-amber-600/60">
+          <span className="font-mono text-[10px] tracking-wider uppercase text-amber-600/60">
             Live Synergy / Counter
           </span>
         </div>

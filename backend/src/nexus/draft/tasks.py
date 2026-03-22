@@ -12,6 +12,7 @@ from typing import Any
 import structlog
 from prometheus_client import Counter, Histogram
 
+from nexus.config import get_settings
 from nexus.shared import clickhouse as ch
 
 logger = structlog.get_logger(__name__)
@@ -179,8 +180,9 @@ async def run_matrix_rebuild(ctx: dict[str, Any]) -> dict[str, Any]:
             try:
                 log.info("matrix_rebuild.queue_start", queue=queue_name, queue_id=queue_id)
 
-                synergy_count = _rebuild_synergy(patch, queue_id, min_games=10)
-                counter_count = _rebuild_counter(patch, queue_id, min_games=10)
+                settings = get_settings()
+                synergy_count = _rebuild_synergy(patch, queue_id, min_games=settings.matrix_min_games)
+                counter_count = _rebuild_counter(patch, queue_id, min_games=settings.matrix_min_games)
 
                 MATRIX_SYNERGY_PAIRS.inc(synergy_count)
                 MATRIX_COUNTER_MATCHUPS.inc(counter_count)
