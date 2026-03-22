@@ -54,7 +54,7 @@ export function ChampionPoolGrid({ champions, variant = "grid" }: ChampionPoolGr
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortBy)}
-              className="border-b border-[var(--color-border)] bg-transparent py-0.5 font-mono text-[9px] text-[var(--color-text-muted)] focus:border-amber-600 focus:outline-none"
+              className="border-b border-[var(--color-border)] bg-transparent py-0.5 font-mono text-[9px] text-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none"
             >
               {sortOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -81,7 +81,7 @@ export function ChampionPoolGrid({ champions, variant = "grid" }: ChampionPoolGr
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortBy)}
-            className="border-b border-[var(--color-border)] bg-transparent py-1 font-mono text-[10px] text-[var(--color-text-secondary)] focus:border-amber-600 focus:outline-none"
+            className="border-b border-[var(--color-border)] bg-transparent py-1 font-mono text-[10px] text-[var(--color-text-secondary)] focus:border-[var(--color-accent)] focus:outline-none"
           >
             {sortOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -131,7 +131,7 @@ function CompactChampionRow({ champion }: { champion: ChampionPoolEntry }) {
         </div>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-medium text-white">
+        <p className="truncate text-xs font-medium text-[var(--color-text-primary)]">
           {champion.champion_name}
         </p>
       </div>
@@ -141,7 +141,7 @@ function CompactChampionRow({ champion }: { champion: ChampionPoolEntry }) {
       <span
         className={cn(
           "w-10 text-right font-mono text-[10px] font-medium",
-          champion.win_rate >= 0.5 ? "text-emerald-400" : "text-red-400"
+          champion.win_rate >= 0.5 ? "text-[var(--color-score-high)]" : "text-[var(--color-score-poor)]"
         )}
       >
         {formatWinRate(champion.win_rate)}
@@ -175,7 +175,7 @@ function ChampionCard({ champion }: { champion: ChampionPoolEntry }) {
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between">
-          <p className="truncate text-xs font-medium text-white">
+          <p className="truncate text-xs font-medium text-[var(--color-text-primary)]">
             {champion.champion_name}
           </p>
           <span className="font-mono text-[9px] text-[var(--color-text-muted)]">
@@ -186,7 +186,7 @@ function ChampionCard({ champion }: { champion: ChampionPoolEntry }) {
         <div className="mt-0.5 flex items-center gap-3 font-mono text-[9px]">
           <span
             className={cn(
-              champion.win_rate >= 0.5 ? "text-emerald-400" : "text-red-400"
+              champion.win_rate >= 0.5 ? "text-[var(--color-score-high)]" : "text-[var(--color-score-poor)]"
             )}
           >
             {formatWinRate(champion.win_rate)}

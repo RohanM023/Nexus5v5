@@ -233,7 +233,7 @@ export function ChampionSelect({
             placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full border-b border-[var(--color-border)] bg-transparent py-2 font-mono text-sm text-white placeholder-[var(--color-text-muted)] focus:border-amber-600 focus:outline-none"
+            className="w-full border-b border-[var(--color-border)] bg-transparent py-2 font-mono text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none"
             autoFocus
           />
           <div className="mt-3 flex gap-1">
@@ -244,8 +244,8 @@ export function ChampionSelect({
                 className={cn(
                   "font-mono text-xs tracking-wider uppercase transition-colors px-2 py-1",
                   roleFilter === role
-                    ? "text-amber-500"
-                    : "text-[var(--color-text-muted)] hover:text-white"
+                    ? "text-[var(--color-accent-text)]"
+                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
                 )}
               >
                 {role === "ALL"

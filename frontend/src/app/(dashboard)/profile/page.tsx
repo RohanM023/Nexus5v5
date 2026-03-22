@@ -27,13 +27,13 @@ export default function ProfilePage() {
         <p className="text-xs text-[var(--color-text-muted)]">Sign in to view your Master Profile</p>
         <p className="text-xs text-[var(--color-text-muted)]">
           Or{" "}
-          <Link href="/" className="text-amber-500 hover:text-amber-400">
+          <Link href="/" className="text-[var(--color-accent-text)] hover:text-[var(--color-accent-hover)]">
             search for any summoner
           </Link>
         </p>
         <Link
           href="/login"
-          className="rounded-md bg-amber-600 px-5 py-2 text-xs font-medium text-black hover:bg-amber-500"
+          className="rounded-md bg-[var(--color-accent-bg)] px-5 py-2 text-xs font-medium text-black hover:bg-[var(--color-accent-bg-hover)]"
         >
           Sign In
         </Link>
@@ -49,14 +49,14 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-7xl space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-white">Master Profile</h1>
+          <h1 className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">Master Profile</h1>
           <p className="mt-0.5 font-mono text-[10px] tracking-wider text-[var(--color-text-muted)]">
             {profile.user.display_name} · {profile.accounts.length} account{profile.accounts.length !== 1 ? "s" : ""}
           </p>
         </div>
         <Link
           href="/settings"
-          className="text-[10px] tracking-wider uppercase text-[var(--color-text-muted)] transition-colors hover:text-white"
+          className="text-[10px] tracking-wider uppercase text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
         >
           Manage
         </Link>
@@ -72,7 +72,7 @@ export default function ProfilePage() {
           {profile.accounts.length === 0 ? (
             <p className="py-6 text-center text-xs text-[var(--color-text-muted)]">
               No accounts linked.{" "}
-              <Link href="/settings" className="text-amber-500 hover:text-amber-400">
+              <Link href="/settings" className="text-[var(--color-accent-text)] hover:text-[var(--color-accent-hover)]">
                 Link one now
               </Link>
             </p>

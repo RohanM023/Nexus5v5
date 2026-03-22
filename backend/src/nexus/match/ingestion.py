@@ -11,6 +11,7 @@ from typing import Any
 from prometheus_client import Counter, Gauge, Histogram
 
 from nexus.match.models import CLICKHOUSE_COLUMNS, MatchRow
+from nexus.match.schemas import BLOCKED_QUEUE_IDS
 from nexus.shared import clickhouse as ch
 from nexus.shared.redis import cache_get, cache_set
 from nexus.shared.riot_api import get_riot_client
@@ -236,6 +237,9 @@ async def _do_ingest(
     """Inner ingestion logic, separated for clean metrics wrapping."""
     client = get_riot_client()
     all_match_ids: list[str] = []
+
+    # Defence-in-depth: filter out Riot-TOS-blocked queue IDs
+    queue_ids = [q for q in queue_ids if q not in BLOCKED_QUEUE_IDS]
 
     # Read watermark for incremental fetch
     watermark = await get_watermark(puuid)

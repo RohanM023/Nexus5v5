@@ -25,7 +25,7 @@ export default function LoginPage() {
 
   return (
     <div className="animate-fade-in">
-      <h2 className="text-center text-lg font-semibold tracking-tight text-white">Welcome back</h2>
+      <h2 className="text-center text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">Welcome back</h2>
       <p className="mt-1 text-center text-xs text-[var(--color-text-muted)]">
         Sign in to your Nexus account
       </p>
@@ -49,7 +49,7 @@ export default function LoginPage() {
         />
 
         {signInError && (
-          <div className="border-l-2 border-red-500/60 bg-red-500/5 px-3 py-2 text-xs text-red-400">
+          <div className="border-l-2 border-[var(--color-danger)]/60 bg-[var(--color-danger)]/5 px-3 py-2 text-xs text-[var(--color-danger)]">
             {signInError.message}
           </div>
         )}
@@ -68,7 +68,7 @@ export default function LoginPage() {
         No account?{" "}
         <Link
           href="/register"
-          className="text-amber-500 hover:text-amber-400"
+          className="text-[var(--color-accent-text)] hover:text-[var(--color-accent-hover)]"
         >
           Create one
         </Link>

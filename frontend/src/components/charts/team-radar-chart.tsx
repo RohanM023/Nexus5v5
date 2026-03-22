@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { useThemeColors } from "@/lib/hooks/use-theme-colors";
 import type { RadarDataPoint } from "@/types";
 
 interface TeamRadarChartProps {
@@ -16,14 +17,16 @@ interface TeamRadarChartProps {
 }
 
 export function TeamRadarChart({ data }: TeamRadarChartProps) {
+  const chartColors = useThemeColors();
+
   return (
     <div className="flex flex-col items-center">
       <ResponsiveContainer width="100%" height={280}>
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
-          <PolarGrid stroke="#18181f" />
+          <PolarGrid stroke={chartColors.grid} />
           <PolarAngleAxis
             dataKey="axis"
-            tick={{ fill: "#6a6a78", fontSize: 9, fontFamily: "var(--font-jetbrains-mono)" }}
+            tick={{ fill: chartColors.tick, fontSize: 9, fontFamily: "var(--font-jetbrains-mono)" }}
           />
           <PolarRadiusAxis
             angle={90}
@@ -34,21 +37,21 @@ export function TeamRadarChart({ data }: TeamRadarChartProps) {
           <Radar
             name="Your Team"
             dataKey="yourTeam"
-            stroke="#d97706"
-            fill="#d97706"
+            stroke={chartColors.primary}
+            fill={chartColors.primary}
             fillOpacity={0.15}
             strokeWidth={1.5}
           />
           <Radar
             name="Opponent"
             dataKey="opponentTeam"
-            stroke="#6a6a78"
-            fill="#6a6a78"
+            stroke={chartColors.secondary}
+            fill={chartColors.secondary}
             fillOpacity={0.08}
             strokeWidth={1}
           />
           <Legend
-            wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-jetbrains-mono)", color: "#6a6a78" }}
+            wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-jetbrains-mono)", color: chartColors.tick }}
           />
         </RadarChart>
       </ResponsiveContainer>

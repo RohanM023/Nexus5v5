@@ -170,14 +170,14 @@ export function ClashView() {
     <div className="space-y-8">
       {/* Search */}
       <div className="flex justify-center">
-        <div className="flex w-full max-w-md items-center border-b border-[var(--color-border)] transition-colors focus-within:border-amber-600/40">
+        <div className="flex w-full max-w-md items-center border-b border-[var(--color-border)] transition-colors focus-within:border-[var(--color-accent)]/40">
           <svg className="h-3.5 w-3.5 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
             type="text"
             placeholder="Search Team, Player, or Clash ID"
-            className="flex-1 bg-transparent px-3 py-2 text-xs text-white placeholder:text-[var(--color-text-muted)] focus:outline-none"
+            className="flex-1 bg-transparent px-3 py-2 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none"
           />
         </div>
       </div>
@@ -238,7 +238,7 @@ export function ClashView() {
             onSubmit={handleAddPlayer}
             className="w-72 space-y-4 rounded-md bg-[var(--color-surface)] p-5 shadow-2xl"
           >
-            <p className="text-xs font-medium text-white">
+            <p className="text-xs font-medium text-[var(--color-text-primary)]">
               Add {addingRole.side === "your" ? "your" : "opponent"}{" "}
               {addingRole.role} player
             </p>
@@ -246,7 +246,7 @@ export function ClashView() {
               <select
                 value={regionInput}
                 onChange={(e) => setRegionInput(e.target.value)}
-                className="border-b border-[var(--color-border)] bg-transparent py-1.5 font-mono text-[10px] text-[var(--color-text-muted)] focus:border-amber-600 focus:outline-none"
+                className="border-b border-[var(--color-border)] bg-transparent py-1.5 font-mono text-[10px] text-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none"
               >
                 {REGIONS.map((r) => (
                   <option key={r.value} value={r.value} className="bg-[var(--color-surface)]">
@@ -259,18 +259,18 @@ export function ClashView() {
                 placeholder="GameName#TAG"
                 value={nameInput}
                 onChange={(e) => { setNameInput(e.target.value); setLookupError(""); }}
-                className="flex-1 border-b border-[var(--color-border)] bg-transparent py-1.5 text-xs text-white placeholder:text-[var(--color-text-muted)] focus:border-amber-600 focus:outline-none"
+                className="flex-1 border-b border-[var(--color-border)] bg-transparent py-1.5 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none"
                 autoFocus
               />
             </div>
             {lookupError && (
-              <p className="text-xs text-red-400">{lookupError}</p>
+              <p className="text-xs text-[var(--color-danger)]">{lookupError}</p>
             )}
             <div className="flex gap-2">
               <button
                 type="submit"
                 disabled={lookupLoading}
-                className="flex flex-1 items-center justify-center rounded-md bg-amber-600 py-1.5 text-xs font-medium text-black hover:bg-amber-500 disabled:opacity-40"
+                className="flex flex-1 items-center justify-center rounded-md bg-[var(--color-accent-bg)] py-1.5 text-xs font-medium text-black hover:bg-[var(--color-accent-bg-hover)] disabled:opacity-40"
               >
                 {lookupLoading ? (
                   <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -284,7 +284,7 @@ export function ClashView() {
               <button
                 type="button"
                 onClick={() => { setAddingRole(null); setNameInput(""); setLookupError(""); }}
-                className="flex-1 rounded-md py-1.5 text-xs text-[var(--color-text-muted)] hover:text-white"
+                className="flex-1 rounded-md py-1.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
               >
                 Cancel
               </button>
@@ -305,7 +305,7 @@ export function ClashView() {
                 <button
                   key={role}
                   onClick={() => setAddingRole({ side: "your", role })}
-                  className="rounded px-2.5 py-1 font-mono text-xs text-amber-600/60 transition-colors hover:text-amber-500 hover:bg-amber-600/5"
+                  className="rounded px-2.5 py-1 font-mono text-xs text-[var(--color-accent-text)]/60 transition-colors hover:text-[var(--color-accent-hover)] hover:bg-[var(--color-accent-bg)]/5"
                 >
                   + {role}
                 </button>
@@ -313,7 +313,7 @@ export function ClashView() {
                 <button
                   key={role}
                   onClick={() => removePlayer("your", role)}
-                  className="rounded px-2.5 py-1 text-xs text-[var(--color-text-muted)] hover:text-red-400"
+                  className="rounded px-2.5 py-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"
                 >
                   {yourTeam[idx]!.game_name} ×
                 </button>
@@ -331,7 +331,7 @@ export function ClashView() {
                 <button
                   key={role}
                   onClick={() => setAddingRole({ side: "opponent", role })}
-                  className="rounded px-2.5 py-1 font-mono text-xs text-red-400/50 transition-colors hover:text-red-400 hover:bg-red-500/5"
+                  className="rounded px-2.5 py-1 font-mono text-xs text-[var(--color-danger)]/50 transition-colors hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/5"
                 >
                   + {role}
                 </button>
@@ -339,7 +339,7 @@ export function ClashView() {
                 <button
                   key={role}
                   onClick={() => removePlayer("opponent", role)}
-                  className="rounded px-2.5 py-1 text-xs text-[var(--color-text-muted)] hover:text-red-400"
+                  className="rounded px-2.5 py-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"
                 >
                   {opponentTeam[idx]!.game_name} ×
                 </button>
@@ -373,14 +373,14 @@ export function ClashView() {
                     unoptimized
                   />
                   <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <span className="text-lg font-bold text-red-500/80">×</span>
+                    <span className="text-lg font-bold text-[var(--color-danger)]/80">×</span>
                   </div>
                 </button>
               ) : (
                 <button
                   key={idx}
                   onClick={() => setBanningFor("your")}
-                  className="flex h-10 w-10 items-center justify-center rounded border border-dashed border-[var(--color-border)] text-[var(--color-text-muted)] transition-colors hover:border-red-500/40 hover:text-red-400"
+                  className="flex h-10 w-10 items-center justify-center rounded border border-dashed border-[var(--color-border)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-danger)]/40 hover:text-[var(--color-danger)]"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -412,14 +412,14 @@ export function ClashView() {
                     unoptimized
                   />
                   <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <span className="text-lg font-bold text-red-500/80">×</span>
+                    <span className="text-lg font-bold text-[var(--color-danger)]/80">×</span>
                   </div>
                 </button>
               ) : (
                 <button
                   key={idx}
                   onClick={() => setBanningFor("opponent")}
-                  className="flex h-10 w-10 items-center justify-center rounded border border-dashed border-[var(--color-border)] text-[var(--color-text-muted)] transition-colors hover:border-red-500/40 hover:text-red-400"
+                  className="flex h-10 w-10 items-center justify-center rounded border border-dashed border-[var(--color-border)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-danger)]/40 hover:text-[var(--color-danger)]"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -434,10 +434,10 @@ export function ClashView() {
       {/* Draft Engine */}
       <div className="space-y-3">
         <div className="flex items-baseline gap-3">
-          <h3 className="text-xs font-semibold tracking-wide text-white">
+          <h3 className="text-xs font-semibold tracking-wide text-[var(--color-text-primary)]">
             Draft Assistant
           </h3>
-          <span className="font-mono text-[10px] tracking-wider uppercase text-amber-600/60">
+          <span className="font-mono text-[10px] tracking-wider uppercase text-[var(--color-accent-text)]/60">
             Live Synergy / Counter
           </span>
         </div>
@@ -449,7 +449,7 @@ export function ClashView() {
 
       {/* Ban Priority */}
       <div className="space-y-3">
-        <h3 className="text-xs font-semibold tracking-wide text-white">
+        <h3 className="text-xs font-semibold tracking-wide text-[var(--color-text-primary)]">
           Ban Priority
         </h3>
         <div className="grid grid-cols-1 gap-2 md:grid-cols-2">

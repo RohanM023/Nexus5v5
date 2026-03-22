@@ -75,8 +75,8 @@ export function DraftBoard({
               className={cn(
                 "font-mono text-[9px] tracking-[0.2em] uppercase",
                 isCompleted
-                  ? "text-emerald-500"
-                  : "text-amber-500"
+                  ? "text-[var(--color-success)]"
+                  : "text-[var(--color-accent-text)]"
               )}
             >
               {isCompleted
@@ -100,7 +100,7 @@ export function DraftBoard({
           {/* Pick section */}
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <p className="mb-3 text-center font-mono text-[9px] tracking-[0.2em] uppercase text-sky-400/70">
+              <p className="mb-3 text-center font-mono text-[9px] tracking-[0.2em] uppercase text-[var(--color-team-blue)]">
                 Blue Side
               </p>
               <div className="space-y-1.5">
@@ -126,7 +126,7 @@ export function DraftBoard({
             </div>
 
             <div>
-              <p className="mb-3 text-center font-mono text-[9px] tracking-[0.2em] uppercase text-red-400/70">
+              <p className="mb-3 text-center font-mono text-[9px] tracking-[0.2em] uppercase text-[var(--color-team-red)]">
                 Red Side
               </p>
               <div className="space-y-1.5">
@@ -158,7 +158,7 @@ export function DraftBoard({
               <button
                 onClick={() => handleOpenSelect()}
                 disabled={isAddingPick || isAddingBan}
-                className="bg-amber-600 px-6 py-2 font-mono text-xs font-medium tracking-wider uppercase text-black transition-colors hover:bg-amber-500 disabled:opacity-40"
+                className="bg-[var(--color-accent-bg)] px-6 py-2 font-mono text-xs font-medium tracking-wider uppercase text-black transition-colors hover:bg-[var(--color-accent-bg-hover)] disabled:opacity-40"
               >
                 {isAddingPick || isAddingBan
                   ? "Processing..."
@@ -204,8 +204,8 @@ function BanRow({
               ban
                 ? "bg-[var(--color-surface)]"
                 : side === "blue"
-                  ? "bg-sky-500/5"
-                  : "bg-red-500/5"
+                  ? "bg-[var(--color-team-blue-bg)]"
+                  : "bg-[var(--color-team-red-bg)]"
             )}
           >
             {ban ? (
@@ -250,8 +250,8 @@ function PickSlot({
           ? "bg-[var(--color-surface)]"
           : isActive
             ? side === "blue"
-              ? "bg-sky-500/5 hover:bg-sky-500/10 cursor-pointer"
-              : "bg-red-500/5 hover:bg-red-500/10 cursor-pointer"
+              ? "bg-[var(--color-team-blue-bg)] hover:brightness-150 cursor-pointer"
+              : "bg-[var(--color-team-red-bg)] hover:brightness-150 cursor-pointer"
             : "bg-transparent cursor-default"
       )}
     >
@@ -275,13 +275,13 @@ function PickSlot({
         </div>
       )}
       <div className="flex-1 text-left">
-        <p className="text-xs font-medium text-white">
+        <p className="text-xs font-medium text-[var(--color-text-primary)]">
           {pick ? pick.champion_name : "—"}
         </p>
         <p className="font-mono text-[8px] tracking-wider text-[var(--color-text-muted)]">{role}</p>
       </div>
       {isActive && (
-        <span className="font-mono text-[8px] tracking-wider text-amber-500">Select</span>
+        <span className="font-mono text-[8px] tracking-wider text-[var(--color-accent-text)]">Select</span>
       )}
     </button>
   );

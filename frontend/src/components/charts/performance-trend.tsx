@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useThemeColors } from "@/lib/hooks/use-theme-colors";
 import type { RecentFormPoint } from "@/types";
 
 interface PerformanceTrendProps {
@@ -17,6 +18,8 @@ interface PerformanceTrendProps {
 }
 
 export function PerformanceTrend({ data }: PerformanceTrendProps) {
+  const chartColors = useThemeColors();
+
   if (!data || data.length === 0) {
     return (
       <Card>
@@ -49,24 +52,24 @@ export function PerformanceTrend({ data }: PerformanceTrendProps) {
       <CardContent>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#18181f" />
+            <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
             <XAxis
               dataKey="date"
-              stroke="#363640"
-              tick={{ fill: "#6a6a78", fontSize: 10, fontFamily: "var(--font-jetbrains-mono)" }}
+              stroke={chartColors.axis}
+              tick={{ fill: chartColors.tick, fontSize: 10, fontFamily: "var(--font-jetbrains-mono)" }}
             />
             <YAxis
-              stroke="#363640"
-              tick={{ fill: "#6a6a78", fontSize: 10, fontFamily: "var(--font-jetbrains-mono)" }}
+              stroke={chartColors.axis}
+              tick={{ fill: chartColors.tick, fontSize: 10, fontFamily: "var(--font-jetbrains-mono)" }}
               domain={[0, 100]}
               tickFormatter={(value) => `${value}%`}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#050507",
-                border: "1px solid #18181f",
+                backgroundColor: chartColors.tooltipBg,
+                border: `1px solid ${chartColors.tooltipBorder}`,
                 borderRadius: "0",
-                color: "#d4d4dc",
+                color: chartColors.foreground,
                 fontFamily: "var(--font-jetbrains-mono)",
                 fontSize: 11,
               }}
@@ -79,15 +82,15 @@ export function PerformanceTrend({ data }: PerformanceTrendProps) {
             <Line
               type="monotone"
               dataKey="winRate"
-              stroke="#d97706"
+              stroke={chartColors.primary}
               strokeWidth={1.5}
-              dot={{ fill: "#d97706", stroke: "#050507", strokeWidth: 2, r: 3 }}
-              activeDot={{ r: 5, fill: "#f59e0b" }}
+              dot={{ fill: chartColors.primary, stroke: chartColors.background, strokeWidth: 2, r: 3 }}
+              activeDot={{ r: 5, fill: chartColors.accentHover }}
             />
             <Line
               type="monotone"
               dataKey="games"
-              stroke="#6a6a78"
+              stroke={chartColors.secondary}
               strokeWidth={1}
               strokeDasharray="4 4"
               dot={false}
@@ -96,7 +99,7 @@ export function PerformanceTrend({ data }: PerformanceTrendProps) {
         </ResponsiveContainer>
         <div className="mt-3 flex items-center justify-center gap-6 font-mono text-[9px] text-[var(--color-text-muted)]">
           <div className="flex items-center gap-2">
-            <div className="h-px w-4 bg-amber-600" />
+            <div className="h-px w-4 bg-[var(--color-chart-primary)]" />
             <span>Win Rate</span>
           </div>
           <div className="flex items-center gap-2">

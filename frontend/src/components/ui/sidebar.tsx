@@ -91,7 +91,7 @@ export function Sidebar({
       <div className="flex h-full flex-col px-2 py-4">
         <button
           onClick={onToggle}
-          className="mb-4 flex items-center justify-center rounded p-1 text-[var(--color-text-muted)] transition-colors hover:text-white"
+          className="mb-4 flex items-center justify-center rounded p-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
           title={collapsed ? "Expand" : "Collapse"}
         >
           <svg
@@ -119,8 +119,8 @@ export function Sidebar({
                   "flex items-center gap-3 rounded px-2 py-2 text-xs font-medium tracking-wide transition-colors",
                   collapsed && "justify-center px-0",
                   active
-                    ? "text-amber-500"
-                    : "text-[var(--color-text-muted)] hover:text-white"
+                    ? "text-[var(--color-accent-text)]"
+                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
                 )}
                 title={collapsed ? link.label : undefined}
               >

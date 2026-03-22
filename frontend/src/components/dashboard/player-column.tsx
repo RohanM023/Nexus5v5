@@ -47,10 +47,10 @@ export function PlayerColumn({
           "flex h-16 w-16 items-center justify-center overflow-hidden rounded-md transition-all",
           player?.selected_champion
             ? side === "your"
-              ? "ring-1 ring-amber-600/50 bg-amber-600/5"
-              : "ring-1 ring-red-500/50 bg-red-500/5"
+              ? "ring-1 ring-[var(--color-accent)]/50 bg-[var(--color-accent)]/5"
+              : "ring-1 ring-[var(--color-danger)]/50 bg-[var(--color-danger)]/5"
             : "bg-[var(--color-surface)]",
-          player && onPickChampion && "cursor-pointer hover:ring-1 hover:ring-amber-500/40"
+          player && onPickChampion && "cursor-pointer hover:ring-1 hover:ring-[var(--color-accent)]/40"
         )}
       >
         {player?.selected_champion ? (
@@ -68,7 +68,7 @@ export function PlayerColumn({
       </button>
 
       {player ? (
-        <p className="max-w-[100px] truncate text-center text-xs font-medium text-white">
+        <p className="max-w-[100px] truncate text-center text-xs font-medium text-[var(--color-text-primary)]">
           {player.game_name}
         </p>
       ) : (
@@ -79,7 +79,7 @@ export function PlayerColumn({
         <div className="flex flex-col items-center gap-0.5">
           {player.alt_accounts.map((alt, i) => (
             <span key={i} className="flex items-center gap-1 font-mono text-[10px] text-[var(--color-text-muted)]">
-              <span className="h-1 w-1 rounded-full bg-amber-600/50" />
+              <span className="h-1 w-1 rounded-full bg-[var(--color-accent)]/50" />
               {alt.game_name}
             </span>
           ))}
@@ -88,7 +88,7 @@ export function PlayerColumn({
 
       {player && poolLoading && (
         <div className="mt-1 w-full space-y-1">
-          <p className="text-center font-mono text-[10px] tracking-wider uppercase text-amber-600/60">
+          <p className="text-center font-mono text-[10px] tracking-wider uppercase text-[var(--color-accent-text)]/60">
             Mastery
           </p>
           <p className="text-center text-xs text-[var(--color-text-muted)]">Loading...</p>
@@ -96,7 +96,7 @@ export function PlayerColumn({
       )}
       {player && !poolLoading && topChamps.length > 0 && (
         <div className="mt-1 w-full space-y-0.5">
-          <p className="text-center font-mono text-[10px] tracking-wider uppercase text-amber-600/60">
+          <p className="text-center font-mono text-[10px] tracking-wider uppercase text-[var(--color-accent-text)]/60">
             Mastery
           </p>
           {topChamps.slice(0, 3).map((champ) => (
@@ -115,7 +115,7 @@ export function PlayerColumn({
               <span className="flex-1 truncate text-xs text-[var(--color-text-muted)]">
                 {champ.champion_name}
               </span>
-              <span className="font-mono text-xs font-medium text-amber-500">
+              <span className="font-mono text-xs font-medium text-[var(--color-accent-text)]">
                 {Math.round(champ.true_mastery)}
               </span>
             </div>
@@ -124,11 +124,11 @@ export function PlayerColumn({
       )}
       {player && !poolLoading && topChamps.length === 0 && (
         <div className="mt-1 w-full">
-          <p className="text-center font-mono text-[10px] tracking-wider uppercase text-amber-600/60">
+          <p className="text-center font-mono text-[10px] tracking-wider uppercase text-[var(--color-accent-text)]/60">
             Mastery
           </p>
           {ingesting ? (
-            <p className="text-center text-xs text-amber-500/70 animate-pulse">
+            <p className="text-center text-xs text-[var(--color-accent-text)]/70 animate-pulse">
               Ingesting...
             </p>
           ) : (

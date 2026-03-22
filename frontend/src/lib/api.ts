@@ -18,6 +18,7 @@ import type {
   PaginatedResponse,
   PerformanceStats,
   PublicSummonerProfile,
+  RankedDataResponse,
   RegisterRequest,
   RiotAccount,
   RiotQuotaStatus,
@@ -252,6 +253,16 @@ class ApiClient {
   ): Promise<PublicSummonerProfile> {
     return this.request<PublicSummonerProfile>(
       `/api/summoner/${region}/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`
+    );
+  }
+
+  async getRankedData(
+    region: string,
+    gameName: string,
+    tagLine: string
+  ): Promise<RankedDataResponse> {
+    return this.request<RankedDataResponse>(
+      `/api/summoner/${region}/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}/ranked`
     );
   }
 

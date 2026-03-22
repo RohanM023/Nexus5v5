@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+# Queue 70 = One-for-All / custom matches — blocked per Riot TOS
+BLOCKED_QUEUE_IDS: frozenset[int] = frozenset({70})
 
 # --- Ingestion ---
 
@@ -19,6 +22,15 @@ class IngestRequest(BaseModel):
         default="na1",
         description="Riot platform region (e.g., na1, euw1)",
     )
+
+    @field_validator("queue_ids")
+    @classmethod
+    def reject_blocked_queues(cls, v: list[int]) -> list[int]:
+        blocked = BLOCKED_QUEUE_IDS & set(v)
+        if blocked:
+            msg = f"Queue IDs {sorted(blocked)} are blocked per Riot TOS"
+            raise ValueError(msg)
+        return v
 
 
 class IngestResponse(BaseModel):

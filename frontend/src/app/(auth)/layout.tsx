@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LegalFooter } from "@/components/ui/legal-footer";
 
 export default function AuthLayout({
   children,
@@ -18,6 +19,7 @@ export default function AuthLayout({
         </Link>
       </div>
       <div className="w-full max-w-sm">{children}</div>
+      <LegalFooter />
     </div>
   );
 }

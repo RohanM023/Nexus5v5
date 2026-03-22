@@ -1,4 +1,5 @@
 import { Navbar } from "@/components/ui/navbar";
+import { LegalFooter } from "@/components/ui/legal-footer";
 
 export default function PublicLayout({
   children,
@@ -9,6 +10,7 @@ export default function PublicLayout({
     <div className="flex min-h-screen flex-col bg-[var(--background)]">
       <Navbar />
       <main className="flex-1">{children}</main>
+      <LegalFooter />
     </div>
   );
 }

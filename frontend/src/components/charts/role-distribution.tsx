@@ -2,6 +2,7 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useThemeColors } from "@/lib/hooks/use-theme-colors";
 import type { RoleDistribution as RoleDistributionData } from "@/types";
 
 interface RoleDistributionProps {
@@ -25,6 +26,8 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function RoleDistributionChart({ data }: RoleDistributionProps) {
+  const chartColors = useThemeColors();
+
   if (!data || data.length === 0) {
     return (
       <Card>
@@ -44,7 +47,7 @@ export function RoleDistributionChart({ data }: RoleDistributionProps) {
     name: ROLE_LABELS[item.role] || item.role,
     value: item.games,
     percentage: item.percentage,
-    fill: ROLE_COLORS[item.role] || "#363640",
+    fill: ROLE_COLORS[item.role] || chartColors.axis,
   }));
 
   return (
@@ -71,10 +74,10 @@ export function RoleDistributionChart({ data }: RoleDistributionProps) {
             </Pie>
             <Tooltip
               contentStyle={{
-                backgroundColor: "#050507",
-                border: "1px solid #18181f",
+                backgroundColor: chartColors.tooltipBg,
+                border: `1px solid ${chartColors.tooltipBorder}`,
                 borderRadius: "0",
-                color: "#d4d4dc",
+                color: chartColors.foreground,
                 fontFamily: "var(--font-jetbrains-mono)",
                 fontSize: 11,
               }}

@@ -9,7 +9,7 @@ export function Spinner({ size = "md", className }: SpinnerProps) {
   return (
     <svg
       className={cn(
-        "animate-spin text-amber-600",
+        "animate-spin text-[var(--color-accent)]",
         {
           "h-3.5 w-3.5": size === "sm",
           "h-5 w-5": size === "md",
@@ -76,9 +76,9 @@ export function ErrorDisplay({
 }: ErrorDisplayProps) {
   return (
     <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-danger)]/10">
         <svg
-          className="h-5 w-5 text-red-400"
+          className="h-5 w-5 text-[var(--color-danger)]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -95,7 +95,7 @@ export function ErrorDisplay({
       {onRetry && (
         <button
           onClick={onRetry}
-          className="rounded-md bg-[var(--color-surface-hover)] px-4 py-1.5 text-xs tracking-wider uppercase text-[var(--color-text-secondary)] transition-colors hover:text-white"
+          className="rounded-md bg-[var(--color-surface-hover)] px-4 py-1.5 text-xs tracking-wider uppercase text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
         >
           Retry
         </button>

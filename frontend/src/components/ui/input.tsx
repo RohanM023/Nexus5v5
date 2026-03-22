@@ -26,17 +26,17 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            "w-full border-b bg-transparent px-0 py-2 text-sm text-white placeholder-[var(--color-text-muted)] transition-colors",
-            "focus:border-amber-600 focus:outline-none",
+            "w-full border-b bg-transparent px-0 py-2 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-colors",
+            "focus:border-[var(--color-accent)] focus:outline-none",
             error
-              ? "border-red-500/60 focus:border-red-500"
+              ? "border-[var(--color-danger)]/60 focus:border-[var(--color-danger)]"
               : "border-[var(--color-border)]",
             className
           )}
           {...props}
         />
         {error && (
-          <p className="mt-1.5 text-xs text-red-400">{error}</p>
+          <p className="mt-1.5 text-xs text-[var(--color-danger)]">{error}</p>
         )}
       </div>
     );

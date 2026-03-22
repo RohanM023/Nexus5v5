@@ -38,7 +38,7 @@ export function RecommendationRow({ suggestions, loading }: RecommendationRowPro
           key={s.champion_id}
           className="flex items-center gap-2.5 rounded-md bg-[var(--color-surface)] p-3 transition-colors hover:bg-[var(--color-surface-hover)]"
         >
-          <span className="font-mono text-sm font-bold text-amber-500/60">{idx + 1}</span>
+          <span className="font-mono text-sm font-bold text-[var(--color-accent-text)]/60">{idx + 1}</span>
           <Image
             src={getChampionIconUrl(s.champion_name)}
             alt={s.champion_name}
@@ -48,12 +48,12 @@ export function RecommendationRow({ suggestions, loading }: RecommendationRowPro
             unoptimized
           />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium text-white">
+            <p className="truncate text-xs font-medium text-[var(--color-text-primary)]">
               {s.champion_name}
             </p>
             <p className="font-mono text-[10px] text-[var(--color-text-muted)]">
-              Syn <span className="text-amber-500">+{s.synergy_contribution.toFixed(1)}</span>{" "}
-              Ctr <span className="text-amber-500">+{s.counter_contribution.toFixed(1)}</span>
+              Syn <span className="text-[var(--color-accent-text)]">+{s.synergy_contribution.toFixed(1)}</span>{" "}
+              Ctr <span className="text-[var(--color-accent-text)]">+{s.counter_contribution.toFixed(1)}</span>
             </p>
           </div>
         </div>

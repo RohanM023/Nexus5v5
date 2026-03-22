@@ -13,13 +13,13 @@ export function StatsOverview({ stats }: StatsOverviewProps) {
     {
       label: "Games",
       value: stats.total_games.toString(),
-      color: "text-white",
+      color: "text-[var(--color-text-primary)]",
       subtext: `${stats.total_wins}W ${stats.total_losses}L`,
     },
     {
       label: "Win Rate",
       value: formatWinRate(stats.overall_win_rate),
-      color: stats.overall_win_rate >= 0.5 ? "text-emerald-400" : "text-red-400",
+      color: stats.overall_win_rate >= 0.5 ? "text-[var(--color-score-high)]" : "text-[var(--color-score-poor)]",
       subtext: "",
     },
     {
@@ -27,10 +27,10 @@ export function StatsOverview({ stats }: StatsOverviewProps) {
       value: stats.avg_kda.toFixed(2),
       color:
         stats.avg_kda >= 3
-          ? "text-emerald-400"
+          ? "text-[var(--color-score-high)]"
           : stats.avg_kda >= 2
-            ? "text-amber-400"
-            : "text-yellow-400",
+            ? "text-[var(--color-score-mid)]"
+            : "text-[var(--color-score-low)]",
       subtext: `${stats.avg_kills.toFixed(1)} / ${stats.avg_deaths.toFixed(1)} / ${stats.avg_assists.toFixed(1)}`,
     },
     {
@@ -38,16 +38,16 @@ export function StatsOverview({ stats }: StatsOverviewProps) {
       value: stats.avg_cs_per_min.toFixed(1),
       color:
         stats.avg_cs_per_min >= 8
-          ? "text-emerald-400"
+          ? "text-[var(--color-score-high)]"
           : stats.avg_cs_per_min >= 6
-            ? "text-amber-400"
-            : "text-yellow-400",
+            ? "text-[var(--color-score-mid)]"
+            : "text-[var(--color-score-low)]",
       subtext: "",
     },
     {
       label: "Vision",
       value: stats.avg_vision_score.toFixed(0),
-      color: stats.avg_vision_score >= 30 ? "text-emerald-400" : "text-amber-400",
+      color: stats.avg_vision_score >= 30 ? "text-[var(--color-score-high)]" : "text-[var(--color-score-mid)]",
       subtext: "per game",
     },
   ];

@@ -12,11 +12,110 @@
   --color-text-muted: #9090a0;
   --color-accent: #d97706;
   --color-accent-hover: #f59e0b;
+
+  /* Accent extended */
+  --color-accent-text: #d97706;
+  --color-accent-bg: #d97706;
+  --color-accent-bg-hover: #f59e0b;
+
+  /* Semantic */
+  --color-danger: #ef4444;
+  --color-danger-bg: rgba(239,68,68,0.8);
+  --color-success: #10b981;
+  --color-success-bg: rgba(16,185,129,0.15);
+  --color-warning: #eab308;
+  --color-warning-bg: rgba(234,179,8,0.15);
+
+  /* Team */
+  --color-team-blue: #38bdf8;
+  --color-team-blue-bg: rgba(56,189,248,0.05);
+  --color-team-red: #f87171;
+  --color-team-red-bg: rgba(248,113,113,0.05);
+
+  /* Tier */
+  --color-tier-s: #fbbf24;
+  --color-tier-s-bg: rgba(251,191,36,0.15);
+  --color-tier-a: #38bdf8;
+  --color-tier-a-bg: rgba(56,189,248,0.15);
+  --color-tier-b: #a78bfa;
+  --color-tier-b-bg: rgba(167,139,250,0.15);
+  --color-tier-c: #737373;
+  --color-tier-c-bg: rgba(115,115,115,0.15);
+
+  /* Score */
+  --color-score-high: #34d399;
+  --color-score-high-bg: #10b981;
+  --color-score-mid: #fbbf24;
+  --color-score-mid-bg: #f59e0b;
+  --color-score-low: #facc15;
+  --color-score-low-bg: #eab308;
+  --color-score-poor: #f87171;
+  --color-score-poor-bg: #ef4444;
+
+  /* Chart */
+  --color-chart-grid: #18181f;
+  --color-chart-axis: #363640;
+  --color-chart-tick: #6a6a78;
+  --color-chart-primary: #d97706;
+  --color-chart-secondary: #6a6a78;
+  --color-chart-tooltip-bg: #050507;
+  --color-chart-tooltip-border: #18181f;
+
+  /* Selection */
+  --color-selection-bg: rgba(217,119,6,0.25);
+  --color-selection-text: #fef3c7;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--color-surface);
+  --color-surface-hover: var(--color-surface-hover);
+  --color-border: var(--color-border);
+  --color-border-hover: var(--color-border-hover);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-text: var(--color-accent-text);
+  --color-accent-bg: var(--color-accent-bg);
+  --color-accent-bg-hover: var(--color-accent-bg-hover);
+  --color-danger: var(--color-danger);
+  --color-danger-bg: var(--color-danger-bg);
+  --color-success: var(--color-success);
+  --color-success-bg: var(--color-success-bg);
+  --color-warning: var(--color-warning);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-team-blue: var(--color-team-blue);
+  --color-team-blue-bg: var(--color-team-blue-bg);
+  --color-team-red: var(--color-team-red);
+  --color-team-red-bg: var(--color-team-red-bg);
+  --color-tier-s: var(--color-tier-s);
+  --color-tier-s-bg: var(--color-tier-s-bg);
+  --color-tier-a: var(--color-tier-a);
+  --color-tier-a-bg: var(--color-tier-a-bg);
+  --color-tier-b: var(--color-tier-b);
+  --color-tier-b-bg: var(--color-tier-b-bg);
+  --color-tier-c: var(--color-tier-c);
+  --color-tier-c-bg: var(--color-tier-c-bg);
+  --color-score-high: var(--color-score-high);
+  --color-score-high-bg: var(--color-score-high-bg);
+  --color-score-mid: var(--color-score-mid);
+  --color-score-mid-bg: var(--color-score-mid-bg);
+  --color-score-low: var(--color-score-low);
+  --color-score-low-bg: var(--color-score-low-bg);
+  --color-score-poor: var(--color-score-poor);
+  --color-score-poor-bg: var(--color-score-poor-bg);
+  --color-chart-grid: var(--color-chart-grid);
+  --color-chart-axis: var(--color-chart-axis);
+  --color-chart-tick: var(--color-chart-tick);
+  --color-chart-primary: var(--color-chart-primary);
+  --color-chart-secondary: var(--color-chart-secondary);
+  --color-chart-tooltip-bg: var(--color-chart-tooltip-bg);
+  --color-chart-tooltip-border: var(--color-chart-tooltip-border);
+  --color-selection-bg: var(--color-selection-bg);
+  --color-selection-text: var(--color-selection-text);
   --font-sans: var(--font-outfit);
   --font-mono: var(--font-jetbrains-mono);
 }
@@ -43,6 +142,11 @@ body::before {
   background-size: 256px 256px;
 }
 
+/* Suppress grain on light themes */
+[data-theme-category="light"] body::before {
+  opacity: 0;
+}
+
 /* Minimal scrollbar */
 ::-webkit-scrollbar {
   width: 4px;
@@ -64,8 +168,8 @@ body::before {
 
 /* Selection */
 ::selection {
-  background: rgba(217, 119, 6, 0.25);
-  color: #fef3c7;
+  background: var(--color-selection-bg);
+  color: var(--color-selection-text);
 }
 
 /* Focus ring */

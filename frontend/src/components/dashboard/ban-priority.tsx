@@ -33,7 +33,7 @@ export function BanPriority({
 
   return (
     <div className="rounded-md bg-[var(--color-surface)] p-4">
-      <p className="mb-3 font-mono text-xs tracking-wider uppercase text-red-400/80">
+      <p className="mb-3 font-mono text-xs tracking-wider uppercase text-[var(--color-danger)]/80">
         {label}
       </p>
       <div className="flex flex-wrap gap-1.5">

@@ -34,6 +34,26 @@ export interface PublicSummonerProfile {
   region: string;
   summoner_level: number;
   profile_icon_id: number;
+  summoner_id: string;
+}
+
+export interface RankedEntry {
+  queue_type: string;
+  tier: string;
+  rank: string;
+  league_points: number;
+  wins: number;
+  losses: number;
+  hot_streak: boolean;
+  veteran: boolean;
+  fresh_blood: boolean;
+  inactive: boolean;
+}
+
+export interface RankedDataResponse {
+  puuid: string;
+  summoner_id: string;
+  entries: RankedEntry[];
 }
 
 export interface AuthTokens {

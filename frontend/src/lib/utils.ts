@@ -63,40 +63,32 @@ export function getChampionSplashUrl(championName: string): string {
 
 export function getTierColor(tier: "S" | "A" | "B" | "C"): string {
   switch (tier) {
-    case "S":
-      return "text-amber-400";
-    case "A":
-      return "text-sky-400";
-    case "B":
-      return "text-violet-400";
-    case "C":
-      return "text-neutral-500";
+    case "S": return "text-[var(--color-tier-s)]";
+    case "A": return "text-[var(--color-tier-a)]";
+    case "B": return "text-[var(--color-tier-b)]";
+    case "C": return "text-[var(--color-tier-c)]";
   }
 }
 
 export function getTierBgColor(tier: "S" | "A" | "B" | "C"): string {
   switch (tier) {
-    case "S":
-      return "bg-amber-400/15 border-amber-400/40";
-    case "A":
-      return "bg-sky-400/15 border-sky-400/40";
-    case "B":
-      return "bg-violet-400/15 border-violet-400/40";
-    case "C":
-      return "bg-neutral-400/15 border-neutral-500/40";
+    case "S": return "bg-[var(--color-tier-s-bg)] border-[var(--color-tier-s)]";
+    case "A": return "bg-[var(--color-tier-a-bg)] border-[var(--color-tier-a)]";
+    case "B": return "bg-[var(--color-tier-b-bg)] border-[var(--color-tier-b)]";
+    case "C": return "bg-[var(--color-tier-c-bg)] border-[var(--color-tier-c)]";
   }
 }
 
 export function getScoreColor(score: number): string {
-  if (score >= 80) return "text-emerald-400";
-  if (score >= 60) return "text-amber-400";
-  if (score >= 40) return "text-yellow-400";
-  return "text-red-400";
+  if (score >= 80) return "text-[var(--color-score-high)]";
+  if (score >= 60) return "text-[var(--color-score-mid)]";
+  if (score >= 40) return "text-[var(--color-score-low)]";
+  return "text-[var(--color-score-poor)]";
 }
 
 export function getScoreBarColor(score: number): string {
-  if (score >= 80) return "bg-emerald-500";
-  if (score >= 60) return "bg-amber-500";
-  if (score >= 40) return "bg-yellow-500";
-  return "bg-red-500";
+  if (score >= 80) return "bg-[var(--color-score-high-bg)]";
+  if (score >= 60) return "bg-[var(--color-score-mid-bg)]";
+  if (score >= 40) return "bg-[var(--color-score-low-bg)]";
+  return "bg-[var(--color-score-poor-bg)]";
 }

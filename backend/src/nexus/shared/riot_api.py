@@ -323,6 +323,23 @@ class RiotAPIClient:
         return result if result else []
 
 
+    # --- League-v4 ---
+
+    async def get_league_entries(
+        self, summoner_id: str, region: str = "na1"
+    ) -> list[dict[str, Any]]:
+        """Get ranked league entries for a summoner (League-v4)."""
+        host = get_platform_host(region)
+        url = f"{host}/lol/league/v4/entries/by-summoner/{summoner_id}"
+        result = await self._request(
+            "GET",
+            url,
+            cache_key=f"riot:league:{summoner_id}",
+            cache_ttl=300,
+        )
+        return result if result else []
+
+
 _riot_client: RiotAPIClient | None = None
 
 

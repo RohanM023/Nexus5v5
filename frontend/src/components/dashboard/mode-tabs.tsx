@@ -24,13 +24,13 @@ export function ModeTabs({ activeMode, onModeChange }: ModeTabsProps) {
           className={cn(
             "relative pb-2 text-xs font-medium tracking-wide transition-colors",
             activeMode === tab.value
-              ? "text-white"
+              ? "text-[var(--color-text-primary)]"
               : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
           )}
         >
           {tab.label}
           {activeMode === tab.value && (
-            <span className="absolute bottom-0 left-0 right-0 h-px bg-amber-600" />
+            <span className="absolute bottom-0 left-0 right-0 h-px bg-[var(--color-accent)]" />
           )}
         </button>
       ))}

@@ -18,7 +18,7 @@ export function WinProbability({ probability }: WinProbabilityProps) {
       <p
         className={cn(
           "font-mono text-2xl font-bold tracking-tight",
-          isAhead ? "text-amber-400" : "text-red-400"
+          isAhead ? "text-[var(--color-score-mid)]" : "text-[var(--color-danger)]"
         )}
       >
         {Math.round(clamped)}%
@@ -27,7 +27,7 @@ export function WinProbability({ probability }: WinProbabilityProps) {
         <div
           className={cn(
             "h-full rounded-full transition-all duration-500",
-            isAhead ? "bg-amber-500" : "bg-red-500"
+            isAhead ? "bg-[var(--color-accent)]" : "bg-[var(--color-danger)]"
           )}
           style={{ width: `${clamped}%` }}
         />

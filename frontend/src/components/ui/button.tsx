@@ -29,15 +29,15 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(
           "inline-flex items-center justify-center font-medium tracking-wide transition-all duration-200 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed",
           {
-            "bg-amber-600 text-black hover:bg-amber-500 rounded-md":
+            "bg-[var(--color-accent-bg)] text-black hover:bg-[var(--color-accent-bg-hover)] rounded-md":
               variant === "primary",
             "bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-border)] border border-[var(--color-border)] rounded-md":
               variant === "secondary",
-            "bg-transparent text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:border-[var(--color-border-hover)] hover:text-white rounded-md":
+            "bg-transparent text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)] rounded-md":
               variant === "outline",
-            "bg-transparent text-[var(--color-text-secondary)] hover:text-white rounded-md":
+            "bg-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] rounded-md":
               variant === "ghost",
-            "bg-red-600/80 text-white hover:bg-red-500 rounded-md":
+            "bg-[var(--color-danger-bg)] text-white hover:bg-[var(--color-danger)] rounded-md":
               variant === "danger",
           },
           {

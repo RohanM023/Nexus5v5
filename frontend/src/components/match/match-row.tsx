@@ -25,8 +25,8 @@ export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
           "flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-[var(--color-surface-hover)]",
           onToggle && "cursor-pointer select-none",
           isWin
-            ? "border-l-2 border-l-emerald-500/60"
-            : "border-l-2 border-l-red-500/40"
+            ? "border-l-2 border-l-[var(--color-success)]/60"
+            : "border-l-2 border-l-[var(--color-danger)]/40"
         )}
       >
         {/* Champion icon */}
@@ -41,7 +41,7 @@ export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
 
         {/* Champion + role */}
         <div className="w-24 min-w-0">
-          <p className="truncate text-xs font-medium text-white">
+          <p className="truncate text-xs font-medium text-[var(--color-text-primary)]">
             {match.champion_name}
           </p>
           <p className="font-mono text-[8px] tracking-wider text-[var(--color-text-muted)]">
@@ -53,7 +53,7 @@ export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
         <span
           className={cn(
             "w-10 text-center font-mono text-[10px] font-medium",
-            isWin ? "text-emerald-400" : "text-red-400"
+            isWin ? "text-[var(--color-success)]" : "text-[var(--color-danger)]"
           )}
         >
           {isWin ? "W" : "L"}
@@ -61,7 +61,7 @@ export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
 
         {/* KDA */}
         <div className="w-20 text-center">
-          <p className="font-mono text-xs font-medium text-white">
+          <p className="font-mono text-xs font-medium text-[var(--color-text-primary)]">
             {formatKDA(match.kills, match.deaths, match.assists)}
           </p>
           <p className="font-mono text-[8px] text-[var(--color-text-muted)]">
@@ -71,7 +71,7 @@ export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
 
         {/* CS/min */}
         <div className="hidden w-14 text-center sm:block">
-          <p className="font-mono text-xs text-white">
+          <p className="font-mono text-xs text-[var(--color-text-primary)]">
             {formatCsPerMin(match.cs, match.game_duration)}
           </p>
           <p className="font-mono text-[8px] text-[var(--color-text-muted)]">cs/m</p>
@@ -79,7 +79,7 @@ export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
 
         {/* Gold */}
         <div className="hidden w-16 text-center md:block">
-          <p className="font-mono text-xs text-white">
+          <p className="font-mono text-xs text-[var(--color-text-primary)]">
             {(match.gold_earned / 1000).toFixed(1)}k
           </p>
           <p className="font-mono text-[8px] text-[var(--color-text-muted)]">gold</p>
@@ -87,7 +87,7 @@ export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
 
         {/* Vision */}
         <div className="hidden w-12 text-center md:block">
-          <p className="font-mono text-xs text-white">{match.vision_score}</p>
+          <p className="font-mono text-xs text-[var(--color-text-primary)]">{match.vision_score}</p>
           <p className="font-mono text-[8px] text-[var(--color-text-muted)]">vis</p>
         </div>
 

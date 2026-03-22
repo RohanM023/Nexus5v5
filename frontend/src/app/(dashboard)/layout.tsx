@@ -2,6 +2,7 @@
 
 import { Navbar } from "@/components/ui/navbar";
 import { Sidebar, useSidebarCollapsed } from "@/components/ui/sidebar";
+import { LegalFooter } from "@/components/ui/legal-footer";
 
 export default function DashboardLayout({
   children,
@@ -17,6 +18,7 @@ export default function DashboardLayout({
         <Sidebar collapsed={collapsed} onToggle={toggle} />
         <main className="flex-1 overflow-y-auto p-5 lg:p-8">{children}</main>
       </div>
+      <LegalFooter />
     </div>
   );
 }

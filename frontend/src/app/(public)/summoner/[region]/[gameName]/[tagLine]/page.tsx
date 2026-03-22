@@ -6,6 +6,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/lib/api";
 import { StatsOverview } from "@/components/profile/stats-overview";
 import { ChampionPoolGrid } from "@/components/profile/champion-pool-grid";
+import { RankedCard } from "@/components/profile/ranked-card";
+import { RankProgression } from "@/components/charts/rank-progression";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageLoader, ErrorDisplay, Spinner } from "@/components/ui/loading";
 import { MatchRow, MatchListHeader } from "@/components/match/match-row";
@@ -63,6 +65,12 @@ export default function SummonerPage() {
     queryKey: ["summoner-matches", summonerQuery.data?.puuid, queue],
     queryFn: () => api.getSummonerMatches(summonerQuery.data!.puuid, undefined, queue),
     enabled: !!summonerQuery.data?.puuid,
+  });
+
+  const rankedQuery = useQuery({
+    queryKey: ["summoner-ranked", region, gameName, tagLine],
+    queryFn: () => api.getRankedData(region, gameName, tagLine),
+    enabled: !!summonerQuery.data,
   });
 
   const ingestionStartTime = useRef<number>(0);
@@ -164,7 +172,7 @@ export default function SummonerPage() {
           onRetry={() => summonerQuery.refetch()}
         />
         <div className="mt-4 text-center">
-          <Link href="/" className="font-mono text-xs tracking-wider text-amber-500 transition-colors hover:text-amber-400">
+          <Link href="/" className="font-mono text-xs tracking-wider text-[var(--color-accent-text)] transition-colors hover:text-[var(--color-accent-hover)]">
             Try another search
           </Link>
         </div>
@@ -194,7 +202,7 @@ export default function SummonerPage() {
           unoptimized
         />
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-white">
+          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">
             {summoner.game_name}
             <span className="text-[var(--color-text-muted)]">#{summoner.tag_line}</span>
           </h1>
@@ -207,7 +215,7 @@ export default function SummonerPage() {
         <button
           onClick={handleRefreshData}
           disabled={isIngesting}
-          className="font-mono text-[10px] tracking-wider text-[var(--color-text-secondary)] transition-colors hover:text-white disabled:opacity-40"
+          className="font-mono text-[10px] tracking-wider text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)] disabled:opacity-40"
         >
           {isIngesting ? (
             <span className="flex items-center gap-2">
@@ -222,9 +230,16 @@ export default function SummonerPage() {
 
       {/* Ingestion banner */}
       {isIngesting && (
-        <div className="mt-4 flex items-center gap-2 border-l-2 border-amber-600/40 bg-amber-500/[0.03] px-4 py-2.5 font-mono text-[10px] text-amber-500/80">
+        <div className="mt-4 flex items-center gap-2 border-l-2 border-[var(--color-accent)]/40 bg-[var(--color-accent)]/[0.03] px-4 py-2.5 font-mono text-[10px] text-[var(--color-accent-text)]/80">
           <Spinner size="sm" />
           Fetching match data from Riot...
+        </div>
+      )}
+
+      {/* Ranked info */}
+      {rankedQuery.data && rankedQuery.data.entries.length > 0 && (
+        <div className="mt-4">
+          <RankedCard entries={rankedQuery.data.entries} />
         </div>
       )}
 
@@ -242,6 +257,16 @@ export default function SummonerPage() {
           </Card>
         ) : null}
       </div>
+
+      {/* Rank Progression */}
+      {rankedQuery.data && matches.length > 0 && (
+        <div className="mt-5">
+          <RankProgression
+            soloEntry={rankedQuery.data.entries.find(e => e.queue_type === "RANKED_SOLO_5x5") ?? null}
+            matches={matches.filter(m => m.queue_id === 420)}
+          />
+        </div>
+      )}
 
       {/* Two-column layout */}
       <div className="mt-5 flex flex-col gap-5 lg:flex-row">
@@ -274,8 +299,8 @@ export default function SummonerPage() {
                   className={cn(
                     "font-mono text-[9px] tracking-wider px-2 py-1 transition-colors",
                     queue === opt.value
-                      ? "text-amber-500"
-                      : "text-[var(--color-text-muted)] hover:text-white"
+                      ? "text-[var(--color-accent-text)]"
+                      : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
                   )}
                 >
                   {opt.label}

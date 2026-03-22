@@ -20,10 +20,10 @@ function getPasswordStrength(password: string): {
   if (/[0-9]/.test(password)) score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
 
-  if (score <= 1) return { score, label: "Weak", color: "bg-red-500" };
-  if (score <= 2) return { score, label: "Fair", color: "bg-yellow-500" };
-  if (score <= 3) return { score, label: "Good", color: "bg-amber-500" };
-  return { score, label: "Strong", color: "bg-emerald-500" };
+  if (score <= 1) return { score, label: "Weak", color: "bg-[var(--color-score-poor-bg)]" };
+  if (score <= 2) return { score, label: "Fair", color: "bg-[var(--color-score-low-bg)]" };
+  if (score <= 3) return { score, label: "Good", color: "bg-[var(--color-score-mid-bg)]" };
+  return { score, label: "Strong", color: "bg-[var(--color-score-high-bg)]" };
 }
 
 export default function RegisterPage() {
@@ -55,7 +55,7 @@ export default function RegisterPage() {
 
   return (
     <div className="animate-fade-in">
-      <h2 className="text-center text-lg font-semibold tracking-tight text-white">Create Account</h2>
+      <h2 className="text-center text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">Create Account</h2>
       <p className="mt-1 text-center text-xs text-[var(--color-text-muted)]">
         Join Nexus to unlock draft intelligence
       </p>
@@ -124,7 +124,7 @@ export default function RegisterPage() {
         />
 
         {signUpError && (
-          <div className="border-l-2 border-red-500/60 bg-red-500/5 px-3 py-2 text-xs text-red-400">
+          <div className="border-l-2 border-[var(--color-danger)]/60 bg-[var(--color-danger)]/5 px-3 py-2 text-xs text-[var(--color-danger)]">
             {signUpError.message}
           </div>
         )}
@@ -144,7 +144,7 @@ export default function RegisterPage() {
         Already have an account?{" "}
         <Link
           href="/login"
-          className="text-amber-500 hover:text-amber-400"
+          className="text-[var(--color-accent-text)] hover:text-[var(--color-accent-hover)]"
         >
           Sign in
         </Link>

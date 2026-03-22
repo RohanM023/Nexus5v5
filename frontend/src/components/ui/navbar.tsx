@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { ThemePicker } from "@/components/ui/theme-picker";
 
 const REGIONS = [
   { value: "na1", label: "NA" },
@@ -41,27 +42,27 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--background)]/80 backdrop-blur-xl">
       <div className="mx-auto flex h-12 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="shrink-0 font-mono text-xs font-bold tracking-widest uppercase text-amber-500">
+        <Link href="/" className="shrink-0 font-mono text-xs font-bold tracking-widest uppercase text-[var(--color-accent-text)]">
           Nexus
         </Link>
 
         <div className="hidden items-center gap-1 sm:flex">
           <Link
             href="/dashboard"
-            className="px-3 py-1 text-xs tracking-wide text-[var(--color-text-muted)] transition-colors hover:text-white"
+            className="px-3 py-1 text-xs tracking-wide text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
           >
             Clash
           </Link>
           <Link
             href="/draft"
-            className="px-3 py-1 text-xs tracking-wide text-[var(--color-text-muted)] transition-colors hover:text-white"
+            className="px-3 py-1 text-xs tracking-wide text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
           >
             Draft
           </Link>
         </div>
 
         <form onSubmit={handleSearch} className="flex flex-1 items-center justify-center">
-          <div className="flex w-full max-w-md items-center border-b border-[var(--color-border)] transition-colors focus-within:border-amber-600/50">
+          <div className="flex w-full max-w-md items-center border-b border-[var(--color-border)] transition-colors focus-within:border-[var(--color-accent)]/50">
             <select
               value={region}
               onChange={(e) => setRegion(e.target.value)}
@@ -78,12 +79,13 @@ export function Navbar() {
               placeholder="Search Riot ID..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="h-7 flex-1 bg-transparent px-2 text-xs text-white placeholder:text-[var(--color-text-muted)] focus:outline-none"
+              className="h-7 flex-1 bg-transparent px-2 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none"
             />
           </div>
         </form>
 
         <div className="flex shrink-0 items-center gap-4">
+          <ThemePicker />
           {isAuthenticated ? (
             <>
               <span className="hidden font-mono text-[10px] tracking-wider text-[var(--color-text-muted)] sm:block">
@@ -91,7 +93,7 @@ export function Navbar() {
               </span>
               <button
                 onClick={signOut}
-                className="text-[10px] tracking-wider uppercase text-[var(--color-text-muted)] transition-colors hover:text-white"
+                className="text-[10px] tracking-wider uppercase text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
               >
                 Sign Out
               </button>
@@ -99,7 +101,7 @@ export function Navbar() {
           ) : (
             <Link
               href="/login"
-              className="text-[10px] tracking-wider uppercase text-[var(--color-text-muted)] transition-colors hover:text-white"
+              className="text-[10px] tracking-wider uppercase text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
             >
               Sign In
             </Link>

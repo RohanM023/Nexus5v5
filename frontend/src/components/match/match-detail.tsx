@@ -34,7 +34,7 @@ export function MatchDetail({ matchId }: MatchDetailProps) {
   }
 
   return (
-    <div className="grid gap-3 bg-[#0e0e12] px-3 py-4 md:grid-cols-2">
+    <div className="grid gap-3 bg-[var(--color-surface)] px-3 py-4 md:grid-cols-2">
       <TeamTable team={data.blue_team} side="blue" />
       <TeamTable team={data.red_team} side="red" />
     </div>
@@ -42,17 +42,17 @@ export function MatchDetail({ matchId }: MatchDetailProps) {
 }
 
 function TeamTable({ team, side }: { team: MatchTeamDetail; side: "blue" | "red" }) {
-  const headerColor = side === "blue" ? "text-blue-500" : "text-red-500";
-  const borderColor = side === "blue" ? "border-blue-500/30" : "border-red-500/30";
+  const headerColor = side === "blue" ? "text-[var(--color-team-blue)]" : "text-[var(--color-team-red)]";
+  const borderColor = side === "blue" ? "border-[var(--color-team-blue)]/30" : "border-[var(--color-team-red)]/30";
   const label = side === "blue" ? "Blue Side" : "Red Side";
 
   return (
     <div className={cn("overflow-hidden rounded-sm border", borderColor)}>
-      <div className={cn("flex items-center justify-between px-3 py-1.5", borderColor, "border-b bg-[#0e0e12]")}>
+      <div className={cn("flex items-center justify-between px-3 py-1.5", borderColor, "border-b bg-[var(--color-surface)]")}>
         <span className={cn("font-mono text-[9px] font-medium tracking-[0.2em] uppercase", headerColor)}>
           {label}
         </span>
-        <span className={cn("font-mono text-[9px] tracking-wider", team.win ? "text-emerald-400" : "text-red-400")}>
+        <span className={cn("font-mono text-[9px] tracking-wider", team.win ? "text-[var(--color-success)]" : "text-[var(--color-danger)]")}>
           {team.win ? "VICTORY" : "DEFEAT"}
         </span>
       </div>
@@ -88,13 +88,13 @@ function ParticipantRow({ participant: p }: { participant: Participant }) {
           unoptimized
         />
         <div className="min-w-0">
-          <p className="truncate text-xs font-medium text-white">{p.champion_name}</p>
+          <p className="truncate text-xs font-medium text-[var(--color-text-primary)]">{p.champion_name}</p>
           <p className="font-mono text-[7px] tracking-wider text-[var(--color-text-muted)]">{p.role}</p>
         </div>
       </div>
 
       {/* KDA */}
-      <div className="text-center font-mono text-[10px] text-white">
+      <div className="text-center font-mono text-[10px] text-[var(--color-text-primary)]">
         {formatKDA(p.kills, p.deaths, p.assists)}
       </div>
 
