@@ -60,15 +60,18 @@ def ensure_tables() -> None:
 
         # Migrate matches from MergeTree → ReplacingMergeTree if needed
         try:
-            engine = client.command(
+            rows = client.query(
                 "SELECT engine FROM system.tables "
                 "WHERE database = currentDatabase() AND name = 'matches'"
             )
-            if engine and str(engine) == "MergeTree":
-                logger.info("Migrating matches table from MergeTree to ReplacingMergeTree")
-                client.command("DROP TABLE matches")
+            if rows.result_rows:
+                engine = str(rows.result_rows[0][0]).strip()
+                logger.info("matches table engine: %s", engine)
+                if engine != "ReplacingMergeTree":
+                    logger.info("Dropping matches table (engine=%s) to recreate as ReplacingMergeTree", engine)
+                    client.command("DROP TABLE IF EXISTS matches")
         except Exception:
-            pass  # Table doesn't exist yet, will be created below
+            logger.debug("Could not check matches table engine, will create if needed")
 
         client.command("""
             CREATE TABLE IF NOT EXISTS matches (
