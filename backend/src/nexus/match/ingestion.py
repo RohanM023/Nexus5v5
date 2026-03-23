@@ -97,7 +97,12 @@ async def _get_existing_match_ids(puuid: str, match_ids: list[str]) -> set[str]:
     )
 
     loop = asyncio.get_running_loop()
-    rows = await loop.run_in_executor(None, ch.query, sql, params)
+    try:
+        rows = await loop.run_in_executor(None, ch.query, sql, params)
+    except Exception:
+        # Table may not exist yet (first deploy); treat as no existing matches
+        logger.warning("Dedup check failed (table may not exist), treating all as new")
+        return set()
     return {row["match_id"] for row in rows}
 
 
