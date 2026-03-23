@@ -596,3 +596,69 @@ async def get_gold_diff(match_id: str) -> dict[str, Any]:
         "match_id": match_id,
         "participants": participants,
     }
+
+
+async def get_duo_overlap(puuid1: str, puuid2: str) -> dict[str, Any]:
+    """Compare champion pools of two players and find overlap."""
+    pool1 = await get_champion_pool_by_puuid(
+        puuid1, sort_by="true_mastery", sort_order="desc"
+    )
+    pool2 = await get_champion_pool_by_puuid(
+        puuid2, sort_by="true_mastery", sort_order="desc"
+    )
+
+    p1_map = {c["champion_id"]: c for c in pool1["champions"]}
+    p2_map = {c["champion_id"]: c for c in pool2["champions"]}
+
+    shared_ids = set(p1_map.keys()) & set(p2_map.keys())
+    p1_only = set(p1_map.keys()) - shared_ids
+    p2_only = set(p2_map.keys()) - shared_ids
+
+    shared_champions = []
+    for cid in shared_ids:
+        c1, c2 = p1_map[cid], p2_map[cid]
+        shared_champions.append(
+            {
+                "champion_id": cid,
+                "champion_name": c1["champion_name"],
+                "player1_mastery": c1["true_mastery"],
+                "player2_mastery": c2["true_mastery"],
+                "avg_mastery": round(
+                    (c1["true_mastery"] + c2["true_mastery"]) / 2, 2
+                ),
+                "player1_comfort": c1["comfort_score"],
+                "player2_comfort": c2["comfort_score"],
+                "player1_tier": c1["tier"],
+                "player2_tier": c2["tier"],
+            }
+        )
+    shared_champions.sort(key=lambda x: x["avg_mastery"], reverse=True)
+
+    # Top 10 exclusive champs per player, sorted by mastery
+    p1_exclusive = sorted(
+        [p1_map[cid] for cid in p1_only],
+        key=lambda c: c["true_mastery"],
+        reverse=True,
+    )[:10]
+    p2_exclusive = sorted(
+        [p2_map[cid] for cid in p2_only],
+        key=lambda c: c["true_mastery"],
+        reverse=True,
+    )[:10]
+
+    union_size = len(p1_map.keys() | p2_map.keys())
+    overlap_pct = round(len(shared_ids) / max(1, union_size) * 100, 1)
+
+    return {
+        "player1_puuid": puuid1,
+        "player2_puuid": puuid2,
+        "player1_total": pool1["total_champions"],
+        "player2_total": pool2["total_champions"],
+        "shared_count": len(shared_ids),
+        "player1_exclusive_count": len(p1_only),
+        "player2_exclusive_count": len(p2_only),
+        "shared_champions": shared_champions,
+        "player1_exclusive": p1_exclusive,
+        "player2_exclusive": p2_exclusive,
+        "overlap_percentage": overlap_pct,
+    }

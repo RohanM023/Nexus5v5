@@ -18,6 +18,7 @@ interface DraftBoardProps {
   onBan: (championId: number) => void;
   isAddingPick: boolean;
   isAddingBan: boolean;
+  fearlessLockedIds?: number[];
 }
 
 const ROLES = ["TOP", "JUNGLE", "MID", "BOT", "SUPPORT"];
@@ -33,6 +34,7 @@ export function DraftBoard({
   onBan,
   isAddingPick,
   isAddingBan,
+  fearlessLockedIds = [],
 }: DraftBoardProps) {
   const [showChampionSelect, setShowChampionSelect] = useState(false);
   const [selectingRole, setSelectingRole] = useState<string>("MID");
@@ -49,7 +51,7 @@ export function DraftBoard({
     ...blueBans.map((b) => b.champion_id),
     ...redBans.map((b) => b.champion_id),
   ];
-  const unavailableIds = [...allPickedIds, ...allBannedIds];
+  const unavailableIds = [...new Set([...allPickedIds, ...allBannedIds, ...fearlessLockedIds])];
 
   const handleOpenSelect = (role?: string) => {
     if (role) setSelectingRole(role);

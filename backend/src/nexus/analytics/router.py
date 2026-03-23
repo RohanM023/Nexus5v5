@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from nexus.analytics import service
 from nexus.analytics.schemas import (
     ChampionPoolResponse,
+    DuoOverlapResponse,
     GoldDiffResponse,
     PerformanceStats,
 )
@@ -92,3 +93,9 @@ async def get_champion_pool_by_puuid(
 async def get_performance_by_puuid(puuid: str) -> dict[str, Any]:
     """Public: performance stats for a single PUUID."""
     return await service.get_performance_by_puuid(puuid)
+
+
+@router.get("/duo-overlap/{puuid1}/{puuid2}", response_model=DuoOverlapResponse)
+async def get_duo_overlap(puuid1: str, puuid2: str) -> dict[str, Any]:
+    """Public: compare champion pools of two players."""
+    return await service.get_duo_overlap(puuid1, puuid2)

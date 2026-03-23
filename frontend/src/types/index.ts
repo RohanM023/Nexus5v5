@@ -348,6 +348,34 @@ export interface PaginatedResponse<T> {
   };
 }
 
+// ---- Duo Overlap ----
+
+export interface SharedChampion {
+  champion_id: number;
+  champion_name: string;
+  player1_mastery: number;
+  player2_mastery: number;
+  avg_mastery: number;
+  player1_comfort: number;
+  player2_comfort: number;
+  player1_tier: string;
+  player2_tier: string;
+}
+
+export interface DuoOverlapResponse {
+  player1_puuid: string;
+  player2_puuid: string;
+  player1_total: number;
+  player2_total: number;
+  shared_count: number;
+  player1_exclusive_count: number;
+  player2_exclusive_count: number;
+  shared_champions: SharedChampion[];
+  player1_exclusive: ChampionPoolEntry[];
+  player2_exclusive: ChampionPoolEntry[];
+  overlap_percentage: number;
+}
+
 // ---- Admin ----
 
 export interface HealthStatus {

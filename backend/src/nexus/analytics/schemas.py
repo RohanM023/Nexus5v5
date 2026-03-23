@@ -86,3 +86,32 @@ class ChampionPoolQueryParams(BaseModel):
         pattern=r"^(games_played|win_rate|true_mastery|comfort_score)$",
     )
     sort_order: str = Field(default="desc", pattern=r"^(asc|desc)$")
+
+
+# --- Duo Overlap ---
+
+
+class SharedChampion(BaseModel):
+    champion_id: int
+    champion_name: str
+    player1_mastery: float
+    player2_mastery: float
+    avg_mastery: float
+    player1_comfort: float
+    player2_comfort: float
+    player1_tier: str
+    player2_tier: str
+
+
+class DuoOverlapResponse(BaseModel):
+    player1_puuid: str
+    player2_puuid: str
+    player1_total: int
+    player2_total: int
+    shared_count: int
+    player1_exclusive_count: int
+    player2_exclusive_count: int
+    shared_champions: list[SharedChampion]
+    player1_exclusive: list[ChampionPoolEntry]
+    player2_exclusive: list[ChampionPoolEntry]
+    overlap_percentage: float

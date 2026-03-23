@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, use } from "react";
+import { useEffect, useRef, use } from "react";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useDraft } from "@/lib/hooks/use-draft";
+import { useFearlessStore } from "@/lib/stores/fearless-store";
 import { DraftBoard } from "@/components/draft/draft-board";
 import { SuggestionPanel } from "@/components/draft/suggestion-panel";
 import { ScoreDisplay } from "@/components/draft/score-display";
@@ -18,6 +19,10 @@ export default function LiveDraftPage({
   const { id } = use(params);
   const { isAuthenticated } = useAuth();
   const draft = useDraft();
+  const fearless = useFearlessStore();
+  const gameRecorded = useRef(false);
+
+  const fearlessLockedIds = fearless.active ? fearless.getAllLockedIds() : [];
 
   useEffect(() => {
     if (id && !draft.sessionId) {
@@ -40,13 +45,29 @@ export default function LiveDraftPage({
     };
   }, [draft.disconnectWebSocket]);
 
+  // Auto-record game completion for fearless series
+  useEffect(() => {
+    if (
+      draft.currentPhase === "completed" &&
+      fearless.active &&
+      !gameRecorded.current &&
+      draft.bluePicks.length > 0
+    ) {
+      gameRecorded.current = true;
+      fearless.completeGame(
+        draft.bluePicks.map((p) => p.champion_id),
+        draft.redPicks.map((p) => p.champion_id),
+      );
+    }
+  }, [draft.currentPhase, fearless.active, draft.bluePicks, draft.redPicks, fearless]);
+
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
         <p className="text-xs text-[var(--color-text-muted)]">Sign in to use the draft assistant.</p>
         <Link
           href="/login"
-          className="rounded-md bg-amber-600 px-4 py-1.5 text-xs font-medium text-black hover:bg-amber-500"
+          className="rounded-md bg-[var(--color-accent-bg)] px-4 py-1.5 text-xs font-medium text-black hover:bg-[var(--color-accent-bg-hover)]"
         >
           Sign In
         </Link>
@@ -58,21 +79,28 @@ export default function LiveDraftPage({
     return <PageLoader message="Connecting..." />;
   }
 
+  const maxGames = fearless.getMaxGames();
+
   return (
     <div className="mx-auto max-w-7xl space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-white">Live Draft</h1>
+          <h1 className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">Live Draft</h1>
           <p className="mt-0.5 font-mono text-[10px] tracking-wider text-[var(--color-text-muted)]">
             {id.slice(0, 8)}... · {draft.mode} ·{" "}
-            <span className="text-amber-500">
+            <span className="text-[var(--color-accent-text)]">
               {draft.currentPhase.replace(/_/g, " ")}
             </span>
+            {fearless.active && (
+              <span className="ml-2 rounded bg-[var(--color-accent)]/15 px-1.5 py-0.5 font-mono text-[9px] text-[var(--color-accent-text)]">
+                FEARLESS G{fearless.currentGame}/{maxGames}
+              </span>
+            )}
           </p>
         </div>
         <Link
           href="/draft"
-          className="text-[10px] tracking-wider uppercase text-[var(--color-text-muted)] transition-colors hover:text-white"
+          className="text-[10px] tracking-wider uppercase text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
         >
           Exit
         </Link>
@@ -104,6 +132,7 @@ export default function LiveDraftPage({
             }}
             isAddingPick={draft.isAddingPick}
             isAddingBan={draft.isAddingBan}
+            fearlessLockedIds={fearlessLockedIds}
           />
         </div>
         <div className="space-y-6">

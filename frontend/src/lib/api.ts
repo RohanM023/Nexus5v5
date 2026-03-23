@@ -8,6 +8,7 @@ import type {
   DraftPickRequest,
   DraftScores,
   DraftSession,
+  DuoOverlapResponse,
   GoldDiffTimeline,
   HealthStatus,
   LinkAccountRequest,
@@ -287,6 +288,14 @@ class ApiClient {
     endDate?: string
   ): Promise<PaginatedResponse<MatchSummary>> {
     return this.getMatchHistory(puuid, cursor, queue, champion, startDate, endDate);
+  }
+
+  // ---- Duo Overlap ----
+
+  async getDuoOverlap(puuid1: string, puuid2: string): Promise<DuoOverlapResponse> {
+    return this.request<DuoOverlapResponse>(
+      `/api/analytics/duo-overlap/${encodeURIComponent(puuid1)}/${encodeURIComponent(puuid2)}`
+    );
   }
 
   // ---- Draft ----

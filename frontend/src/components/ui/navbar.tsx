@@ -59,6 +59,12 @@ export function Navbar() {
           >
             Draft
           </Link>
+          <Link
+            href="/duo-compare"
+            className="px-3 py-1 text-xs tracking-wide text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
+          >
+            Duo
+          </Link>
         </div>
 
         <form onSubmit={handleSearch} className="flex flex-1 items-center justify-center">
