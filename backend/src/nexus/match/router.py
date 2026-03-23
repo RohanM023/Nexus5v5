@@ -163,7 +163,7 @@ async def get_match_detail(match_id: str) -> dict[str, Any]:
         "SELECT match_id, game_duration, game_start, queue_id, puuid,"
         " champion_id, champion_name, team_id, role, kills, deaths, assists,"
         " cs, gold_earned, damage_dealt, vision_score, win"
-        " FROM matches WHERE match_id = %(match_id)s"
+        " FROM matches FINAL WHERE match_id = %(match_id)s"
     )
     params: dict[str, Any] = {"match_id": match_id}
 
@@ -265,7 +265,7 @@ async def get_match_history(
 
     where = " AND ".join(conditions)
     sql = (  # noqa: S608
-        f"SELECT * FROM matches WHERE {where} ORDER BY game_start DESC LIMIT %(limit)s"
+        f"SELECT * FROM matches FINAL WHERE {where} ORDER BY game_start DESC LIMIT %(limit)s"
     )
 
     loop = asyncio.get_running_loop()

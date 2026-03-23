@@ -56,7 +56,7 @@ async def _fetch_recent_games(
     """Fetch the most recent N games for a champion across PUUIDs."""
     sql = """
         SELECT win, kills, deaths, assists
-        FROM matches
+        FROM matches FINAL
         WHERE puuid IN %(puuids)s AND champion_id = %(champion_id)s
         ORDER BY game_start DESC
         LIMIT %(limit)s
@@ -103,7 +103,7 @@ async def get_champion_pool(
         f"avg(cs / (greatest(game_duration, 1) / 60.0)) AS avg_cs_per_min, "
         f"avg(vision_score) AS avg_vision_score, "
         f"max(game_start) AS last_played "
-        f"FROM matches WHERE {where} "
+        f"FROM matches FINAL WHERE {where} "
         f"GROUP BY champion_id, champion_name "
         f"ORDER BY games_played DESC"
     )
@@ -262,7 +262,7 @@ async def get_champion_pool_by_puuid(
         f"avg(cs / (greatest(game_duration, 1) / 60.0)) AS avg_cs_per_min, "
         f"avg(vision_score) AS avg_vision_score, "
         f"max(game_start) AS last_played "
-        f"FROM matches WHERE {where} "
+        f"FROM matches FINAL WHERE {where} "
         f"GROUP BY champion_id, champion_name "
         f"ORDER BY games_played DESC"
     )
@@ -394,7 +394,7 @@ async def get_performance(
         "avg(assists) AS avg_assists, "
         "avg(cs / (greatest(game_duration, 1) / 60.0)) AS avg_cs_per_min, "
         "avg(vision_score) AS avg_vision_score "
-        "FROM matches WHERE puuid IN %(puuids)s"
+        "FROM matches FINAL WHERE puuid IN %(puuids)s"
     )
     stats_rows = await _async_ch_query(stats_sql, params)
 
@@ -423,7 +423,7 @@ async def get_performance(
 
     # Role distribution
     role_sql = (
-        "SELECT role, count() AS games FROM matches "
+        "SELECT role, count() AS games FROM matches FINAL "
         "WHERE puuid IN %(puuids)s GROUP BY role ORDER BY games DESC"
     )
     role_rows = await _async_ch_query(role_sql, params)
@@ -441,7 +441,7 @@ async def get_performance(
     top_sql = (
         "SELECT champion_id, champion_name, "
         "count() AS games_played, sum(win) / count() AS win_rate "
-        "FROM matches WHERE puuid IN %(puuids)s "
+        "FROM matches FINAL WHERE puuid IN %(puuids)s "
         "GROUP BY champion_id, champion_name "
         "ORDER BY games_played DESC LIMIT 5"
     )
@@ -484,7 +484,7 @@ async def get_performance_by_puuid(puuid: str) -> dict[str, Any]:
         "avg(assists) AS avg_assists, "
         "avg(cs / (greatest(game_duration, 1) / 60.0)) AS avg_cs_per_min, "
         "avg(vision_score) AS avg_vision_score "
-        "FROM matches WHERE puuid IN %(puuids)s"
+        "FROM matches FINAL WHERE puuid IN %(puuids)s"
     )
     stats_rows = await _async_ch_query(stats_sql, params)
 
@@ -512,7 +512,7 @@ async def get_performance_by_puuid(puuid: str) -> dict[str, Any]:
     avg_kda = (float(s["avg_kills"]) + float(s["avg_assists"])) / avg_deaths
 
     role_sql = (
-        "SELECT role, count() AS games FROM matches "
+        "SELECT role, count() AS games FROM matches FINAL "
         "WHERE puuid IN %(puuids)s GROUP BY role ORDER BY games DESC"
     )
     role_rows = await _async_ch_query(role_sql, params)
@@ -529,7 +529,7 @@ async def get_performance_by_puuid(puuid: str) -> dict[str, Any]:
     top_sql = (
         "SELECT champion_id, champion_name, "
         "count() AS games_played, sum(win) / count() AS win_rate "
-        "FROM matches WHERE puuid IN %(puuids)s "
+        "FROM matches FINAL WHERE puuid IN %(puuids)s "
         "GROUP BY champion_id, champion_name "
         "ORDER BY games_played DESC LIMIT 5"
     )
@@ -566,7 +566,7 @@ async def get_gold_diff(match_id: str) -> dict[str, Any]:
     """Get gold diff timeline for all participants in a match."""
     rows = await _async_ch_query(
         "SELECT puuid, champion_name, team_id, gold_diff_timeline "
-        "FROM matches WHERE match_id = %(match_id)s",
+        "FROM matches FINAL WHERE match_id = %(match_id)s",
         {"match_id": match_id},
     )
 

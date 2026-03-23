@@ -92,7 +92,7 @@ async def _get_existing_match_ids(puuid: str, match_ids: list[str]) -> set[str]:
 
     in_clause = ", ".join(placeholders)
     sql = (  # noqa: S608
-        f"SELECT DISTINCT match_id FROM matches "
+        f"SELECT DISTINCT match_id FROM matches FINAL "
         f"WHERE puuid = %(puuid)s AND match_id IN ({in_clause})"
     )
 

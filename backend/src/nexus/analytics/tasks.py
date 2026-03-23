@@ -87,7 +87,7 @@ async def _refresh_user_scores(user_id: UUID, puuids: list[str]) -> int:
         "avg(cs / (greatest(game_duration, 1) / 60.0)) AS avg_cs_per_min, "
         "avg(vision_score) AS avg_vision_score, "
         "max(game_start) AS last_played "
-        "FROM matches WHERE puuid IN %(puuids)s "
+        "FROM matches FINAL WHERE puuid IN %(puuids)s "
         "GROUP BY champion_id, champion_name "
         "ORDER BY games_played DESC"
     )
@@ -150,7 +150,7 @@ async def _refresh_user_scores(user_id: UUID, puuids: list[str]) -> int:
         champion_id = int(row["champion_id"])
         recent_sql = (
             "SELECT win, kills, deaths, assists "
-            "FROM matches "
+            "FROM matches FINAL "
             "WHERE puuid IN %(puuids)s AND champion_id = %(champion_id)s "
             "ORDER BY game_start DESC "
             "LIMIT 20"

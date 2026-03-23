@@ -48,7 +48,7 @@ def _resolve_latest_patch() -> str:
                 position(game_version, '.', position(game_version, '.') + 1) - 1
             ) AS patch,
             count() AS cnt
-        FROM matches
+        FROM matches FINAL
         WHERE game_start > now() - INTERVAL 30 DAY
         GROUP BY patch
         ORDER BY cnt DESC
@@ -76,21 +76,21 @@ def _rebuild_synergy(patch: str, queue_id: int, min_games: int) -> int:
             (countIf(m1.win = 1) / count()) -
             (
                 (SELECT countIf(win = 1) / count()
-                 FROM matches
+                 FROM matches FINAL
                  WHERE champion_id = m1.champion_id
                    AND game_version LIKE concat(%(patch)s, '%')
                    AND queue_id = %(queue_id)s)
                 +
                 (SELECT countIf(win = 1) / count()
-                 FROM matches
+                 FROM matches FINAL
                  WHERE champion_id = m2.champion_id
                    AND game_version LIKE concat(%(patch)s, '%')
                    AND queue_id = %(queue_id)s)
             ) / 2
         ) * least(1.0, count() / 100.0) * 100.0    AS synergy_score,
         now64(3)                                     AS updated_at
-    FROM matches AS m1
-    INNER JOIN matches AS m2
+    FROM matches FINAL AS m1
+    INNER JOIN matches FINAL AS m2
         ON  m1.match_id = m2.match_id
         AND m1.team_id  = m2.team_id
         AND m1.champion_id < m2.champion_id
@@ -126,8 +126,8 @@ def _rebuild_counter(patch: str, queue_id: int, min_games: int) -> int:
         (countIf(m1.win = 1) / count() - 0.5)
             * least(1.0, count() / 50.0) * 100.0          AS counter_score,
         now64(3)                                           AS updated_at
-    FROM matches AS m1
-    INNER JOIN matches AS m2
+    FROM matches FINAL AS m1
+    INNER JOIN matches FINAL AS m2
         ON  m1.match_id = m2.match_id
         AND m1.team_id != m2.team_id
         AND m1.role = m2.role

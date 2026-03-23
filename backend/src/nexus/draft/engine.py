@@ -29,7 +29,7 @@ async def _get_champion_names() -> dict[int, str]:
     try:
         rows = ch.query(
             "SELECT DISTINCT champion_id, champion_name "
-            "FROM matches WHERE champion_name != '' "
+            "FROM matches FINAL WHERE champion_name != '' "
             "ORDER BY champion_id"
         )
         _champion_name_cache = {int(r["champion_id"]): r["champion_name"] for r in rows}
@@ -332,7 +332,7 @@ async def generate_suggestions(
     if not all_champion_ids:
         logger.info("Synergy matrix empty for patch %s, falling back to matches table", patch)
         fallback_rows = ch.query(
-            "SELECT DISTINCT champion_id AS cid FROM matches "
+            "SELECT DISTINCT champion_id AS cid FROM matches FINAL "
             "WHERE game_version LIKE concat(%(patch)s, '%%') "
             "ORDER BY cid",
             {"patch": patch},

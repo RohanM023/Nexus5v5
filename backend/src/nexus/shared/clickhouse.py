@@ -57,6 +57,19 @@ def ensure_tables() -> None:
     """Create required tables if they don't exist (auto-migration)."""
     try:
         client = get_clickhouse_client()
+
+        # Migrate matches from MergeTree → ReplacingMergeTree if needed
+        try:
+            engine = client.command(
+                "SELECT engine FROM system.tables "
+                "WHERE database = currentDatabase() AND name = 'matches'"
+            )
+            if engine and str(engine) == "MergeTree":
+                logger.info("Migrating matches table from MergeTree to ReplacingMergeTree")
+                client.command("DROP TABLE matches")
+        except Exception:
+            pass  # Table doesn't exist yet, will be created below
+
         client.command("""
             CREATE TABLE IF NOT EXISTS matches (
                 match_id       String,
@@ -82,9 +95,9 @@ def ensure_tables() -> None:
                 gold_diff_timeline String,
                 ingested_at    DateTime64(3, 'UTC') DEFAULT now64(3)
             )
-            ENGINE = MergeTree()
+            ENGINE = ReplacingMergeTree(ingested_at)
             PARTITION BY toYYYYMM(game_start)
-            ORDER BY (puuid, game_start, match_id)
+            ORDER BY (match_id, puuid)
             TTL toDateTime(game_start) + INTERVAL 2 YEAR
         """)
 
