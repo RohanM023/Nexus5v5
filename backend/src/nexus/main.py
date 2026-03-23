@@ -44,7 +44,7 @@ def _configure_logging() -> None:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Startup / shutdown lifecycle for database, Redis, ClickHouse, and arq."""
     from nexus.dependencies import close_arq_pool, get_arq_pool
-    from nexus.shared.clickhouse import close_client, get_clickhouse_client
+    from nexus.shared.clickhouse import close_client, ensure_tables, get_clickhouse_client
     from nexus.shared.database import dispose_engine, get_engine
     from nexus.shared.redis import close_redis, get_redis
     from nexus.shared.riot_api import close_riot_client
@@ -61,7 +61,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await get_redis()
     except Exception:
         logger.warning("Redis unavailable — caching and background jobs disabled")
-    get_clickhouse_client()
+    try:
+        get_clickhouse_client()
+        ensure_tables()
+    except Exception:
+        logger.warning("ClickHouse unavailable — match data features disabled")
     try:
         await get_arq_pool()
     except Exception:

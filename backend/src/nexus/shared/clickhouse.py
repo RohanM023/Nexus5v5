@@ -53,6 +53,79 @@ def command(sql: str, parameters: dict[str, Any] | None = None) -> None:
     client.command(sql, parameters=parameters)
 
 
+def ensure_tables() -> None:
+    """Create required tables if they don't exist (auto-migration)."""
+    try:
+        client = get_clickhouse_client()
+        client.command("""
+            CREATE TABLE IF NOT EXISTS matches (
+                match_id       String,
+                platform_id    LowCardinality(String),
+                queue_id       UInt16,
+                game_version   LowCardinality(String),
+                game_duration  UInt32,
+                game_start     DateTime64(3, 'UTC'),
+                puuid          String,
+                champion_id    UInt16,
+                champion_name  LowCardinality(String),
+                team_id        UInt8,
+                role           LowCardinality(String),
+                win            UInt8,
+                kills          UInt16,
+                deaths         UInt16,
+                assists        UInt16,
+                cs             UInt32,
+                gold_earned    UInt32,
+                damage_dealt   UInt32,
+                damage_taken   UInt32,
+                vision_score   UInt16,
+                gold_diff_timeline String,
+                ingested_at    DateTime64(3, 'UTC') DEFAULT now64(3)
+            )
+            ENGINE = MergeTree()
+            PARTITION BY toYYYYMM(game_start)
+            ORDER BY (puuid, game_start, match_id)
+            TTL toDateTime(game_start) + INTERVAL 2 YEAR
+        """)
+
+        client.command("""
+            CREATE TABLE IF NOT EXISTS synergy_matrix (
+                patch          LowCardinality(String),
+                champion_a     UInt16,
+                champion_b     UInt16,
+                queue_id       UInt16,
+                games_played   UInt32,
+                wins           UInt32,
+                avg_gold_diff  Float32,
+                synergy_score  Float32,
+                updated_at     DateTime64(3, 'UTC') DEFAULT now64(3)
+            )
+            ENGINE = ReplacingMergeTree(updated_at)
+            ORDER BY (patch, champion_a, champion_b, queue_id)
+        """)
+
+        client.command("""
+            CREATE TABLE IF NOT EXISTS counter_matrix (
+                patch          LowCardinality(String),
+                champion       UInt16,
+                opponent       UInt16,
+                role           LowCardinality(String),
+                queue_id       UInt16,
+                games_played   UInt32,
+                wins           UInt32,
+                avg_gold_diff  Float32,
+                counter_score  Float32,
+                updated_at     DateTime64(3, 'UTC') DEFAULT now64(3)
+            )
+            ENGINE = ReplacingMergeTree(updated_at)
+            ORDER BY (patch, champion, opponent, role, queue_id)
+        """)
+
+        logger.info("ClickHouse tables verified/created successfully")
+    except Exception:
+        logger.exception("Failed to create ClickHouse tables")
+
+
 def close_client() -> None:
     global _client
     if _client is not None:

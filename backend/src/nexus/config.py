@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     clickhouse_port: int = 8123
     clickhouse_user: str = "default"
     clickhouse_password: str = ""
-    clickhouse_db: str = "nexus"
+    clickhouse_db: str = "default"
     clickhouse_secure: bool = False
     clickhouse_verify_tls: bool = True
 
