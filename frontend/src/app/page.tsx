@@ -101,21 +101,21 @@ export default function Home() {
       {/* ── Left sidebar rail ── */}
       <div
         className={cn(
-          "fixed left-0 top-0 z-30 flex h-full flex-col border-r border-[var(--color-border)]/40 bg-[var(--background)]/90 backdrop-blur-md transition-[width] duration-200",
+          "fixed left-0 top-0 z-30 flex h-full flex-col overflow-hidden border-r border-[var(--color-border)]/40 bg-[var(--background)]/90 backdrop-blur-md transition-all duration-300 ease-in-out",
           sidebarOpen ? "w-40" : "w-11"
         )}
         onMouseEnter={() => setSidebarOpen(true)}
         onMouseLeave={() => setSidebarOpen(false)}
       >
         {/* Toggle chevron */}
-        <div className="flex h-14 items-center justify-center">
+        <div className="flex h-14 shrink-0 items-center justify-center">
           <button
             onClick={() => setSidebarOpen((p) => !p)}
             className="rounded p-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
             title={sidebarOpen ? "Collapse" : "Expand"}
           >
             <svg
-              className={cn("h-3 w-3 transition-transform duration-200", !sidebarOpen && "rotate-180")}
+              className={cn("h-3 w-3 transition-transform duration-300 ease-in-out", !sidebarOpen && "rotate-180")}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -131,38 +131,31 @@ export default function Home() {
             <Link
               key={link.href}
               href={link.href}
-              className={cn(
-                "flex items-center gap-3 rounded px-2 py-2 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]",
-                !sidebarOpen && "justify-center px-0"
-              )}
-              title={!sidebarOpen ? link.label : undefined}
+              className="flex items-center gap-3 rounded px-2 py-2 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]"
+              title={link.label}
             >
-              {link.icon}
-              {sidebarOpen && (
-                <span className="font-mono text-[10px] font-medium tracking-wider whitespace-nowrap">
-                  {link.label}
-                </span>
-              )}
+              <span className="shrink-0">{link.icon}</span>
+              <span className="truncate font-mono text-[10px] font-medium tracking-wider whitespace-nowrap opacity-0 transition-opacity duration-300 ease-in-out"
+                style={{ opacity: sidebarOpen ? 1 : 0 }}
+              >
+                {link.label}
+              </span>
             </Link>
           ))}
         </nav>
 
         {/* Version at bottom */}
-        {sidebarOpen && (
-          <div className="px-4 pb-4">
-            <p className="font-mono text-[9px] tracking-wider text-[var(--color-text-muted)]">v0.1.0</p>
-          </div>
-        )}
+        <div
+          className="shrink-0 overflow-hidden px-4 pb-4 transition-opacity duration-300 ease-in-out"
+          style={{ opacity: sidebarOpen ? 1 : 0 }}
+        >
+          <p className="font-mono text-[9px] tracking-wider text-[var(--color-text-muted)] whitespace-nowrap">v0.1.0</p>
+        </div>
       </div>
 
       {/* ── Top bar ── */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-5">
-        <span
-          className={cn(
-            "font-mono text-[10px] font-bold tracking-[0.25em] uppercase text-[var(--color-accent-text)]/60 transition-[margin] duration-200",
-            sidebarOpen ? "ml-40" : "ml-11"
-          )}
-        >
+      <div className="absolute top-0 left-11 right-0 z-20 flex items-center justify-between px-6 py-5">
+        <span className="font-mono text-[10px] font-bold tracking-[0.25em] uppercase text-[var(--color-accent-text)]/60">
           Nexus 5v5
         </span>
         <div className="flex items-center gap-5">
@@ -189,7 +182,7 @@ export default function Home() {
       </div>
 
       {/* ── Search-centric hero ── */}
-      <main className="flex flex-1 flex-col items-center justify-center px-4">
+      <main className="flex flex-1 flex-col items-center justify-center pl-11 pr-4">
         <div className="w-full max-w-[520px] animate-fade-in">
           <h1 className="mb-12 text-center">
             <span className="block font-mono text-3xl font-bold tracking-[0.2em] uppercase text-[var(--color-text-primary)] sm:text-4xl">
@@ -267,7 +260,9 @@ export default function Home() {
         </div>
       </main>
 
-      <LegalFooter />
+      <div className="pl-11">
+        <LegalFooter />
+      </div>
     </div>
   );
 }
