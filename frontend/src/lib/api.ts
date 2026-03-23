@@ -180,8 +180,8 @@ class ApiClient {
   async triggerIngestion(
     puuid: string,
     options?: { region?: string; count?: number }
-  ): Promise<{ job_id: string; error?: string }> {
-    return this.request<{ job_id: string; error?: string }>(
+  ): Promise<{ job_id: string; status?: string; error?: string }> {
+    return this.request<{ job_id: string; status?: string; error?: string }>(
       `/api/match/ingest/${puuid}`,
       {
         method: "POST",

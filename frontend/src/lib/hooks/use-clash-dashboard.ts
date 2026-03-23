@@ -39,13 +39,17 @@ export function useClashDashboard() {
     queryFn: async () => {
       const results = await Promise.all(
         yourPuuids.map((puuid) =>
-          api.getSummonerChampionPool(puuid).catch(() => null)
+          api.getSummonerChampionPool(puuid).catch(() => ({
+            user_id: puuid,
+            champions: [],
+            total_champions: 0,
+          }))
         )
       );
       return results;
     },
     enabled: yourPuuids.length > 0,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000, // 30s — short so post-ingestion refetch picks up new data
   });
 
   const opponentPoolQueries = useQuery({
@@ -53,13 +57,17 @@ export function useClashDashboard() {
     queryFn: async () => {
       const results = await Promise.all(
         opponentPuuids.map((puuid) =>
-          api.getSummonerChampionPool(puuid).catch(() => null)
+          api.getSummonerChampionPool(puuid).catch(() => ({
+            user_id: puuid,
+            champions: [],
+            total_champions: 0,
+          }))
         )
       );
       return results;
     },
     enabled: opponentPuuids.length > 0,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
   });
 
   // --- Build per-player pool arrays aligned to 5 slots ---

@@ -76,7 +76,7 @@ export function ClashView() {
           await new Promise((r) => setTimeout(r, 2000));
           try {
             const status = await api.getIngestionStatus(jobId);
-            if (status.status === "completed" || status.status === "complete") {
+            if (status.status === "completed" || status.status === "complete" || status.status === "not_found") {
               break;
             }
             if (status.status === "failed") break;
@@ -91,7 +91,8 @@ export function ClashView() {
           return next;
         });
         // Invalidate pool caches so mastery data refetches
-        queryClient.invalidateQueries({ queryKey: [`clash-${side}-pools`] });
+        await queryClient.invalidateQueries({ queryKey: ["clash-your-pools"] });
+        await queryClient.invalidateQueries({ queryKey: ["clash-opponent-pools"] });
       };
 
       poll();
@@ -128,8 +129,18 @@ export function ClashView() {
       const side = addingRole.side;
       api
         .triggerIngestion(summoner.puuid, { region: regionInput })
-        .then((res) => pollIngestion(res.job_id, summoner.puuid, side))
-        .catch(() => {});
+        .then((res) => {
+          // Inline ingestion returns status:"complete" immediately — refresh pools now
+          if (res.status === "complete" || res.error) {
+            queryClient.invalidateQueries({ queryKey: [`clash-${side}-pools`] });
+          }
+          if (res.job_id && !res.error) {
+            pollIngestion(res.job_id, summoner.puuid, side);
+          }
+        })
+        .catch(() => {
+          queryClient.invalidateQueries({ queryKey: [`clash-${side}-pools`] });
+        });
 
       setNameInput("");
       setAddingRole(null);
