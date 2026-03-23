@@ -115,3 +115,57 @@ class DuoOverlapResponse(BaseModel):
     player1_exclusive: list[ChampionPoolEntry]
     player2_exclusive: list[ChampionPoolEntry]
     overlap_percentage: float
+
+
+# --- Champion Trends ---
+
+
+class ChampionGameResult(BaseModel):
+    win: bool
+    game_start: str
+
+
+class ChampionTrend(BaseModel):
+    champion_id: int
+    champion_name: str
+    recent_games: list[ChampionGameResult]
+
+
+class ChampionTrendsResponse(BaseModel):
+    puuid: str
+    trends: list[ChampionTrend]
+
+
+# --- Head-to-Head ---
+
+
+class HeadToHeadPlayer(BaseModel):
+    puuid: str
+    champion_id: int
+    champion_name: str
+    role: str
+    win: bool
+    kills: int
+    deaths: int
+    assists: int
+
+
+class HeadToHeadMatch(BaseModel):
+    match_id: str
+    game_start: str
+    game_duration: int
+    queue_id: int
+    player1: HeadToHeadPlayer
+    player2: HeadToHeadPlayer
+    same_team: bool
+
+
+class HeadToHeadResponse(BaseModel):
+    puuid1: str
+    puuid2: str
+    total_games: int
+    same_team_games: int
+    opposite_team_games: int
+    p1_wins_vs: int
+    p2_wins_vs: int
+    matches: list[HeadToHeadMatch]

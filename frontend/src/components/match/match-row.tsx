@@ -1,7 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { cn, formatKDA, formatKDARatio, formatCsPerMin, formatDuration, formatTimeAgo, getChampionIconUrl } from "@/lib/utils";
+import { getMatchNote, setMatchNote } from "@/lib/match-notes";
 import { MatchDetail } from "@/components/match/match-detail";
 import type { MatchSummary } from "@/types";
 
@@ -13,6 +15,13 @@ interface MatchRowProps {
 
 export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
   const isWin = match.win;
+  const [isEditing, setIsEditing] = useState(false);
+  const [noteText, setNoteText] = useState("");
+
+  useEffect(() => {
+    const note = getMatchNote(match.match_id);
+    if (note) setNoteText(note);
+  }, [match.match_id]);
 
   return (
     <div>
@@ -22,7 +31,7 @@ export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
         onClick={onToggle}
         onKeyDown={onToggle ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } } : undefined}
         className={cn(
-          "flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-[var(--color-surface-hover)]",
+          "group flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-[var(--color-surface-hover)]",
           onToggle && "cursor-pointer select-none",
           isWin
             ? "border-l-2 border-l-[var(--color-success)]/60"
@@ -101,6 +110,18 @@ export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
               {formatTimeAgo(match.game_start)}
             </p>
           </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); setIsEditing(!isEditing); }}
+            className={cn(
+              "shrink-0 transition-colors",
+              noteText ? "text-[var(--color-accent-text)]" : "text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100"
+            )}
+            title={noteText ? "Edit note" : "Add note"}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+            </svg>
+          </button>
           {onToggle && (
             <span className={cn("text-[10px] text-[var(--color-text-muted)] transition-transform", expanded && "rotate-180")}>
               ▼
@@ -108,6 +129,39 @@ export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
           )}
         </div>
       </div>
+
+      {isEditing && (
+        <div
+          className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <input
+            type="text"
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value.slice(0, 200))}
+            onBlur={() => { setMatchNote(match.match_id, noteText); setIsEditing(false); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { setMatchNote(match.match_id, noteText); setIsEditing(false); }
+              if (e.key === "Escape") { setNoteText(getMatchNote(match.match_id) ?? ""); setIsEditing(false); }
+            }}
+            placeholder="Add a note..."
+            className="w-full bg-transparent font-mono text-[10px] text-[var(--color-text-secondary)] placeholder:text-[var(--color-text-muted)] focus:outline-none"
+            maxLength={200}
+            autoFocus
+          />
+        </div>
+      )}
+
+      {!isEditing && noteText && (
+        <div
+          className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1"
+          onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+        >
+          <p className="font-mono text-[10px] text-[var(--color-text-muted)] cursor-pointer hover:text-[var(--color-text-secondary)]">
+            {noteText}
+          </p>
+        </div>
+      )}
 
       {expanded && (
         <MatchDetail matchId={match.match_id} />

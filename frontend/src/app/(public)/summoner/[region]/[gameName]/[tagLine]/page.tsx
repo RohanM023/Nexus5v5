@@ -14,6 +14,7 @@ import { MatchRow, MatchListHeader } from "@/components/match/match-row";
 import { cn, getProfileIconUrl } from "@/lib/utils";
 import { addRecentSearch } from "@/lib/recent-searches";
 import type { MatchSummary } from "@/types";
+import { StreakIndicator } from "@/components/profile/streak-indicator";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -65,6 +66,12 @@ export default function SummonerPage() {
   const matchesQuery = useQuery({
     queryKey: ["summoner-matches", summonerQuery.data?.puuid, queue],
     queryFn: () => api.getSummonerMatches(summonerQuery.data!.puuid, undefined, queue),
+    enabled: !!summonerQuery.data?.puuid,
+  });
+
+  const trendsQuery = useQuery({
+    queryKey: ["summoner-trends", summonerQuery.data?.puuid],
+    queryFn: () => api.getChampionTrends(summonerQuery.data!.puuid),
     enabled: !!summonerQuery.data?.puuid,
   });
 
@@ -192,6 +199,12 @@ export default function SummonerPage() {
   const performance = performanceQuery.data;
   const championPool = championPoolQuery.data;
   const matches = matchesQuery.data?.data ?? [];
+  const trendsMap = new Map(
+    (trendsQuery.data?.trends ?? []).map((t) => [
+      t.champion_id,
+      t.recent_games.map((g) => g.win),
+    ])
+  );
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
@@ -214,6 +227,11 @@ export default function SummonerPage() {
             <span>{region.toUpperCase()}</span>
             <span>&middot;</span>
             <span>Lvl {summoner.summoner_level}</span>
+            {performance?.role_distribution?.[0] && (
+              <span className="rounded bg-[var(--color-accent)]/10 px-1.5 py-0.5 font-mono text-[9px] tracking-wider text-[var(--color-accent-text)]">
+                {performance.role_distribution[0].role}
+              </span>
+            )}
           </div>
         </div>
         <button
@@ -258,12 +276,30 @@ export default function SummonerPage() {
       <div className="mt-5">
         {performanceQuery.isLoading ? (
           <PageLoader message="Loading stats..." />
+        ) : performanceQuery.error ? (
+          <Card>
+            <CardContent className="py-6 text-center text-xs text-[var(--color-text-muted)]">
+              Failed to load performance stats.{" "}
+              <button
+                onClick={() => performanceQuery.refetch()}
+                className="text-[var(--color-accent-text)] hover:underline"
+              >
+                Retry
+              </button>
+            </CardContent>
+          </Card>
         ) : performance && performance.total_games > 0 ? (
           <StatsOverview stats={performance} />
         ) : !isIngesting ? (
           <Card>
             <CardContent className="py-6 text-center text-xs text-[var(--color-text-muted)]">
-              No performance data available yet.
+              No performance data available yet.{" "}
+              <button
+                onClick={() => performanceQuery.refetch()}
+                className="text-[var(--color-accent-text)] hover:underline"
+              >
+                Retry
+              </button>
             </CardContent>
           </Card>
         ) : null}
@@ -286,7 +322,7 @@ export default function SummonerPage() {
           {championPoolQuery.isLoading ? (
             <PageLoader message="Loading champions..." />
           ) : championPool && championPool.champions.length > 0 ? (
-            <ChampionPoolGrid champions={championPool.champions} variant="compact" />
+            <ChampionPoolGrid champions={championPool.champions} variant="compact" trendsMap={trendsMap} />
           ) : !isIngesting ? (
             <Card>
               <CardContent className="py-6 text-center text-xs text-[var(--color-text-muted)]">
@@ -299,9 +335,12 @@ export default function SummonerPage() {
         {/* Right main: Match History */}
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-mono text-[9px] tracking-[0.3em] uppercase text-[var(--color-text-secondary)]">
-              Match History
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="font-mono text-[9px] tracking-[0.3em] uppercase text-[var(--color-text-secondary)]">
+                Match History
+              </h2>
+              {matches.length > 0 && <StreakIndicator matches={matches} />}
+            </div>
             <div className="flex gap-1">
               {QUEUE_OPTIONS.map((opt) => (
                 <button

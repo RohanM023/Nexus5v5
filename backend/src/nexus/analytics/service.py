@@ -440,7 +440,8 @@ async def get_performance(
     # Top champions
     top_sql = (
         "SELECT champion_id, champion_name, "
-        "count() AS games_played, sum(win) / count() AS win_rate "
+        "count() AS games_played, "
+        "sum(win) * 1.0 / count() AS win_rate "
         "FROM matches FINAL WHERE puuid IN %(puuids)s "
         "GROUP BY champion_id, champion_name "
         "ORDER BY games_played DESC LIMIT 5"
@@ -476,34 +477,40 @@ async def get_performance(
 
 async def get_performance_by_puuid(puuid: str) -> dict[str, Any]:
     """Aggregate performance stats for a single PUUID (public lookup use-case)."""
+    empty_response: dict[str, Any] = {
+        "user_id": puuid,
+        "total_games": 0,
+        "total_wins": 0,
+        "total_losses": 0,
+        "overall_win_rate": 0.0,
+        "avg_kills": 0.0,
+        "avg_deaths": 0.0,
+        "avg_assists": 0.0,
+        "avg_kda": 0.0,
+        "avg_cs_per_min": 0.0,
+        "avg_vision_score": 0.0,
+        "role_distribution": [],
+        "top_champions": [],
+    }
+
     params: dict[str, Any] = {"puuids": [puuid]}
 
-    stats_sql = (
-        "SELECT count() AS total_games, sum(win) AS total_wins, "
-        "avg(kills) AS avg_kills, avg(deaths) AS avg_deaths, "
-        "avg(assists) AS avg_assists, "
-        "avg(cs / (greatest(game_duration, 1) / 60.0)) AS avg_cs_per_min, "
-        "avg(vision_score) AS avg_vision_score "
-        "FROM matches FINAL WHERE puuid IN %(puuids)s"
-    )
-    stats_rows = await _async_ch_query(stats_sql, params)
+    try:
+        stats_sql = (
+            "SELECT count() AS total_games, sum(win) AS total_wins, "
+            "avg(kills) AS avg_kills, avg(deaths) AS avg_deaths, "
+            "avg(assists) AS avg_assists, "
+            "avg(cs / (greatest(game_duration, 1) / 60.0)) AS avg_cs_per_min, "
+            "avg(vision_score) AS avg_vision_score "
+            "FROM matches FINAL WHERE puuid IN %(puuids)s"
+        )
+        stats_rows = await _async_ch_query(stats_sql, params)
+    except Exception:
+        logger.exception("get_performance_by_puuid: stats query failed for %s", puuid)
+        return empty_response
 
-    if not stats_rows or stats_rows[0]["total_games"] == 0:
-        return {
-            "user_id": puuid,
-            "total_games": 0,
-            "total_wins": 0,
-            "total_losses": 0,
-            "overall_win_rate": 0.0,
-            "avg_kills": 0.0,
-            "avg_deaths": 0.0,
-            "avg_assists": 0.0,
-            "avg_kda": 0.0,
-            "avg_cs_per_min": 0.0,
-            "avg_vision_score": 0.0,
-            "role_distribution": [],
-            "top_champions": [],
-        }
+    if not stats_rows or int(stats_rows[0]["total_games"]) == 0:
+        return empty_response
 
     s = stats_rows[0]
     total_games = int(s["total_games"])
@@ -511,11 +518,15 @@ async def get_performance_by_puuid(puuid: str) -> dict[str, Any]:
     avg_deaths = max(1.0, float(s["avg_deaths"]))
     avg_kda = (float(s["avg_kills"]) + float(s["avg_assists"])) / avg_deaths
 
-    role_sql = (
-        "SELECT role, count() AS games FROM matches FINAL "
-        "WHERE puuid IN %(puuids)s GROUP BY role ORDER BY games DESC"
-    )
-    role_rows = await _async_ch_query(role_sql, params)
+    try:
+        role_sql = (
+            "SELECT role, count() AS games FROM matches FINAL "
+            "WHERE puuid IN %(puuids)s GROUP BY role ORDER BY games DESC"
+        )
+        role_rows = await _async_ch_query(role_sql, params)
+    except Exception:
+        logger.exception("get_performance_by_puuid: role query failed for %s", puuid)
+        role_rows = []
 
     role_dist = [
         {
@@ -526,14 +537,19 @@ async def get_performance_by_puuid(puuid: str) -> dict[str, Any]:
         for r in role_rows
     ]
 
-    top_sql = (
-        "SELECT champion_id, champion_name, "
-        "count() AS games_played, sum(win) / count() AS win_rate "
-        "FROM matches FINAL WHERE puuid IN %(puuids)s "
-        "GROUP BY champion_id, champion_name "
-        "ORDER BY games_played DESC LIMIT 5"
-    )
-    top_rows = await _async_ch_query(top_sql, params)
+    try:
+        top_sql = (
+            "SELECT champion_id, champion_name, "
+            "count() AS games_played, "
+            "sum(win) * 1.0 / count() AS win_rate "
+            "FROM matches FINAL WHERE puuid IN %(puuids)s "
+            "GROUP BY champion_id, champion_name "
+            "ORDER BY games_played DESC LIMIT 5"
+        )
+        top_rows = await _async_ch_query(top_sql, params)
+    except Exception:
+        logger.exception("get_performance_by_puuid: top champs query failed for %s", puuid)
+        top_rows = []
 
     top_champs = [
         {
@@ -661,4 +677,153 @@ async def get_duo_overlap(puuid1: str, puuid2: str) -> dict[str, Any]:
         "player1_exclusive": p1_exclusive,
         "player2_exclusive": p2_exclusive,
         "overlap_percentage": overlap_pct,
+    }
+
+
+async def get_champion_recent_games(
+    puuid: str, *, limit_per_champ: int = 10
+) -> dict[str, Any]:
+    """Get recent win/loss results per champion for sparkline display."""
+    sql = """
+        SELECT champion_id, champion_name, win, game_start
+        FROM (
+            SELECT champion_id, champion_name, win, game_start,
+                   row_number() OVER (
+                       PARTITION BY champion_id ORDER BY game_start DESC
+                   ) AS rn
+            FROM matches FINAL
+            WHERE puuid = %(puuid)s
+        )
+        WHERE rn <= %(limit)s
+        ORDER BY champion_id, game_start ASC
+    """
+    rows = await _async_ch_query(sql, {"puuid": puuid, "limit": limit_per_champ})
+
+    trends: dict[int, dict[str, Any]] = {}
+    for row in rows:
+        cid = int(row["champion_id"])
+        if cid not in trends:
+            trends[cid] = {
+                "champion_id": cid,
+                "champion_name": str(row["champion_name"]),
+                "recent_games": [],
+            }
+        game_start = row["game_start"]
+        if hasattr(game_start, "isoformat"):
+            game_start = game_start.isoformat()
+        trends[cid]["recent_games"].append(
+            {"win": bool(row["win"]), "game_start": str(game_start)}
+        )
+
+    return {"puuid": puuid, "trends": list(trends.values())}
+
+
+async def get_head_to_head(
+    puuid1: str, puuid2: str, *, limit: int = 20
+) -> dict[str, Any]:
+    """Find shared matches between two players and compute head-to-head stats."""
+    # Step 1: Find match IDs where both players participated
+    shared_sql = """
+        SELECT match_id
+        FROM matches FINAL
+        WHERE puuid IN %(puuids)s
+        GROUP BY match_id
+        HAVING count(DISTINCT puuid) = 2
+        ORDER BY max(game_start) DESC
+        LIMIT %(limit)s
+    """
+    shared_rows = await _async_ch_query(
+        shared_sql, {"puuids": [puuid1, puuid2], "limit": limit}
+    )
+
+    if not shared_rows:
+        return {
+            "puuid1": puuid1,
+            "puuid2": puuid2,
+            "total_games": 0,
+            "same_team_games": 0,
+            "opposite_team_games": 0,
+            "p1_wins_vs": 0,
+            "p2_wins_vs": 0,
+            "matches": [],
+        }
+
+    match_ids = [str(r["match_id"]) for r in shared_rows]
+
+    # Step 2: Fetch participant details for those matches
+    detail_sql = """
+        SELECT match_id, puuid, champion_id, champion_name, role,
+               team_id, win, kills, deaths, assists,
+               game_start, game_duration, queue_id
+        FROM matches FINAL
+        WHERE match_id IN %(match_ids)s AND puuid IN %(puuids)s
+        ORDER BY game_start DESC
+    """
+    detail_rows = await _async_ch_query(
+        detail_sql, {"match_ids": match_ids, "puuids": [puuid1, puuid2]}
+    )
+
+    # Group by match_id
+    by_match: dict[str, list[dict[str, Any]]] = {}
+    for row in detail_rows:
+        mid = str(row["match_id"])
+        by_match.setdefault(mid, []).append(row)
+
+    matches = []
+    same_team_count = 0
+    opposite_team_count = 0
+    p1_wins_vs = 0
+    p2_wins_vs = 0
+
+    for mid, participants in by_match.items():
+        p1_data = next((p for p in participants if str(p["puuid"]) == puuid1), None)
+        p2_data = next((p for p in participants if str(p["puuid"]) == puuid2), None)
+        if not p1_data or not p2_data:
+            continue
+
+        same_team = int(p1_data["team_id"]) == int(p2_data["team_id"])
+        if same_team:
+            same_team_count += 1
+        else:
+            opposite_team_count += 1
+            if bool(p1_data["win"]):
+                p1_wins_vs += 1
+            else:
+                p2_wins_vs += 1
+
+        game_start = p1_data["game_start"]
+        if hasattr(game_start, "isoformat"):
+            game_start = game_start.isoformat()
+
+        def _player(data: dict[str, Any]) -> dict[str, Any]:
+            return {
+                "puuid": str(data["puuid"]),
+                "champion_id": int(data["champion_id"]),
+                "champion_name": str(data["champion_name"]),
+                "role": str(data["role"]),
+                "win": bool(data["win"]),
+                "kills": int(data["kills"]),
+                "deaths": int(data["deaths"]),
+                "assists": int(data["assists"]),
+            }
+
+        matches.append({
+            "match_id": mid,
+            "game_start": str(game_start),
+            "game_duration": int(p1_data["game_duration"]),
+            "queue_id": int(p1_data["queue_id"]),
+            "player1": _player(p1_data),
+            "player2": _player(p2_data),
+            "same_team": same_team,
+        })
+
+    return {
+        "puuid1": puuid1,
+        "puuid2": puuid2,
+        "total_games": len(matches),
+        "same_team_games": same_team_count,
+        "opposite_team_games": opposite_team_count,
+        "p1_wins_vs": p1_wins_vs,
+        "p2_wins_vs": p2_wins_vs,
+        "matches": matches,
     }

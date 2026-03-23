@@ -4,6 +4,9 @@ import { useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import { useQueryClient } from "@tanstack/react-query";
 import { useClashDashboard } from "@/lib/hooks/use-clash-dashboard";
+import { useClashStore } from "@/lib/stores/clash-store";
+import { useTeamPresetsStore } from "@/lib/stores/team-presets-store";
+import type { TeamPresetPlayer } from "@/lib/stores/team-presets-store";
 import { api, ApiError } from "@/lib/api";
 import { getChampionIconUrl } from "@/lib/utils";
 import { TeamPanel } from "./team-panel";
@@ -12,7 +15,7 @@ import { RecommendationRow } from "./recommendation-row";
 import { BanPriority } from "./ban-priority";
 import { TeamRadarChart } from "@/components/charts/team-radar-chart";
 import { ChampionSelect } from "@/components/draft/champion-select";
-import type { TeamRole } from "@/types";
+import type { TeamPlayer, TeamRole } from "@/types";
 
 const ROLES: TeamRole[] = ["TOP", "JUNGLE", "MID", "BOT", "SUPPORT"];
 
@@ -51,6 +54,10 @@ export function ClashView() {
     yourPoolsLoading,
     opponentPoolsLoading,
   } = useClashDashboard();
+
+  const { presets, savePreset, deletePreset } = useTeamPresetsStore();
+  const [presetName, setPresetName] = useState("");
+  const [showPresets, setShowPresets] = useState(false);
 
   const queryClient = useQueryClient();
   const activePolls = useRef<Set<string>>(new Set());
@@ -154,6 +161,11 @@ export function ClashView() {
     } finally {
       setLookupLoading(false);
     }
+  };
+
+  const toPresetPlayer = (p: TeamPlayer | null): TeamPresetPlayer | null => {
+    if (!p) return null;
+    return { puuid: p.puuid, game_name: p.game_name, tag_line: p.tag_line, role: p.role };
   };
 
   const unavailableChampionIds = [
@@ -440,6 +452,93 @@ export function ClashView() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Team Presets */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold tracking-wide text-[var(--color-text-primary)]">
+            Team Presets
+          </h3>
+          <button
+            onClick={() => setShowPresets(!showPresets)}
+            className="font-mono text-[10px] tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+          >
+            {showPresets ? "Hide" : `Show (${presets.length})`}
+          </button>
+        </div>
+
+        {/* Save */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Preset name..."
+            value={presetName}
+            onChange={(e) => setPresetName(e.target.value)}
+            className="flex-1 border-b border-[var(--color-border)] bg-transparent py-1 font-mono text-[10px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none"
+          />
+          <button
+            onClick={() => {
+              if (!presetName.trim()) return;
+              savePreset(presetName.trim(), yourTeam.map(toPresetPlayer));
+              setPresetName("");
+            }}
+            disabled={!presetName.trim() || yourTeam.every((p) => !p)}
+            className="font-mono text-[10px] tracking-wider text-[var(--color-accent-text)] transition-colors hover:text-[var(--color-accent-hover)] disabled:opacity-40"
+          >
+            Save
+          </button>
+        </div>
+
+        {/* Preset list */}
+        {showPresets && presets.length > 0 && (
+          <div className="space-y-1">
+            {presets.map((preset) => {
+              const playerCount = preset.players.filter(Boolean).length;
+              return (
+                <div
+                  key={preset.name}
+                  className="flex items-center gap-2 rounded px-2 py-1.5 transition-colors hover:bg-[var(--color-surface-hover)]"
+                >
+                  <span className="flex-1 truncate font-mono text-xs text-[var(--color-text-primary)]">
+                    {preset.name}
+                  </span>
+                  <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
+                    {playerCount}/5
+                  </span>
+                  <button
+                    onClick={() => {
+                      const { resetTeams, addPlayer } = useClashStore.getState();
+                      resetTeams();
+                      const roles: TeamRole[] = ["TOP", "JUNGLE", "MID", "BOT", "SUPPORT"];
+                      preset.players.forEach((p, i) => {
+                        if (p) {
+                          addPlayer("your", roles[i], {
+                            puuid: p.puuid,
+                            game_name: p.game_name,
+                            tag_line: p.tag_line,
+                            role: roles[i],
+                            alt_accounts: [],
+                            top_champions: [],
+                          });
+                        }
+                      });
+                    }}
+                    className="font-mono text-[10px] tracking-wider text-[var(--color-accent-text)] hover:text-[var(--color-accent-hover)]"
+                  >
+                    Load
+                  </button>
+                  <button
+                    onClick={() => deletePreset(preset.name)}
+                    className="font-mono text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"
+                  >
+                    Delete
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Draft Engine */}

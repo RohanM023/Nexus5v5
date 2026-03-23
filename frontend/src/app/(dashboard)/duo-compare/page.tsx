@@ -7,7 +7,8 @@ import { cn, getChampionIconUrl, getTierBgColor } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { VennDiagram } from "@/components/charts/venn-diagram";
-import type { DuoOverlapResponse, SharedChampion, ChampionPoolEntry } from "@/types";
+import { HeadToHead } from "@/components/charts/head-to-head";
+import type { DuoOverlapResponse, HeadToHeadResponse, SharedChampion, ChampionPoolEntry } from "@/types";
 
 const REGIONS = [
   { value: "na1", label: "NA" },
@@ -26,6 +27,7 @@ export default function DuoComparePage() {
   const [player1, setPlayer1] = useState<PlayerInput>({ riotId: "", region: "na1" });
   const [player2, setPlayer2] = useState<PlayerInput>({ riotId: "", region: "na1" });
   const [result, setResult] = useState<DuoOverlapResponse | null>(null);
+  const [h2hResult, setH2hResult] = useState<HeadToHeadResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,6 +48,7 @@ export default function DuoComparePage() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setH2hResult(null);
 
     try {
       const [summoner1, summoner2] = await Promise.all([
@@ -53,8 +56,12 @@ export default function DuoComparePage() {
         api.lookupSummoner(player2.region, p2.gameName, p2.tagLine),
       ]);
 
-      const overlap = await api.getDuoOverlap(summoner1.puuid, summoner2.puuid);
+      const [overlap, h2h] = await Promise.all([
+        api.getDuoOverlap(summoner1.puuid, summoner2.puuid),
+        api.getHeadToHead(summoner1.puuid, summoner2.puuid),
+      ]);
       setResult(overlap);
+      setH2hResult(h2h);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to compare players"
@@ -271,6 +278,15 @@ export default function DuoComparePage() {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Head-to-Head */}
+          {h2hResult && (
+            <HeadToHead
+              data={h2hResult}
+              player1Label={p1Label}
+              player2Label={p2Label}
+            />
           )}
 
           {/* Exclusive Champions */}

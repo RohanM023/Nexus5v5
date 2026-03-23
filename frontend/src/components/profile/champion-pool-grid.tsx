@@ -11,16 +11,18 @@ import {
   getTierBgColor,
   getTierColor,
 } from "@/lib/utils";
+import { WinLossSparkline } from "@/components/charts/win-loss-sparkline";
 import type { ChampionPoolEntry } from "@/types";
 
 interface ChampionPoolGridProps {
   champions: ChampionPoolEntry[];
   variant?: "grid" | "compact";
+  trendsMap?: Map<number, boolean[]>;
 }
 
 type SortBy = "mastery" | "comfort" | "winrate" | "games";
 
-export function ChampionPoolGrid({ champions, variant = "grid" }: ChampionPoolGridProps) {
+export function ChampionPoolGrid({ champions, variant = "grid", trendsMap }: ChampionPoolGridProps) {
   const [sortBy, setSortBy] = useState<SortBy>("mastery");
 
   const sorted = [...champions].sort((a, b) => {
@@ -66,7 +68,7 @@ export function ChampionPoolGrid({ champions, variant = "grid" }: ChampionPoolGr
         </CardHeader>
         <CardContent className="space-y-0 p-0">
           {sorted.slice(0, 10).map((champ) => (
-            <CompactChampionRow key={champ.champion_id} champion={champ} />
+            <CompactChampionRow key={champ.champion_id} champion={champ} sparkline={trendsMap?.get(champ.champion_id)} />
           ))}
         </CardContent>
       </Card>
@@ -99,7 +101,7 @@ export function ChampionPoolGrid({ champions, variant = "grid" }: ChampionPoolGr
         ) : (
           <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
             {sorted.map((champ) => (
-              <ChampionCard key={champ.champion_id} champion={champ} />
+              <ChampionCard key={champ.champion_id} champion={champ} sparkline={trendsMap?.get(champ.champion_id)} />
             ))}
           </div>
         )}
@@ -108,7 +110,7 @@ export function ChampionPoolGrid({ champions, variant = "grid" }: ChampionPoolGr
   );
 }
 
-function CompactChampionRow({ champion }: { champion: ChampionPoolEntry }) {
+function CompactChampionRow({ champion, sparkline }: { champion: ChampionPoolEntry; sparkline?: boolean[] }) {
   return (
     <div className="flex items-center gap-2.5 px-5 py-2 transition-colors hover:bg-[var(--color-surface-hover)]">
       <div className="relative shrink-0">
@@ -134,6 +136,11 @@ function CompactChampionRow({ champion }: { champion: ChampionPoolEntry }) {
         <p className="truncate text-xs font-medium text-[var(--color-text-primary)]">
           {champion.champion_name}
         </p>
+        {sparkline && sparkline.length > 0 && (
+          <div className="mt-0.5">
+            <WinLossSparkline results={sparkline} />
+          </div>
+        )}
       </div>
       <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
         {champion.games_played}g
@@ -150,7 +157,7 @@ function CompactChampionRow({ champion }: { champion: ChampionPoolEntry }) {
   );
 }
 
-function ChampionCard({ champion }: { champion: ChampionPoolEntry }) {
+function ChampionCard({ champion, sparkline }: { champion: ChampionPoolEntry; sparkline?: boolean[] }) {
   return (
     <div className="flex items-start gap-3 rounded-sm bg-[var(--background)] p-3 transition-colors hover:bg-[var(--color-surface-hover)]">
       <div className="relative shrink-0">
@@ -193,6 +200,12 @@ function ChampionCard({ champion }: { champion: ChampionPoolEntry }) {
           </span>
           <span className="text-[var(--color-text-muted)]">{champion.avg_kda.toFixed(1)} KDA</span>
         </div>
+
+        {sparkline && sparkline.length > 0 && (
+          <div className="mt-1">
+            <WinLossSparkline results={sparkline} />
+          </div>
+        )}
 
         <div className="mt-1.5 space-y-1">
           <ScoreBar label="Mst" value={champion.true_mastery} maxValue={100} />

@@ -376,6 +376,58 @@ export interface DuoOverlapResponse {
   overlap_percentage: number;
 }
 
+// ---- Champion Trends ----
+
+export interface ChampionGameResult {
+  win: boolean;
+  game_start: string;
+}
+
+export interface ChampionTrend {
+  champion_id: number;
+  champion_name: string;
+  recent_games: ChampionGameResult[];
+}
+
+export interface ChampionTrendsResponse {
+  puuid: string;
+  trends: ChampionTrend[];
+}
+
+// ---- Head-to-Head ----
+
+export interface HeadToHeadPlayer {
+  puuid: string;
+  champion_id: number;
+  champion_name: string;
+  role: string;
+  win: boolean;
+  kills: number;
+  deaths: number;
+  assists: number;
+}
+
+export interface HeadToHeadMatch {
+  match_id: string;
+  game_start: string;
+  game_duration: number;
+  queue_id: number;
+  player1: HeadToHeadPlayer;
+  player2: HeadToHeadPlayer;
+  same_team: boolean;
+}
+
+export interface HeadToHeadResponse {
+  puuid1: string;
+  puuid2: string;
+  total_games: number;
+  same_team_games: number;
+  opposite_team_games: number;
+  p1_wins_vs: number;
+  p2_wins_vs: number;
+  matches: HeadToHeadMatch[];
+}
+
 // ---- Admin ----
 
 export interface HealthStatus {

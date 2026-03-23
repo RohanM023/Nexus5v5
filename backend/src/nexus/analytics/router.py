@@ -11,8 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from nexus.analytics import service
 from nexus.analytics.schemas import (
     ChampionPoolResponse,
+    ChampionTrendsResponse,
     DuoOverlapResponse,
     GoldDiffResponse,
+    HeadToHeadResponse,
     PerformanceStats,
 )
 from nexus.middleware.auth import get_current_user
@@ -99,3 +101,22 @@ async def get_performance_by_puuid(puuid: str) -> dict[str, Any]:
 async def get_duo_overlap(puuid1: str, puuid2: str) -> dict[str, Any]:
     """Public: compare champion pools of two players."""
     return await service.get_duo_overlap(puuid1, puuid2)
+
+
+@router.get("/champion-trends/{puuid}", response_model=ChampionTrendsResponse)
+async def get_champion_trends(
+    puuid: str,
+    limit_per_champ: int = Query(default=10, ge=1, le=20),
+) -> dict[str, Any]:
+    """Public: recent win/loss results per champion for sparkline display."""
+    return await service.get_champion_recent_games(puuid, limit_per_champ=limit_per_champ)
+
+
+@router.get("/head-to-head/{puuid1}/{puuid2}", response_model=HeadToHeadResponse)
+async def get_head_to_head(
+    puuid1: str,
+    puuid2: str,
+    limit: int = Query(default=20, ge=1, le=50),
+) -> dict[str, Any]:
+    """Public: head-to-head history between two players."""
+    return await service.get_head_to_head(puuid1, puuid2, limit=limit)

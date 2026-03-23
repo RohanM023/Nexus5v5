@@ -3,6 +3,7 @@
 import { Navbar } from "@/components/ui/navbar";
 import { Sidebar, useSidebarCollapsed } from "@/components/ui/sidebar";
 import { LegalFooter } from "@/components/ui/legal-footer";
+import { PatchBanner } from "@/components/ui/patch-banner";
 
 export default function DashboardLayout({
   children,
@@ -16,7 +17,10 @@ export default function DashboardLayout({
       <Navbar />
       <div className="flex flex-1">
         <Sidebar collapsed={collapsed} onToggle={toggle} />
-        <main className="flex-1 overflow-y-auto p-5 lg:p-8">{children}</main>
+        <main className="flex-1 overflow-y-auto p-5 lg:p-8">
+          <PatchBanner />
+          {children}
+        </main>
       </div>
       <LegalFooter />
     </div>

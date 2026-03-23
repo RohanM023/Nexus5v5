@@ -4,12 +4,14 @@ import type {
   AuthTokens,
   ChampionPoolResponse,
   ChampionSuggestion,
+  ChampionTrendsResponse,
   DraftBanRequest,
   DraftPickRequest,
   DraftScores,
   DraftSession,
   DuoOverlapResponse,
   GoldDiffTimeline,
+  HeadToHeadResponse,
   HealthStatus,
   LinkAccountRequest,
   LoginRequest,
@@ -295,6 +297,22 @@ class ApiClient {
   async getDuoOverlap(puuid1: string, puuid2: string): Promise<DuoOverlapResponse> {
     return this.request<DuoOverlapResponse>(
       `/api/analytics/duo-overlap/${encodeURIComponent(puuid1)}/${encodeURIComponent(puuid2)}`
+    );
+  }
+
+  // ---- Champion Trends ----
+
+  async getChampionTrends(puuid: string): Promise<ChampionTrendsResponse> {
+    return this.request<ChampionTrendsResponse>(
+      `/api/analytics/champion-trends/${encodeURIComponent(puuid)}`
+    );
+  }
+
+  // ---- Head-to-Head ----
+
+  async getHeadToHead(puuid1: string, puuid2: string): Promise<HeadToHeadResponse> {
+    return this.request<HeadToHeadResponse>(
+      `/api/analytics/head-to-head/${encodeURIComponent(puuid1)}/${encodeURIComponent(puuid2)}`
     );
   }
 

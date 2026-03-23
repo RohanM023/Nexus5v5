@@ -4,7 +4,9 @@ import { useState } from "react";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChampionSelect } from "./champion-select";
+import { DraftTimer } from "./draft-timer";
 import { cn, getChampionIconUrl } from "@/lib/utils";
+import { generateShareUrl, copyToClipboard } from "@/lib/draft-share";
 import type { DraftBan, DraftPhase, DraftPick } from "@/types";
 
 interface DraftBoardProps {
@@ -38,10 +40,22 @@ export function DraftBoard({
 }: DraftBoardProps) {
   const [showChampionSelect, setShowChampionSelect] = useState(false);
   const [selectingRole, setSelectingRole] = useState<string>("MID");
+  const [copied, setCopied] = useState(false);
 
   const isBanPhase =
     currentPhase === "ban_phase_1" || currentPhase === "ban_phase_2";
   const isCompleted = currentPhase === "completed";
+
+  const hasContent = bluePicks.length > 0 || redPicks.length > 0 || blueBans.length > 0 || redBans.length > 0;
+
+  const handleShare = async () => {
+    const url = generateShareUrl(bluePicks, redPicks, blueBans, redBans);
+    const success = await copyToClipboard(url);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const allPickedIds = [
     ...bluePicks.map((p) => p.champion_id),
@@ -72,7 +86,17 @@ export function DraftBoard({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Draft Board</CardTitle>
+            <div className="flex items-center gap-3">
+              <CardTitle>Draft Board</CardTitle>
+              {hasContent && (
+                <button
+                  onClick={handleShare}
+                  className="font-mono text-[9px] tracking-wider text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent-text)]"
+                >
+                  {copied ? "Copied!" : "Share"}
+                </button>
+              )}
+            </div>
             <span
               className={cn(
                 "font-mono text-[9px] tracking-[0.2em] uppercase",
@@ -88,6 +112,9 @@ export function DraftBoard({
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Draft Timer */}
+          {!isCompleted && <DraftTimer phase={currentPhase} activeSide={activeSide} />}
+
           {/* Ban section */}
           <div>
             <p className="mb-2 font-mono text-[8px] tracking-[0.3em] uppercase text-[var(--color-text-muted)]">
