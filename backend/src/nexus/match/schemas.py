@@ -39,6 +39,7 @@ class IngestResponse(BaseModel):
     matches_fetched: int
     matches_inserted: int
     status: str
+    error: str | None = None
 
 
 class IngestStatusResponse(BaseModel):
@@ -46,6 +47,7 @@ class IngestStatusResponse(BaseModel):
     status: str
     matches_fetched: int | None = None
     matches_inserted: int | None = None
+    error: str | None = None
 
 
 # --- Match History ---

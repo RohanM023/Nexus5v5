@@ -33,6 +33,7 @@ export default function SummonerPage() {
   const [queue, setQueue] = useState<number | undefined>(undefined);
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const [ingestionJobId, setIngestionJobId] = useState<string | null>(null);
+  const [ingestionError, setIngestionError] = useState<string | null>(null);
   const autoIngestTriggered = useRef(false);
   const recentSearchAdded = useRef(false);
 
@@ -111,13 +112,16 @@ export default function SummonerPage() {
   }, [ingestionStatusQuery.data?.status, ingestionJobId, queryClient]);
 
   const triggerIngest = useCallback(async (puuid: string) => {
+    setIngestionError(null);
     try {
       const res = await api.triggerIngestion(puuid, { region, count: 10 });
-      if (res.job_id) {
+      if (res.error) {
+        setIngestionError(res.error);
+      } else if (res.job_id) {
         setIngestionJobId(res.job_id);
       }
-    } catch {
-      // Silently fail for auto-ingest
+    } catch (err) {
+      setIngestionError(err instanceof Error ? err.message : "Ingestion request failed");
     }
   }, [region]);
 
@@ -233,6 +237,13 @@ export default function SummonerPage() {
         <div className="mt-4 flex items-center gap-2 border-l-2 border-[var(--color-accent)]/40 bg-[var(--color-accent)]/[0.03] px-4 py-2.5 font-mono text-[10px] text-[var(--color-accent-text)]/80">
           <Spinner size="sm" />
           Fetching match data from Riot...
+        </div>
+      )}
+
+      {/* Ingestion error banner */}
+      {ingestionError && (
+        <div className="mt-4 border-l-2 border-[var(--color-danger)]/60 bg-[var(--color-danger)]/5 px-4 py-2.5 font-mono text-[10px] text-[var(--color-danger)]">
+          <span className="font-medium">Ingestion failed:</span> {ingestionError}
         </div>
       )}
 

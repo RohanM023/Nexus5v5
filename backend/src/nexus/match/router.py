@@ -87,15 +87,22 @@ async def trigger_ingestion(
             "matches_inserted": inserted,
             "status": "complete",
         }
-    except Exception:
+    except Exception as exc:
         logger.exception("Inline ingestion failed for %s", puuid)
-        _inline_results[job_id] = {"status": "complete", "matches_fetched": 0, "matches_inserted": 0}
+        error_msg = f"{type(exc).__name__}: {exc}"
+        _inline_results[job_id] = {
+            "status": "complete",
+            "matches_fetched": 0,
+            "matches_inserted": 0,
+            "error": error_msg,
+        }
         return {
             "puuid": puuid,
             "job_id": job_id,
             "matches_fetched": 0,
             "matches_inserted": 0,
             "status": "complete",
+            "error": error_msg,
         }
 
 

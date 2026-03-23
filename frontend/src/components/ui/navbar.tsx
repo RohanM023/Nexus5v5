@@ -67,8 +67,8 @@ export function Navbar() {
           </Link>
         </div>
 
-        <form onSubmit={handleSearch} className="flex flex-1 items-center justify-center">
-          <div className="flex w-full max-w-md items-center border-b border-[var(--color-border)] transition-colors focus-within:border-[var(--color-accent)]/50">
+        <form onSubmit={handleSearch} className="mx-4 flex min-w-0 flex-1 items-center justify-center">
+          <div className="flex w-full max-w-sm items-center rounded-md border border-[var(--color-border)] px-2 transition-colors focus-within:border-[var(--color-accent)]/50">
             <select
               value={region}
               onChange={(e) => setRegion(e.target.value)}
@@ -85,7 +85,7 @@ export function Navbar() {
               placeholder="Search Riot ID..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="h-7 flex-1 bg-transparent px-2 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none"
+              className="h-7 min-w-0 flex-1 bg-transparent px-2 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none"
             />
           </div>
         </form>
