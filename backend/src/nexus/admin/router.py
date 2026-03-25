@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Response
 
 from nexus.admin.schemas import (
     CreatePartnerKeyRequest,
+    DbStatsResponse,
     HealthResponse,
     LatestPatchResponse,
     PartnerKeyListResponse,
@@ -100,6 +101,53 @@ async def latest_patch() -> dict[str, str]:
     from nexus.draft.tasks import _resolve_latest_patch
 
     return {"patch": _resolve_latest_patch()}
+
+
+@router.get("/db-stats", response_model=DbStatsResponse)
+async def db_stats() -> dict[str, Any]:
+    """Database statistics — match counts, player counts, storage usage."""
+    import asyncio
+
+    from nexus.shared import clickhouse as ch
+
+    loop = asyncio.get_running_loop()
+
+    totals = await loop.run_in_executor(
+        None,
+        ch.query,
+        "SELECT count() as total_rows, uniq(match_id) as unique_matches,"
+        " uniq(puuid) as unique_players FROM matches FINAL",
+        None,
+    )
+
+    storage = await loop.run_in_executor(
+        None,
+        ch.query,
+        "SELECT round(sum(bytes_on_disk) / 1048576, 2) as mb"
+        " FROM system.parts WHERE database = 'nexus' AND table = 'matches' AND active",
+        None,
+    )
+
+    daily = await loop.run_in_executor(
+        None,
+        ch.query,
+        "SELECT toDate(game_start) as day, uniq(match_id) as matches,"
+        " uniq(puuid) as players FROM matches FINAL"
+        " GROUP BY day ORDER BY day DESC LIMIT 14",
+        None,
+    )
+
+    row = totals[0] if totals else {}
+    return {
+        "total_rows": row.get("total_rows", 0),
+        "unique_matches": row.get("unique_matches", 0),
+        "unique_players": row.get("unique_players", 0),
+        "storage_mb": storage[0].get("mb", 0) if storage else 0,
+        "recent_days": [
+            {"day": str(d["day"]), "matches": d["matches"], "players": d["players"]}
+            for d in daily
+        ],
+    }
 
 
 @router.get("/partner-keys", response_model=PartnerKeyListResponse)

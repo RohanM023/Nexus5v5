@@ -55,3 +55,11 @@ class PartnerKeySummary(BaseModel):
 class PartnerKeyListResponse(BaseModel):
     keys: list[PartnerKeySummary]
     total: int
+
+
+class DbStatsResponse(BaseModel):
+    total_rows: int
+    unique_matches: int
+    unique_players: int
+    storage_mb: float
+    recent_days: list[dict]
