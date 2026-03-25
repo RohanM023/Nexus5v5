@@ -313,6 +313,26 @@ async def draft_live(websocket: WebSocket, session_id: str) -> None:
         await websocket.close(code=4001, reason="Invalid or expired token")
         return
 
+    # Verify session ownership
+    user_id = payload.get("sub")
+    if user_id:
+        async for db in get_db_session():
+            result = await db.execute(
+                select(DraftSession).where(
+                    DraftSession.id == UUID(session_id),
+                    DraftSession.user_id == UUID(user_id),
+                )
+            )
+            if result.scalar_one_or_none() is None:
+                await websocket.close(
+                    code=4003, reason="Not authorized for this session"
+                )
+                return
+            break
+    else:
+        await websocket.close(code=4001, reason="Invalid token payload")
+        return
+
     await websocket.accept()
     key = session_id
 

@@ -19,6 +19,7 @@ from nexus.analytics.schemas import (
 )
 from nexus.middleware.auth import get_current_user
 from nexus.shared.database import get_db_session
+from nexus.shared.exceptions import ForbiddenError
 
 router = APIRouter(prefix="/api/v1/analytics", tags=["analytics"])
 
@@ -38,6 +39,8 @@ async def get_champion_pool(
     db: AsyncSession = Depends(get_db_session),
 ) -> dict[str, Any]:
     """Get champion pool with True Mastery and Comfort scores."""
+    if user_id != current_user["user_id"]:
+        raise ForbiddenError("Cannot access another user's analytics")
     return await service.get_champion_pool(
         db,
         user_id,
@@ -56,6 +59,8 @@ async def get_performance(
     db: AsyncSession = Depends(get_db_session),
 ) -> dict[str, Any]:
     """Get aggregated performance stats across all linked accounts."""
+    if user_id != current_user["user_id"]:
+        raise ForbiddenError("Cannot access another user's analytics")
     return await service.get_performance(db, user_id)
 
 

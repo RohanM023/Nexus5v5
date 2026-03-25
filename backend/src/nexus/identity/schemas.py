@@ -63,7 +63,6 @@ class VerifyAccountResponse(BaseModel):
     account_id: UUID
     verification_status: str
     verification_method: str
-    verification_token: str | None = None
     message: str
 
 

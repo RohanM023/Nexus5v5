@@ -197,6 +197,38 @@ export function RankProgression({ soloEntry, matches }: RankProgressionProps) {
               stroke="var(--color-accent-text)"
               strokeWidth={1.5}
               fill="url(#lpGradient)"
+              dot={(props) => {
+                const { cx, cy, index } = props as { cx?: number; cy?: number; index?: number };
+                const point = index != null ? data[index] : undefined;
+                if (cx == null || cy == null || !point) return <circle key={index ?? 0} />;
+                return (
+                  <circle
+                    key={index}
+                    cx={cx}
+                    cy={cy}
+                    r={3}
+                    fill={point.result === "W" ? "var(--color-success)" : "var(--color-danger)"}
+                    stroke="var(--color-surface)"
+                    strokeWidth={1}
+                  />
+                );
+              }}
+              activeDot={(props) => {
+                const { cx, cy, index } = props as { cx?: number; cy?: number; index?: number };
+                const point = index != null ? data[index] : undefined;
+                if (cx == null || cy == null || !point) return <circle key={`active-${index ?? 0}`} />;
+                return (
+                  <circle
+                    key={`active-${index}`}
+                    cx={cx}
+                    cy={cy}
+                    r={5}
+                    fill={point.result === "W" ? "var(--color-success)" : "var(--color-danger)"}
+                    stroke="var(--color-surface)"
+                    strokeWidth={2}
+                  />
+                );
+              }}
             />
           </AreaChart>
         </ResponsiveContainer>

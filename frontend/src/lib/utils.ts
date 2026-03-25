@@ -57,6 +57,10 @@ export function getProfileIconUrl(iconId: number): string {
   return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${iconId}.png`;
 }
 
+export function getItemIconUrl(itemId: number): string {
+  return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/item/${itemId}.png`;
+}
+
 export function getChampionSplashUrl(championName: string): string {
   return `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${championName}_0.jpg`;
 }

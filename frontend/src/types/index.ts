@@ -102,6 +102,7 @@ export interface MatchSummary {
   damage_dealt: number;
   damage_taken: number;
   vision_score: number;
+  items?: number[];
 }
 
 export interface GoldDiffParticipant {
@@ -131,6 +132,7 @@ export interface MatchParticipant {
   total_damage_dealt: number;
   vision_score: number;
   win: boolean;
+  items?: number[];
 }
 
 export interface MatchTeamDetail {

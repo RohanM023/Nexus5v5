@@ -137,6 +137,14 @@ def ensure_tables() -> None:
             ORDER BY (patch, champion, opponent, role, queue_id)
         """)
 
+        # Add items column to matches table (idempotent migration)
+        try:
+            client.command(
+                "ALTER TABLE matches ADD COLUMN IF NOT EXISTS items String DEFAULT ''"
+            )
+        except Exception:
+            logger.debug("Could not add items column (may already exist)")
+
         logger.info("ClickHouse tables verified/created successfully")
     except Exception:
         logger.exception("Failed to create ClickHouse tables")

@@ -120,7 +120,6 @@ async def verify_account(
         "account_id": account_id,
         "verification_status": link.verification_status,
         "verification_method": link.verification_method,
-        "verification_token": link.verification_token,
         "message": message,
     }
 

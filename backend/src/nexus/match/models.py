@@ -32,6 +32,7 @@ class MatchRow:
     damage_taken: int
     vision_score: int
     gold_diff_timeline: str = ""
+    items: str = ""
 
     def to_row(self) -> list[Any]:
         """Return values in ClickHouse column order."""
@@ -57,6 +58,7 @@ class MatchRow:
             self.damage_taken,
             self.vision_score,
             self.gold_diff_timeline,
+            self.items,
         ]
 
 
@@ -82,4 +84,5 @@ CLICKHOUSE_COLUMNS: list[str] = [
     "damage_taken",
     "vision_score",
     "gold_diff_timeline",
+    "items",
 ]

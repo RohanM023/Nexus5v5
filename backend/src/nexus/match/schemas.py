@@ -74,6 +74,7 @@ class MatchParticipant(BaseModel):
     damage_dealt: int
     damage_taken: int
     vision_score: int
+    items: list[int] = []
 
 
 class MatchHistoryFilters(BaseModel):
@@ -109,6 +110,7 @@ class ParticipantDetail(BaseModel):
     total_damage_dealt: int
     vision_score: int
     win: bool
+    items: list[int] = []
 
 
 class TeamDetail(BaseModel):

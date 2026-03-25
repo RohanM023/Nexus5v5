@@ -50,6 +50,8 @@ def _get_algorithm(settings: Settings) -> str:
     key = _load_key(settings.jwt_private_key_path)
     if key and key.startswith("-----BEGIN"):
         return "RS256"
+    if settings.environment == "production":
+        raise RuntimeError("RS256 keys missing in production — JWT security compromised")
     return "HS256"
 
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import uuid
 from typing import Any
@@ -162,7 +163,7 @@ async def get_match_detail(match_id: str) -> dict[str, Any]:
     sql = (  # noqa: S608
         "SELECT match_id, game_duration, game_start, queue_id, puuid,"
         " champion_id, champion_name, team_id, role, kills, deaths, assists,"
-        " cs, gold_earned, damage_dealt, vision_score, win"
+        " cs, gold_earned, damage_dealt, vision_score, win, items"
         " FROM matches FINAL WHERE match_id = %(match_id)s"
     )
     params: dict[str, Any] = {"match_id": match_id}
@@ -179,6 +180,14 @@ async def get_match_detail(match_id: str) -> dict[str, Any]:
 
     for row in rows:
         duration_min = max(first.get("game_duration", 1), 1) / 60
+        items_raw = row.get("items", "")
+        detail_items: list[int] = []
+        if items_raw:
+            try:
+                detail_items = json.loads(items_raw)
+            except (json.JSONDecodeError, TypeError):
+                detail_items = []
+
         participant = {
             "champion_id": row.get("champion_id", 0),
             "champion_name": row.get("champion_name", ""),
@@ -192,6 +201,7 @@ async def get_match_detail(match_id: str) -> dict[str, Any]:
             "total_damage_dealt": row.get("damage_dealt", 0),
             "vision_score": row.get("vision_score", 0),
             "win": bool(row.get("win", 0)),
+            "items": detail_items,
         }
         if row.get("team_id", 0) == 100:
             blue_participants.append(participant)
@@ -283,6 +293,14 @@ async def get_match_history(
 
     data = []
     for row in rows:
+        items_raw = row.get("items", "")
+        items: list[int] = []
+        if items_raw:
+            try:
+                items = json.loads(items_raw)
+            except (json.JSONDecodeError, TypeError):
+                items = []
+
         data.append(
             schemas.MatchParticipant(
                 match_id=row.get("match_id", ""),
@@ -291,7 +309,7 @@ async def get_match_history(
                 game_version=row.get("game_version", ""),
                 game_duration=row.get("game_duration", 0),
                 game_start=row.get("game_start", ""),
-                puuid=row.get("puuid", ""),
+                puuid=row.get("puuid", "")[:8],
                 champion_id=row.get("champion_id", 0),
                 champion_name=row.get("champion_name", ""),
                 team_id=row.get("team_id", 0),
@@ -305,6 +323,7 @@ async def get_match_history(
                 damage_dealt=row.get("damage_dealt", 0),
                 damage_taken=row.get("damage_taken", 0),
                 vision_score=row.get("vision_score", 0),
+                items=items,
             ).model_dump()
         )
 

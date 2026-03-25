@@ -130,6 +130,9 @@ def _extract_participant(
 
     raw_match_id = metadata.get("matchId", "")
 
+    # Extract items (item0 through item6) from participant data
+    item_ids = [participant.get(f"item{i}", 0) for i in range(7)]
+
     return MatchRow(
         match_id=raw_match_id,
         platform_id=raw_match_id.split("_")[0] if "_" in raw_match_id else "",
@@ -151,6 +154,7 @@ def _extract_participant(
         damage_dealt=participant.get("totalDamageDealtToChampions", 0),
         damage_taken=participant.get("totalDamageTaken", 0),
         vision_score=participant.get("visionScore", 0),
+        items=json.dumps(item_ids),
     )
 
 

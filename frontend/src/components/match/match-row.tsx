@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { cn, formatKDA, formatKDARatio, formatCsPerMin, formatDuration, formatTimeAgo, getChampionIconUrl } from "@/lib/utils";
+import { cn, formatKDA, formatKDARatio, formatCsPerMin, formatDuration, formatTimeAgo, getChampionIconUrl, getItemIconUrl } from "@/lib/utils";
 import { getMatchNote, setMatchNote } from "@/lib/match-notes";
 import { MatchDetail } from "@/components/match/match-detail";
 import type { MatchSummary } from "@/types";
@@ -100,6 +100,27 @@ export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
           <p className="font-mono text-[8px] text-[var(--color-text-muted)]">vis</p>
         </div>
 
+        {/* Items */}
+        {match.items && match.items.length > 0 && (
+          <div className="hidden items-center gap-0.5 lg:flex">
+            {match.items.map((itemId, idx) =>
+              itemId > 0 ? (
+                <Image
+                  key={idx}
+                  src={getItemIconUrl(itemId)}
+                  alt={`Item ${itemId}`}
+                  width={20}
+                  height={20}
+                  className="rounded-sm"
+                  unoptimized
+                />
+              ) : (
+                <div key={idx} className="h-5 w-5 rounded-sm bg-[var(--color-border)]/30" />
+              )
+            )}
+          </div>
+        )}
+
         {/* Duration + time ago + expand indicator */}
         <div className="ml-auto flex items-center gap-2">
           <div className="w-16 text-right">
@@ -184,6 +205,7 @@ export function MatchListHeader({ className }: MatchListHeaderProps) {
       <div className="hidden w-14 text-center sm:block">CS/m</div>
       <div className="hidden w-16 text-center md:block">Gold</div>
       <div className="hidden w-12 text-center md:block">Vision</div>
+      <div className="hidden lg:block w-[148px] text-center">Items</div>
       <div className="ml-auto w-16 text-right">Time</div>
     </div>
   );

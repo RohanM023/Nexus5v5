@@ -5,13 +5,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/lib/api";
 import { StatsOverview } from "@/components/profile/stats-overview";
+import { RecentStatsBar } from "@/components/profile/recent-stats-bar";
 import { ChampionPoolGrid } from "@/components/profile/champion-pool-grid";
 import { RankedCard } from "@/components/profile/ranked-card";
 import { RankProgression } from "@/components/charts/rank-progression";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageLoader, ErrorDisplay, Spinner } from "@/components/ui/loading";
 import { MatchRow, MatchListHeader } from "@/components/match/match-row";
-import { cn, getProfileIconUrl } from "@/lib/utils";
+import { cn, getProfileIconUrl, formatTimeAgo } from "@/lib/utils";
 import { addRecentSearch } from "@/lib/recent-searches";
 import type { MatchSummary } from "@/types";
 import { StreakIndicator } from "@/components/profile/streak-indicator";
@@ -234,20 +235,27 @@ export default function SummonerPage() {
             )}
           </div>
         </div>
-        <button
-          onClick={handleRefreshData}
-          disabled={isIngesting}
-          className="font-mono text-[10px] tracking-wider text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)] disabled:opacity-40"
-        >
-          {isIngesting ? (
-            <span className="flex items-center gap-2">
-              <Spinner size="sm" />
-              Ingesting
+        <div className="flex items-center gap-3">
+          {matches.length > 0 && matches[0]?.game_start && (
+            <span className="font-mono text-[9px] text-[var(--color-text-muted)]">
+              Data from {formatTimeAgo(matches[0].game_start)}
             </span>
-          ) : (
-            "Refresh"
           )}
-        </button>
+          <button
+            onClick={handleRefreshData}
+            disabled={isIngesting}
+            className="font-mono text-[10px] tracking-wider text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)] disabled:opacity-40"
+          >
+            {isIngesting ? (
+              <span className="flex items-center gap-2">
+                <Spinner size="sm" />
+                Ingesting
+              </span>
+            ) : (
+              "Refresh"
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Ingestion banner */}
@@ -259,11 +267,29 @@ export default function SummonerPage() {
       )}
 
       {/* Ingestion error banner */}
-      {ingestionError && (
-        <div className="mt-4 border-l-2 border-[var(--color-danger)]/60 bg-[var(--color-danger)]/5 px-4 py-2.5 font-mono text-[10px] text-[var(--color-danger)]">
-          <span className="font-medium">Ingestion failed:</span> {ingestionError}
-        </div>
-      )}
+      {ingestionError && (() => {
+        const isRateLimit = /429|rate.?limit/i.test(ingestionError);
+        const isApiKey = /403|api.?key|RIOT_API_ERROR/i.test(ingestionError);
+        if (isRateLimit) {
+          return (
+            <div className="mt-4 border-l-2 border-amber-500/60 bg-amber-500/5 px-4 py-2.5 font-mono text-[10px] text-amber-400">
+              High traffic — please try again in a moment.
+            </div>
+          );
+        }
+        if (isApiKey) {
+          return (
+            <div className="mt-4 border-l-2 border-[var(--color-danger)]/60 bg-[var(--color-danger)]/5 px-4 py-2.5 font-mono text-[10px] text-[var(--color-danger)]">
+              Riot API key is expired or invalid.
+            </div>
+          );
+        }
+        return (
+          <div className="mt-4 border-l-2 border-[var(--color-danger)]/60 bg-[var(--color-danger)]/5 px-4 py-2.5 font-mono text-[10px] text-[var(--color-danger)]">
+            <span className="font-medium">Ingestion failed:</span> {ingestionError}
+          </div>
+        );
+      })()}
 
       {/* Ranked info */}
       {rankedQuery.data && rankedQuery.data.entries.length > 0 && (
@@ -358,6 +384,12 @@ export default function SummonerPage() {
               ))}
             </div>
           </div>
+
+          {matches.length > 0 && (
+            <div className="mb-3">
+              <RecentStatsBar matches={matches.slice(0, 20)} />
+            </div>
+          )}
 
           {matchesQuery.isLoading ? (
             <PageLoader message="Loading matches..." />
