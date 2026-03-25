@@ -5,7 +5,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/lib/api";
 import { StatsOverview } from "@/components/profile/stats-overview";
-import { RecentStatsBar } from "@/components/profile/recent-stats-bar";
 import { ChampionPoolGrid } from "@/components/profile/champion-pool-grid";
 import { RankedCard } from "@/components/profile/ranked-card";
 import { RankProgression } from "@/components/charts/rank-progression";
@@ -384,12 +383,6 @@ export default function SummonerPage() {
               ))}
             </div>
           </div>
-
-          {matches.length > 0 && (
-            <div className="mb-3">
-              <RecentStatsBar matches={matches.slice(0, 20)} />
-            </div>
-          )}
 
           {matchesQuery.isLoading ? (
             <PageLoader message="Loading matches..." />

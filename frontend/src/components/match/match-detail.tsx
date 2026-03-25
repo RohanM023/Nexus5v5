@@ -58,7 +58,7 @@ function TeamTable({ team, side }: { team: MatchTeamDetail; side: "blue" | "red"
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[minmax(0,1fr)_56px_48px_48px_48px_40px_minmax(0,120px)] gap-0 border-b border-[var(--color-border)] px-2 py-1 font-mono text-[7px] tracking-[0.15em] uppercase text-[var(--color-text-muted)]">
+      <div className="grid grid-cols-[minmax(0,1fr)_56px_48px_48px_48px_40px_minmax(0,130px)] gap-0 border-b border-[var(--color-border)] px-2 py-1 font-mono text-[7px] tracking-[0.15em] uppercase text-[var(--color-text-muted)]">
         <span>Champion</span>
         <span className="text-center">KDA</span>
         <span className="text-center">CS/m</span>
@@ -77,7 +77,7 @@ function TeamTable({ team, side }: { team: MatchTeamDetail; side: "blue" | "red"
 
 function ParticipantRow({ participant: p }: { participant: Participant }) {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_56px_48px_48px_48px_40px_minmax(0,120px)] items-center gap-0 border-b border-[var(--color-border)] px-2 py-1.5 last:border-b-0">
+    <div className="grid grid-cols-[minmax(0,1fr)_56px_48px_48px_48px_40px_minmax(0,130px)] items-center gap-0 border-b border-[var(--color-border)] px-2 py-1.5 last:border-b-0">
       {/* Champion + role */}
       <div className="flex items-center gap-2 overflow-hidden">
         <Image
@@ -120,7 +120,7 @@ function ParticipantRow({ participant: p }: { participant: Participant }) {
       </div>
 
       {/* Items */}
-      <div className="flex items-center justify-center gap-0.5">
+      <div className="flex items-center justify-center gap-0.5 overflow-hidden">
         {p.items && p.items.length > 0 ? (
           p.items.map((itemId, idx) =>
             itemId > 0 ? (
@@ -130,11 +130,11 @@ function ParticipantRow({ participant: p }: { participant: Participant }) {
                 alt={`Item ${itemId}`}
                 width={16}
                 height={16}
-                className="rounded-sm"
+                className="shrink-0 rounded-sm"
                 unoptimized
               />
             ) : (
-              <div key={idx} className="h-4 w-4 rounded-sm bg-[var(--color-border)]/30" />
+              <div key={idx} className="h-4 w-4 shrink-0 rounded-sm bg-[var(--color-border)]/30" />
             )
           )
         ) : null}

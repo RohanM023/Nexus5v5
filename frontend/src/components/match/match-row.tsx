@@ -102,7 +102,7 @@ export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
 
         {/* Items */}
         {match.items && match.items.length > 0 && (
-          <div className="hidden items-center gap-0.5 lg:flex">
+          <div className="hidden w-[148px] shrink-0 items-center gap-0.5 overflow-hidden lg:flex">
             {match.items.map((itemId, idx) =>
               itemId > 0 ? (
                 <Image
@@ -111,11 +111,11 @@ export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
                   alt={`Item ${itemId}`}
                   width={20}
                   height={20}
-                  className="rounded-sm"
+                  className="shrink-0 rounded-sm"
                   unoptimized
                 />
               ) : (
-                <div key={idx} className="h-5 w-5 rounded-sm bg-[var(--color-border)]/30" />
+                <div key={idx} className="h-5 w-5 shrink-0 rounded-sm bg-[var(--color-border)]/30" />
               )
             )}
           </div>
