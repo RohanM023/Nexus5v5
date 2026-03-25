@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { cn, formatKDA, getChampionIconUrl, getItemIconUrl } from "@/lib/utils";
 import { Spinner } from "@/components/ui/loading";
@@ -33,15 +34,17 @@ export function MatchDetail({ matchId }: MatchDetailProps) {
     );
   }
 
+  const region = data.match_id.split("_")[0]?.toLowerCase() || "";
+
   return (
-    <div className="grid gap-3 bg-[var(--color-surface)] px-3 py-4 md:grid-cols-2">
-      <TeamTable team={data.blue_team} side="blue" />
-      <TeamTable team={data.red_team} side="red" />
+    <div className="space-y-3 bg-[var(--color-surface)] px-3 py-4">
+      <TeamTable team={data.blue_team} side="blue" region={region} />
+      <TeamTable team={data.red_team} side="red" region={region} />
     </div>
   );
 }
 
-function TeamTable({ team, side }: { team: MatchTeamDetail; side: "blue" | "red" }) {
+function TeamTable({ team, side, region }: { team: MatchTeamDetail; side: "blue" | "red"; region: string }) {
   const headerColor = side === "blue" ? "text-[var(--color-team-blue)]" : "text-[var(--color-team-red)]";
   const borderColor = side === "blue" ? "border-[var(--color-team-blue)]/30" : "border-[var(--color-team-red)]/30";
   const label = side === "blue" ? "Blue Side" : "Red Side";
@@ -58,8 +61,8 @@ function TeamTable({ team, side }: { team: MatchTeamDetail; side: "blue" | "red"
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[minmax(0,1fr)_56px_48px_48px_48px_40px_minmax(0,130px)] gap-0 border-b border-[var(--color-border)] px-2 py-1 font-mono text-[7px] tracking-[0.15em] uppercase text-[var(--color-text-muted)]">
-        <span>Champion</span>
+      <div className="grid grid-cols-[minmax(0,1.5fr)_56px_48px_48px_48px_40px_minmax(0,130px)] gap-0 border-b border-[var(--color-border)] px-2 py-1 font-mono text-[7px] tracking-[0.15em] uppercase text-[var(--color-text-muted)]">
+        <span>Player</span>
         <span className="text-center">KDA</span>
         <span className="text-center">CS/m</span>
         <span className="text-center">Gold</span>
@@ -69,16 +72,21 @@ function TeamTable({ team, side }: { team: MatchTeamDetail; side: "blue" | "red"
       </div>
 
       {team.participants.map((p, i) => (
-        <ParticipantRow key={i} participant={p} />
+        <ParticipantRow key={i} participant={p} region={region} />
       ))}
     </div>
   );
 }
 
-function ParticipantRow({ participant: p }: { participant: Participant }) {
+function ParticipantRow({ participant: p, region }: { participant: Participant; region: string }) {
+  const hasProfile = p.game_name && p.tag_line;
+  const profileHref = hasProfile
+    ? `/summoner/${region}/${encodeURIComponent(p.game_name)}/${encodeURIComponent(p.tag_line)}`
+    : null;
+
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_56px_48px_48px_48px_40px_minmax(0,130px)] items-center gap-0 border-b border-[var(--color-border)] px-2 py-1.5 last:border-b-0">
-      {/* Champion + role */}
+    <div className="grid grid-cols-[minmax(0,1.5fr)_56px_48px_48px_48px_40px_minmax(0,130px)] items-center gap-0 border-b border-[var(--color-border)] px-2 py-1.5 last:border-b-0">
+      {/* Champion icon + player name */}
       <div className="flex items-center gap-2 overflow-hidden">
         <Image
           src={getChampionIconUrl(p.champion_name)}
@@ -89,8 +97,20 @@ function ParticipantRow({ participant: p }: { participant: Participant }) {
           unoptimized
         />
         <div className="min-w-0">
-          <p className="truncate text-xs font-medium text-[var(--color-text-primary)]">{p.champion_name}</p>
-          <p className="font-mono text-[7px] tracking-wider text-[var(--color-text-muted)]">{p.role}</p>
+          {profileHref ? (
+            <Link
+              href={profileHref}
+              className="block truncate text-xs font-medium text-[var(--color-text-primary)] hover:text-[var(--color-accent-text)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {p.game_name}
+            </Link>
+          ) : (
+            <p className="truncate text-xs font-medium text-[var(--color-text-primary)]">{p.champion_name}</p>
+          )}
+          <p className="font-mono text-[7px] tracking-wider text-[var(--color-text-muted)]">
+            {p.champion_name} &middot; {p.role}
+          </p>
         </div>
       </div>
 

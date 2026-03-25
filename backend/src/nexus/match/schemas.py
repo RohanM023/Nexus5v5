@@ -101,7 +101,8 @@ class ParticipantDetail(BaseModel):
     champion_id: int
     champion_name: str
     role: str
-    summoner_name: str
+    game_name: str = ""
+    tag_line: str = ""
     kills: int
     deaths: int
     assists: int

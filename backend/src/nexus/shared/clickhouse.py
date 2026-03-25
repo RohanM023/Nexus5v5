@@ -145,6 +145,17 @@ def ensure_tables() -> None:
         except Exception:
             logger.debug("Could not add items column (may already exist)")
 
+        # Add game_name and tag_line columns for player profile links
+        try:
+            client.command(
+                "ALTER TABLE matches ADD COLUMN IF NOT EXISTS game_name String DEFAULT ''"
+            )
+            client.command(
+                "ALTER TABLE matches ADD COLUMN IF NOT EXISTS tag_line String DEFAULT ''"
+            )
+        except Exception:
+            logger.debug("Could not add game_name/tag_line columns (may already exist)")
+
         logger.info("ClickHouse tables verified/created successfully")
     except Exception:
         logger.exception("Failed to create ClickHouse tables")

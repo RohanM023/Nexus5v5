@@ -155,6 +155,8 @@ def _extract_participant(
         damage_taken=participant.get("totalDamageTaken", 0),
         vision_score=participant.get("visionScore", 0),
         items=json.dumps(item_ids),
+        game_name=participant.get("riotIdGameName", ""),
+        tag_line=participant.get("riotIdTagline", ""),
     )
 
 

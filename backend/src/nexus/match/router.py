@@ -163,7 +163,8 @@ async def get_match_detail(match_id: str) -> dict[str, Any]:
     sql = (  # noqa: S608
         "SELECT match_id, game_duration, game_start, queue_id, puuid,"
         " champion_id, champion_name, team_id, role, kills, deaths, assists,"
-        " cs, gold_earned, damage_dealt, vision_score, win, items"
+        " cs, gold_earned, damage_dealt, vision_score, win, items,"
+        " game_name, tag_line"
         " FROM matches FINAL WHERE match_id = %(match_id)s"
     )
     params: dict[str, Any] = {"match_id": match_id}
@@ -192,7 +193,8 @@ async def get_match_detail(match_id: str) -> dict[str, Any]:
             "champion_id": row.get("champion_id", 0),
             "champion_name": row.get("champion_name", ""),
             "role": row.get("role", ""),
-            "summoner_name": row.get("puuid", "")[:8],
+            "game_name": row.get("game_name", ""),
+            "tag_line": row.get("tag_line", ""),
             "kills": row.get("kills", 0),
             "deaths": row.get("deaths", 0),
             "assists": row.get("assists", 0),

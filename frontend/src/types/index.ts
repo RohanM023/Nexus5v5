@@ -123,7 +123,8 @@ export interface MatchParticipant {
   champion_id: number;
   champion_name: string;
   role: string;
-  summoner_name: string;
+  game_name: string;
+  tag_line: string;
   kills: number;
   deaths: number;
   assists: number;
