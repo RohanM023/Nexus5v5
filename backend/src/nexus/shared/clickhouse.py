@@ -101,7 +101,6 @@ def ensure_tables() -> None:
             ENGINE = ReplacingMergeTree(ingested_at)
             PARTITION BY toYYYYMM(game_start)
             ORDER BY (match_id, puuid)
-            TTL toDateTime(game_start) + INTERVAL 2 YEAR
         """)
 
         client.command("""
@@ -155,6 +154,12 @@ def ensure_tables() -> None:
             )
         except Exception:
             logger.debug("Could not add game_name/tag_line columns (may already exist)")
+
+        # Remove TTL so match data is retained forever
+        try:
+            client.command("ALTER TABLE matches REMOVE TTL")
+        except Exception:
+            logger.debug("Could not remove TTL (may not exist)")
 
         logger.info("ClickHouse tables verified/created successfully")
     except Exception:

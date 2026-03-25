@@ -17,7 +17,7 @@ from nexus.admin.schemas import (
     SynergyRebuildResponse,
 )
 from nexus.config import get_settings
-from nexus.middleware.auth import get_current_user
+from nexus.middleware.auth import get_admin_user
 from nexus.shared.database import get_db_session
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ async def health_check() -> dict[str, str]:
 
 @router.get("/metrics")
 async def prometheus_metrics(
-    _current_user: dict[str, Any] = Depends(get_current_user),
+    _current_user: dict[str, Any] = Depends(get_admin_user),
 ) -> Response:
     """Expose Prometheus metrics. Requires authentication."""
     from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
@@ -51,7 +51,7 @@ async def prometheus_metrics(
 
 @router.get("/riot-quota", response_model=RiotQuotaResponse)
 async def riot_quota(
-    _current_user: dict[str, Any] = Depends(get_current_user),
+    _current_user: dict[str, Any] = Depends(get_admin_user),
 ) -> dict[str, Any]:
     """Show current Riot API quota usage. Requires authentication."""
     from nexus.shared.riot_api import get_riot_client
@@ -68,7 +68,7 @@ async def riot_quota(
 
 @router.post("/synergy/rebuild", response_model=SynergyRebuildResponse)
 async def rebuild_synergy(
-    _current_user: dict[str, Any] = Depends(get_current_user),
+    _current_user: dict[str, Any] = Depends(get_admin_user),
 ) -> dict[str, str]:
     """Trigger a synergy/counter matrix rebuild from match data."""
     from nexus.draft.tasks import _rebuild_counter, _rebuild_synergy, _resolve_latest_patch
@@ -104,7 +104,7 @@ async def latest_patch() -> dict[str, str]:
 
 @router.get("/partner-keys", response_model=PartnerKeyListResponse)
 async def list_partner_api_keys(
-    _current_user: dict[str, Any] = Depends(get_current_user),
+    _current_user: dict[str, Any] = Depends(get_admin_user),
     db: Any = Depends(get_db_session),
 ) -> dict[str, Any]:
     """List all partner API keys (name, usage, status). Admin only."""
@@ -116,7 +116,7 @@ async def list_partner_api_keys(
 @router.post("/partner-keys", response_model=PartnerKeyResponse)
 async def create_partner_api_key(
     body: CreatePartnerKeyRequest,
-    _current_user: dict[str, Any] = Depends(get_current_user),
+    _current_user: dict[str, Any] = Depends(get_admin_user),
     db: Any = Depends(get_db_session),
 ) -> dict[str, Any]:
     """Create a new partner API key. Admin only."""
@@ -133,7 +133,7 @@ async def create_partner_api_key(
 @router.delete("/partner-keys/{key_id}")
 async def delete_partner_api_key(
     key_id: str,
-    _current_user: dict[str, Any] = Depends(get_current_user),
+    _current_user: dict[str, Any] = Depends(get_admin_user),
     db: Any = Depends(get_db_session),
 ) -> dict[str, str]:
     """Revoke a partner API key. Admin only."""

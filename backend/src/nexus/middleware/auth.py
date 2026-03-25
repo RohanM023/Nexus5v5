@@ -138,6 +138,18 @@ async def get_current_user(
     return {"user_id": UUID(user_id), "token_payload": payload}
 
 
+async def get_admin_user(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_security),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, Any]:
+    """Like get_current_user but also requires admin role."""
+    user = await get_current_user(request, credentials, settings)
+    if str(user["user_id"]) not in settings.admin_user_ids:
+        raise AuthError("Admin access required")
+    return user
+
+
 async def get_optional_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_security),
     settings: Settings = Depends(get_settings),

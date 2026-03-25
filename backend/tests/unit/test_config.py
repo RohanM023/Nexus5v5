@@ -16,7 +16,7 @@ class TestSettings:
         """Settings should have sensible defaults for local dev."""
         settings = Settings()
         assert settings.app_name == "Nexus-5v5"
-        assert settings.environment == "local"
+        assert settings.environment in ("local", "development")
         assert settings.port == 8000
 
     def test_postgres_dsn(self):

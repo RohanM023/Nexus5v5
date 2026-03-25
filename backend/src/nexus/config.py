@@ -3,17 +3,22 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Resolve .env from project root (works whether cwd is backend/ or project root)
+_ENV_FILE = Path(__file__).resolve().parents[3] / ".env"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_ENV_FILE) if _ENV_FILE.exists() else ".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     # --- Application ---
@@ -97,6 +102,18 @@ class Settings(BaseSettings):
 
     # --- Encryption ---
     encryption_key: str = ""  # AES-256 key for identity link data
+
+    # --- Admin ---
+    admin_user_ids_str: str = Field(
+        default="",
+        alias="ADMIN_USER_IDS",
+        validation_alias="ADMIN_USER_IDS",
+        description="Comma-separated UUIDs of admin users",
+    )
+
+    @property
+    def admin_user_ids(self) -> set[str]:
+        return {uid.strip() for uid in self.admin_user_ids_str.split(",") if uid.strip()}
 
     # --- Rate Limiting ---
     auth_rate_limit_per_minute: int = 10
