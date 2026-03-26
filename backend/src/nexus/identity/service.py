@@ -7,7 +7,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from passlib.context import CryptContext
+import bcrypt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -24,24 +24,19 @@ from nexus.shared.exceptions import AuthError, ConflictError, NotFoundError, Val
 
 logger = logging.getLogger(__name__)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 MAX_LINKED_ACCOUNTS = 5
 
-_BCRYPT_MAX_BYTES = 72
-
-
-def _truncate_for_bcrypt(password: str) -> str:
-    """Truncate password to 72 bytes (bcrypt's hard limit)."""
-    return password.encode("utf-8")[:_BCRYPT_MAX_BYTES].decode("utf-8", errors="ignore")
+_BCRYPT_WORK_FACTOR = 12
 
 
 def _hash_password(password: str) -> str:
-    return pwd_context.hash(_truncate_for_bcrypt(password))
+    pw = password.encode("utf-8")[:72]
+    return bcrypt.hashpw(pw, bcrypt.gensalt(rounds=_BCRYPT_WORK_FACTOR)).decode("ascii")
 
 
 def _verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(_truncate_for_bcrypt(plain), hashed)
+    pw = plain.encode("utf-8")[:72]
+    return bcrypt.checkpw(pw, hashed.encode("ascii"))
 
 
 def _hash_token(token: str) -> str:
