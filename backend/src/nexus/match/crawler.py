@@ -127,32 +127,22 @@ async def seed_from_ladder(region: str) -> int:
     queue_key = QUEUE_KEY.format(region=region)
     seen_key = SEEN_KEY.format(region=region)
 
-    summoner_ids: list[str] = []
+    puuids: list[str] = []
 
     challenger = await client.get_challenger_league(region=region)
     if challenger and "entries" in challenger:
-        summoner_ids.extend(e["summonerId"] for e in challenger["entries"])
+        puuids.extend(e["puuid"] for e in challenger["entries"] if e.get("puuid"))
 
     grandmaster = await client.get_grandmaster_league(region=region)
     if grandmaster and "entries" in grandmaster:
-        summoner_ids.extend(e["summonerId"] for e in grandmaster["entries"])
+        puuids.extend(e["puuid"] for e in grandmaster["entries"] if e.get("puuid"))
 
-    logger.info("Seed: fetched %d summoner IDs from ladder (region=%s)", len(summoner_ids), region)
+    logger.info("Seed: fetched %d PUUIDs from ladder (region=%s)", len(puuids), region)
 
     new_count = 0
-    for sid in summoner_ids:
+    for puuid in puuids:
         if await is_kill_switch_active():
             break
-        try:
-            summoner = await client.get_summoner_by_id(sid, region)
-        except (RiotAPIError, RateLimitError):
-            logger.warning("Failed to resolve summoner %s, skipping", sid[:8])
-            continue
-        if summoner is None:
-            continue
-        puuid = summoner.get("puuid", "")
-        if not puuid:
-            continue
         already_seen = await redis.sismember(seen_key, puuid)
         if not already_seen:
             await redis.sadd(seen_key, puuid)
