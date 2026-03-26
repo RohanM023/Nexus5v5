@@ -12,7 +12,7 @@ from arq.connections import RedisSettings
 from nexus.analytics.tasks import run_batch_analytics_refresh
 from nexus.config import get_settings
 from nexus.draft.tasks import run_matrix_rebuild
-from nexus.match.tasks import run_ingest_matches
+from nexus.match.tasks import run_crawler_cycle, run_ingest_matches
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +75,11 @@ class WorkerSettings:
     cron_jobs = [
         cron(run_batch_analytics_refresh, hour=4, minute=0),
         cron(run_matrix_rebuild, hour=5, minute=0),
+        cron(
+            run_crawler_cycle,
+            hour={0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22},
+            minute=30,
+        ),
     ]
     on_startup = startup
     on_shutdown = shutdown

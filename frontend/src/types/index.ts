@@ -436,12 +436,48 @@ export interface HeadToHeadResponse {
 export interface HealthStatus {
   status: string;
   version: string;
-  uptime: number;
+  environment: string;
 }
 
 export interface RiotQuotaStatus {
-  requests_per_second: number;
-  requests_per_two_minutes: number;
-  limit_per_second: number;
-  limit_per_two_minutes: number;
+  per_second_limit: number;
+  per_2min_limit: number;
+  per_second_used_pct: number;
+  per_2min_used_pct: number;
+  auto_backoff_active: boolean;
+}
+
+export interface CrawlerStats {
+  cycles: number;
+  players_processed: number;
+  matches_inserted: number;
+  last_run_at: string;
+}
+
+export interface CrawlerStatus {
+  enabled: boolean;
+  kill_switch_active: boolean;
+  circuit_breaker_active: boolean;
+  queue_depth: number;
+  seen_count: number;
+  stats: CrawlerStats;
+}
+
+export interface CrawlerKillSwitchResponse {
+  kill_switch_active: boolean;
+  message: string;
+}
+
+export interface CrawlerSeedResponse {
+  status: string;
+  players_queued: number;
+  message: string;
+}
+
+export interface DbStats {
+  total_rows: number;
+  unique_matches: number;
+  unique_players: number;
+  storage_mb: number;
+  recent_days: { day: string; matches: number; players: number }[];
 }

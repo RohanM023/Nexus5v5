@@ -8,6 +8,9 @@ from typing import Any
 from fastapi import APIRouter, Depends, Response
 
 from nexus.admin.schemas import (
+    CrawlerKillSwitchResponse,
+    CrawlerSeedResponse,
+    CrawlerStatusResponse,
     CreatePartnerKeyRequest,
     DbStatsResponse,
     HealthResponse,
@@ -144,9 +147,94 @@ async def db_stats() -> dict[str, Any]:
         "unique_players": row.get("unique_players", 0),
         "storage_mb": storage[0].get("mb", 0) if storage else 0,
         "recent_days": [
-            {"day": str(d["day"]), "matches": d["matches"], "players": d["players"]}
-            for d in daily
+            {"day": str(d["day"]), "matches": d["matches"], "players": d["players"]} for d in daily
         ],
+    }
+
+
+@router.get("/crawler/status", response_model=CrawlerStatusResponse)
+async def crawler_status(
+    _current_user: dict[str, Any] = Depends(get_admin_user),
+) -> dict[str, Any]:
+    """View crawler stats, queue depth, and circuit breaker state."""
+    from nexus.match.crawler import (
+        CIRCUIT_BREAKER_KEY,
+        KILL_SWITCH_KEY,
+        QUEUE_KEY,
+        SEEN_KEY,
+        STATS_KEY,
+    )
+    from nexus.shared.redis import get_redis
+
+    settings = get_settings()
+    redis = await get_redis()
+    region = settings.crawler_regions.split(",")[0].strip()
+
+    kill_switch = await redis.exists(KILL_SWITCH_KEY) > 0
+    circuit_breaker = await redis.exists(CIRCUIT_BREAKER_KEY) > 0
+    queue_depth = await redis.llen(QUEUE_KEY.format(region=region))
+    seen_count = await redis.scard(SEEN_KEY.format(region=region))
+
+    stats_raw = await redis.hgetall(STATS_KEY.format(region=region))
+    stats = {
+        "cycles": int(stats_raw.get("cycles", 0)),
+        "players_processed": int(stats_raw.get("players_processed", 0)),
+        "matches_inserted": int(stats_raw.get("matches_inserted", 0)),
+        "last_run_at": stats_raw.get("last_run_at", ""),
+    }
+
+    return {
+        "enabled": settings.crawler_enabled,
+        "kill_switch_active": kill_switch,
+        "circuit_breaker_active": circuit_breaker,
+        "queue_depth": queue_depth,
+        "seen_count": seen_count,
+        "stats": stats,
+    }
+
+
+@router.post("/crawler/kill-switch", response_model=CrawlerKillSwitchResponse)
+async def toggle_kill_switch(
+    _current_user: dict[str, Any] = Depends(get_admin_user),
+) -> dict[str, Any]:
+    """Toggle the crawler kill switch on/off."""
+    from nexus.match.crawler import KILL_SWITCH_KEY
+    from nexus.shared.redis import get_redis
+
+    redis = await get_redis()
+    is_active = await redis.exists(KILL_SWITCH_KEY) > 0
+
+    if is_active:
+        await redis.delete(KILL_SWITCH_KEY)
+        logger.info("Crawler kill switch DEACTIVATED by admin")
+        return {
+            "kill_switch_active": False,
+            "message": "Kill switch deactivated — crawler will resume on next cycle",
+        }
+
+    await redis.set(KILL_SWITCH_KEY, "1")
+    logger.warning("Crawler kill switch ACTIVATED by admin")
+    return {
+        "kill_switch_active": True,
+        "message": "Kill switch activated — crawler will stop immediately",
+    }
+
+
+@router.post("/crawler/seed", response_model=CrawlerSeedResponse)
+async def trigger_seed(
+    _current_user: dict[str, Any] = Depends(get_admin_user),
+) -> dict[str, Any]:
+    """Manually trigger a seed cycle from the Challenger/GM ladder."""
+    from nexus.match.crawler import seed_from_ladder
+
+    settings = get_settings()
+    region = settings.crawler_regions.split(",")[0].strip()
+
+    new_count = await seed_from_ladder(region)
+    return {
+        "status": "ok",
+        "players_queued": new_count,
+        "message": f"Seeded {new_count} new players from {region} ladder",
     }
 
 

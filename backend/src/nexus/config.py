@@ -127,6 +127,15 @@ class Settings(BaseSettings):
             raise ValueError("JWT_SECRET_KEY must be changed from the default value in production")
         return v
 
+    # --- Crawler ---
+    crawler_enabled: bool = False
+    crawler_regions: str = "na1"
+    crawler_max_players_per_cycle: int = 50
+    crawler_max_api_calls_per_cycle: int = 500
+    crawler_sleep_between_players: float = 0.5
+    crawler_cycle_interval_hours: int = 2
+    crawler_match_count: int = 20
+
     # --- Matrix Rebuild ---
     matrix_min_games: int = 2
 

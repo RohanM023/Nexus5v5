@@ -322,7 +322,6 @@ class RiotAPIClient:
         )
         return result if result else []
 
-
     # --- League-v4 ---
 
     async def get_league_entries(
@@ -338,6 +337,45 @@ class RiotAPIClient:
             cache_ttl=300,
         )
         return result if result else []
+
+    async def get_challenger_league(
+        self, queue: str = "RANKED_SOLO_5x5", region: str = "na1"
+    ) -> dict[str, Any] | None:
+        """League-v4: Get challenger league (~300 players)."""
+        host = get_platform_host(region)
+        url = f"{host}/lol/league/v4/challengerleagues/by-queue/{queue}"
+        return await self._request(
+            "GET",
+            url,
+            cache_key=f"riot:challenger:{region}:{queue}",
+            cache_ttl=3600,
+        )
+
+    async def get_grandmaster_league(
+        self, queue: str = "RANKED_SOLO_5x5", region: str = "na1"
+    ) -> dict[str, Any] | None:
+        """League-v4: Get grandmaster league (~700 players)."""
+        host = get_platform_host(region)
+        url = f"{host}/lol/league/v4/grandmasterleagues/by-queue/{queue}"
+        return await self._request(
+            "GET",
+            url,
+            cache_key=f"riot:grandmaster:{region}:{queue}",
+            cache_ttl=3600,
+        )
+
+    async def get_summoner_by_id(
+        self, summoner_id: str, region: str = "na1"
+    ) -> dict[str, Any] | None:
+        """Summoner-v4: Get summoner by encrypted summoner ID."""
+        host = get_platform_host(region)
+        url = f"{host}/lol/summoner/v4/summoners/{summoner_id}"
+        return await self._request(
+            "GET",
+            url,
+            cache_key=f"riot:summoner:id:{summoner_id}",
+            cache_ttl=900,
+        )
 
 
 _riot_client: RiotAPIClient | None = None

@@ -1,4 +1,4 @@
-"""arq job functions for match ingestion."""
+"""arq job functions for match ingestion and crawling."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from typing import Any
 
 from arq.jobs import Job
 
+from nexus.config import get_settings
 from nexus.match.ingestion import ingest_matches
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,28 @@ async def run_ingest_matches(
     except Exception:
         logger.exception("Ingestion job failed for puuid=%s", puuid)
         raise
+
+
+async def run_crawler_cycle(ctx: dict[str, Any]) -> dict[str, Any]:
+    """arq cron job: run one crawler cycle across configured regions."""
+    from nexus.match.crawler import run_crawler_cycle as _run_cycle
+
+    settings = get_settings()
+    if not settings.crawler_enabled:
+        logger.info("Crawler disabled, skipping cycle")
+        return {"status": "disabled"}
+
+    regions = [r.strip() for r in settings.crawler_regions.split(",")]
+    results: dict[str, Any] = {}
+    for region in regions:
+        results[region] = await _run_cycle(
+            region=region,
+            max_players=settings.crawler_max_players_per_cycle,
+            max_api_calls=settings.crawler_max_api_calls_per_cycle,
+            sleep_between=settings.crawler_sleep_between_players,
+            match_count=settings.crawler_match_count,
+        )
+    return results
 
 
 async def enqueue_ingestion(

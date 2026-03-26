@@ -5,6 +5,10 @@ import type {
   ChampionPoolResponse,
   ChampionSuggestion,
   ChampionTrendsResponse,
+  CrawlerKillSwitchResponse,
+  CrawlerSeedResponse,
+  CrawlerStatus,
+  DbStats,
   DraftBanRequest,
   DraftPickRequest,
   DraftScores,
@@ -381,6 +385,26 @@ class ApiClient {
 
   async getLatestPatch(): Promise<{ patch: string }> {
     return this.request<{ patch: string }>("/api/admin/latest-patch");
+  }
+
+  async getDbStats(): Promise<DbStats> {
+    return this.request<DbStats>("/api/admin/db-stats");
+  }
+
+  async getCrawlerStatus(): Promise<CrawlerStatus> {
+    return this.request<CrawlerStatus>("/api/admin/crawler/status");
+  }
+
+  async toggleCrawlerKillSwitch(): Promise<CrawlerKillSwitchResponse> {
+    return this.request<CrawlerKillSwitchResponse>("/api/admin/crawler/kill-switch", {
+      method: "POST",
+    });
+  }
+
+  async triggerCrawlerSeed(): Promise<CrawlerSeedResponse> {
+    return this.request<CrawlerSeedResponse>("/api/admin/crawler/seed", {
+      method: "POST",
+    });
   }
 }
 

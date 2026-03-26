@@ -63,3 +63,30 @@ class DbStatsResponse(BaseModel):
     unique_players: int
     storage_mb: float
     recent_days: list[dict]
+
+
+class CrawlerStatsDetail(BaseModel):
+    cycles: int = 0
+    players_processed: int = 0
+    matches_inserted: int = 0
+    last_run_at: str = ""
+
+
+class CrawlerStatusResponse(BaseModel):
+    enabled: bool
+    kill_switch_active: bool
+    circuit_breaker_active: bool
+    queue_depth: int
+    seen_count: int
+    stats: CrawlerStatsDetail
+
+
+class CrawlerKillSwitchResponse(BaseModel):
+    kill_switch_active: bool
+    message: str
+
+
+class CrawlerSeedResponse(BaseModel):
+    status: str
+    players_queued: int
+    message: str

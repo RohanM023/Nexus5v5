@@ -60,6 +60,15 @@ const links: SidebarLink[] = [
       </svg>
     ),
   },
+  {
+    href: "/admin",
+    label: "Admin",
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728M9.172 15.828a4 4 0 010-5.656m5.656 0a4 4 0 010 5.656M12 12h.008v.008H12V12z" />
+      </svg>
+    ),
+  },
 ];
 
 export function useSidebarCollapsed() {
