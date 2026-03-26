@@ -6,7 +6,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/lib/api";
 import { StatsOverview } from "@/components/profile/stats-overview";
 import { ChampionPoolGrid } from "@/components/profile/champion-pool-grid";
-import { RankedCard } from "@/components/profile/ranked-card";
+import { getEmblemUrl, formatRank } from "@/components/profile/ranked-card";
 import { RankProgression } from "@/components/charts/rank-progression";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageLoader, ErrorDisplay, Spinner } from "@/components/ui/loading";
@@ -232,6 +232,38 @@ export default function SummonerPage() {
                 {performance.role_distribution[0].role}
               </span>
             )}
+            {(() => {
+              const entries = rankedQuery.data?.entries ?? [];
+              const solo = entries.find(e => e.queue_type === "RANKED_SOLO_5x5");
+              const flex = entries.find(e => e.queue_type === "RANKED_FLEX_SR");
+              if (!solo && !flex) return null;
+              return (
+                <>
+                  {solo && (
+                    <>
+                      <span>&middot;</span>
+                      <span className="inline-flex items-center gap-1">
+                        <Image src={getEmblemUrl(solo.tier)} alt={solo.tier} width={16} height={16} unoptimized />
+                        <span className="text-[var(--color-text-secondary)]">
+                          {formatRank(solo.tier, solo.rank)} &middot; {solo.league_points} LP
+                        </span>
+                      </span>
+                    </>
+                  )}
+                  {flex && (
+                    <>
+                      <span>&middot;</span>
+                      <span className="inline-flex items-center gap-1">
+                        <Image src={getEmblemUrl(flex.tier)} alt={flex.tier} width={16} height={16} unoptimized />
+                        <span className="text-[var(--color-text-secondary)]">
+                          {formatRank(flex.tier, flex.rank)} &middot; {flex.league_points} LP
+                        </span>
+                      </span>
+                    </>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -290,13 +322,6 @@ export default function SummonerPage() {
         );
       })()}
 
-      {/* Ranked info */}
-      {rankedQuery.data && rankedQuery.data.entries.length > 0 && (
-        <div className="mt-4">
-          <RankedCard entries={rankedQuery.data.entries} />
-        </div>
-      )}
-
       {/* Stats bar */}
       <div className="mt-5">
         {performanceQuery.isLoading ? (
@@ -330,20 +355,16 @@ export default function SummonerPage() {
         ) : null}
       </div>
 
-      {/* Rank Progression */}
-      {rankedQuery.data && matches.length > 0 && (
-        <div className="mt-5">
-          <RankProgression
-            soloEntry={rankedQuery.data.entries.find(e => e.queue_type === "RANKED_SOLO_5x5") ?? null}
-            matches={matches.filter(m => m.queue_id === 420)}
-          />
-        </div>
-      )}
-
       {/* Two-column layout */}
       <div className="mt-5 flex flex-col gap-5 lg:flex-row">
-        {/* Left sidebar: Champion Pool */}
-        <div className="w-full lg:w-[280px] lg:shrink-0">
+        {/* Left sidebar: Rank Progression + Champion Pool */}
+        <div className="w-full lg:w-[280px] lg:shrink-0 space-y-5">
+          {rankedQuery.data && matches.length > 0 && (
+            <RankProgression
+              soloEntry={rankedQuery.data.entries.find(e => e.queue_type === "RANKED_SOLO_5x5") ?? null}
+              matches={matches.filter(m => m.queue_id === 420)}
+            />
+          )}
           {championPoolQuery.isLoading ? (
             <PageLoader message="Loading champions..." />
           ) : championPool && championPool.champions.length > 0 ? (

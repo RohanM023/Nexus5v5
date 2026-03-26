@@ -8,11 +8,11 @@ interface RankedCardProps {
   entries: RankedEntry[];
 }
 
-function getEmblemUrl(tier: string): string {
+export function getEmblemUrl(tier: string): string {
   return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier.toLowerCase()}.png`;
 }
 
-function formatRank(tier: string, rank: string): string {
+export function formatRank(tier: string, rank: string): string {
   if (["MASTER", "GRANDMASTER", "CHALLENGER"].includes(tier.toUpperCase())) {
     return tier;
   }
