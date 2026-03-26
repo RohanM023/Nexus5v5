@@ -338,6 +338,20 @@ class RiotAPIClient:
         )
         return result if result else []
 
+    async def get_league_entries_by_puuid(
+        self, puuid: str, region: str = "na1"
+    ) -> list[dict[str, Any]]:
+        """Get ranked league entries by PUUID (League-v4)."""
+        host = get_platform_host(region)
+        url = f"{host}/lol/league/v4/entries/by-puuid/{puuid}"
+        result = await self._request(
+            "GET",
+            url,
+            cache_key=f"riot:league:puuid:{puuid}",
+            cache_ttl=300,
+        )
+        return result if result else []
+
     async def get_challenger_league(
         self, queue: str = "RANKED_SOLO_5x5", region: str = "na1"
     ) -> dict[str, Any] | None:

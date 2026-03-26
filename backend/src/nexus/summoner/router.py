@@ -60,15 +60,8 @@ async def get_ranked_data(
     if not puuid:
         raise NotFoundError(f"Riot account not found: {game_name}#{tag_line}")
 
-    summoner = await client.get_summoner_by_puuid(puuid, region=region)
-    if not summoner:
-        raise NotFoundError(f"Summoner not found for Riot ID: {game_name}#{tag_line}")
-
-    summoner_id = str(summoner.get("id") or "")
-    if not summoner_id:
-        raise NotFoundError(f"Summoner ID not found for: {game_name}#{tag_line}")
-
-    league_entries = await client.get_league_entries(summoner_id, region=region)
+    # Use PUUID-based league lookup (Riot API no longer returns summoner ID reliably)
+    league_entries = await client.get_league_entries_by_puuid(puuid, region=region)
 
     entries = [
         schemas.RankedEntry(
@@ -88,7 +81,7 @@ async def get_ranked_data(
 
     return schemas.RankedDataResponse(
         puuid=puuid,
-        summoner_id=summoner_id,
+        summoner_id="",
         entries=entries,
     )
 
