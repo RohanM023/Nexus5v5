@@ -221,7 +221,7 @@ async def ingest_matches(
     (doubles the number of Riot API calls).
     """
     if queue_ids is None:
-        queue_ids = [420, 700]
+        queue_ids = []  # empty = fetch all queues from Riot API
 
     ACTIVE_INGESTION_JOBS.inc()
     timer = INGESTION_DURATION.labels(region=region).time()
@@ -255,7 +255,10 @@ async def _do_ingest(
     # Read watermark for incremental fetch
     watermark = await get_watermark(puuid)
 
-    for queue_id in queue_ids:
+    # Empty queue_ids = fetch all queues in a single Riot API call
+    fetch_queues: list[int | None] = queue_ids if queue_ids else [None]
+
+    for queue_id in fetch_queues:
         try:
             ids = await client.get_match_ids(puuid, region, queue=queue_id, count=count)
         except Exception:

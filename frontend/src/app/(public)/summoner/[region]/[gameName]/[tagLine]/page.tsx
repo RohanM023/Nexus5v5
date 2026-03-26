@@ -21,6 +21,7 @@ import Link from "next/link";
 const QUEUE_OPTIONS = [
   { value: undefined, label: "All" },
   { value: 420, label: "Ranked" },
+  { value: 400, label: "Normal" },
   { value: 700, label: "Clash" },
 ] as const;
 
