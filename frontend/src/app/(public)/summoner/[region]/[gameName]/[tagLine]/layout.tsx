@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
-interface SummonerLayoutProps {
+interface SummonerLayoutParams {
   children: React.ReactNode;
   params: Promise<{ region: string; gameName: string; tagLine: string }>;
 }
 
-export async function generateMetadata({ params }: SummonerLayoutProps): Promise<Metadata> {
+export async function generateMetadata({ params }: SummonerLayoutParams): Promise<Metadata> {
   const { region, gameName, tagLine } = await params;
   const decodedName = decodeURIComponent(gameName);
   const decodedTag = decodeURIComponent(tagLine);
@@ -27,6 +27,6 @@ export async function generateMetadata({ params }: SummonerLayoutProps): Promise
   };
 }
 
-export default function SummonerLayout({ children }: SummonerLayoutProps) {
+export default function SummonerLayout({ children }: SummonerLayoutParams) {
   return children;
 }

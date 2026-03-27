@@ -11,9 +11,10 @@ interface MatchRowProps {
   match: MatchSummary;
   expanded?: boolean;
   onToggle?: () => void;
+  queueLabel?: string;
 }
 
-export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
+export function MatchRow({ match, expanded, onToggle, queueLabel }: MatchRowProps) {
   const isWin = match.win;
   const [isEditing, setIsEditing] = useState(false);
   const [noteText, setNoteText] = useState("");
@@ -55,6 +56,7 @@ export function MatchRow({ match, expanded, onToggle }: MatchRowProps) {
           </p>
           <p className="font-mono text-[8px] tracking-wider text-[var(--color-text-muted)]">
             {match.role}
+            {queueLabel && <span className="ml-1 text-[var(--color-accent-text)]">{queueLabel}</span>}
           </p>
         </div>
 

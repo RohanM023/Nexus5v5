@@ -21,9 +21,21 @@ import Link from "next/link";
 const QUEUE_OPTIONS = [
   { value: undefined, label: "All" },
   { value: 420, label: "Ranked" },
-  { value: 400, label: "Normal" },
+  { value: 440, label: "Flex" },
   { value: 700, label: "Clash" },
 ] as const;
+
+const QUEUE_LABELS: Record<number, string> = {
+  420: "Ranked",
+  440: "Flex",
+  400: "Normal",
+  430: "Normal",
+  450: "ARAM",
+  700: "Clash",
+  720: "Clash",
+  900: "URF",
+  1700: "Arena",
+};
 
 export default function SummonerPage() {
   const params = useParams();
@@ -360,12 +372,23 @@ export default function SummonerPage() {
       <div className="mt-5 flex flex-col gap-5 lg:flex-row">
         {/* Left sidebar: Rank Progression + Champion Pool */}
         <div className="w-full lg:w-[280px] lg:shrink-0 space-y-5">
-          {rankedQuery.data && matches.length > 0 && (
-            <RankProgression
-              soloEntry={rankedQuery.data.entries.find(e => e.queue_type === "RANKED_SOLO_5x5") ?? null}
-              matches={matches.filter(m => m.queue_id === 420)}
-            />
-          )}
+          {rankedQuery.data && (() => {
+            const allMatches = matchesQuery.data?.data ?? [];
+            const isFlexTab = queue === 440;
+            const entry = rankedQuery.data.entries.find(e =>
+              e.queue_type === (isFlexTab ? "RANKED_FLEX_SR" : "RANKED_SOLO_5x5")
+            ) ?? null;
+            const rankedMatches = allMatches.filter(m =>
+              m.queue_id === (isFlexTab ? 440 : 420)
+            );
+            if (!entry || rankedMatches.length === 0) return null;
+            return (
+              <RankProgression
+                soloEntry={entry}
+                matches={rankedMatches}
+              />
+            );
+          })()}
           {championPoolQuery.isLoading ? (
             <PageLoader message="Loading champions..." />
           ) : championPool && championPool.champions.length > 0 ? (
@@ -425,6 +448,7 @@ export default function SummonerPage() {
                   match={match}
                   expanded={expandedMatchId === match.match_id}
                   onToggle={() => setExpandedMatchId(expandedMatchId === match.match_id ? null : match.match_id)}
+                  queueLabel={queue === undefined ? QUEUE_LABELS[match.queue_id] : undefined}
                 />
               ))}
             </div>
