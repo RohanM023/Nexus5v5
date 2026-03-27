@@ -31,6 +31,7 @@ const QUEUE_LABELS: Record<number, string> = {
   400: "Normal",
   430: "Normal",
   450: "ARAM",
+  480: "Swiftplay",
   700: "Clash",
   720: "Clash",
   900: "URF",
