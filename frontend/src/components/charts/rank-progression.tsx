@@ -80,11 +80,19 @@ export function RankProgression({ soloEntry, matches }: RankProgressionProps) {
 
   const currentLP = toAbsoluteLP(soloEntry.tier, soloEntry.rank, soloEntry.league_points);
 
-  // Sort matches newest first, take last N, then reverse to oldest first
-  const sorted = [...matches]
-    .sort((a, b) => new Date(b.game_start).getTime() - new Date(a.game_start).getTime())
-    .slice(0, MAX_GAMES)
-    .reverse();
+  // Sort matches newest first
+  const newestFirst = [...matches].sort(
+    (a, b) => new Date(b.game_start).getTime() - new Date(a.game_start).getTime()
+  );
+
+  // Filter to current patch only (match game_version major.minor, e.g. "25.S1")
+  const currentPatch = newestFirst[0]?.game_version?.split(".").slice(0, 2).join(".") ?? "";
+  const patchFiltered = currentPatch
+    ? newestFirst.filter((m) => m.game_version?.startsWith(currentPatch))
+    : newestFirst;
+
+  // Take last N games, reverse to oldest first for chart
+  const sorted = patchFiltered.slice(0, MAX_GAMES).reverse();
 
   // Walk backwards from current LP to estimate historical LP
   let estimatedLP = currentLP;
