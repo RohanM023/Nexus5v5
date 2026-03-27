@@ -212,7 +212,8 @@ class ApiClient {
     queue?: number,
     champion?: string,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
+    limit?: number
   ): Promise<PaginatedResponse<MatchSummary>> {
     const params = new URLSearchParams();
     if (cursor) params.set("cursor", cursor);
@@ -220,6 +221,7 @@ class ApiClient {
     if (champion) params.set("champion", champion);
     if (startDate) params.set("start_date", startDate);
     if (endDate) params.set("end_date", endDate);
+    if (limit !== undefined) params.set("limit", limit.toString());
     const qs = params.toString();
     return this.request<PaginatedResponse<MatchSummary>>(
       `/api/match/history/${puuid}${qs ? `?${qs}` : ""}`
@@ -292,9 +294,10 @@ class ApiClient {
     queue?: number,
     champion?: string,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
+    limit?: number
   ): Promise<PaginatedResponse<MatchSummary>> {
-    return this.getMatchHistory(puuid, cursor, queue, champion, startDate, endDate);
+    return this.getMatchHistory(puuid, cursor, queue, champion, startDate, endDate, limit);
   }
 
   // ---- Duo Overlap ----

@@ -146,6 +146,7 @@ export default function SummonerPage() {
     }
   }, [region]);
 
+  // Auto-ingest only on first visit when there's no data
   useEffect(() => {
     if (autoIngestTriggered.current) return;
     if (!summonerQuery.data?.puuid) return;
@@ -443,7 +444,7 @@ export default function SummonerPage() {
           ) : (
             <div className="overflow-hidden rounded-sm bg-[var(--color-surface)]">
               <MatchListHeader className="border-b border-[var(--color-border)]" />
-              {matches.slice(0, 20).map((match: MatchSummary) => (
+              {matches.map((match: MatchSummary) => (
                 <MatchRow
                   key={match.match_id}
                   match={match}
