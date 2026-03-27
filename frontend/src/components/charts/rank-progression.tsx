@@ -62,6 +62,8 @@ interface RankProgressionProps {
 
 const LP_PER_GAME = 15;
 
+const MAX_GAMES = 20;
+
 export function RankProgression({ soloEntry, matches }: RankProgressionProps) {
   if (!soloEntry || matches.length === 0) {
     return (
@@ -78,10 +80,11 @@ export function RankProgression({ soloEntry, matches }: RankProgressionProps) {
 
   const currentLP = toAbsoluteLP(soloEntry.tier, soloEntry.rank, soloEntry.league_points);
 
-  // Sort matches oldest first
-  const sorted = [...matches].sort(
-    (a, b) => new Date(a.game_start).getTime() - new Date(b.game_start).getTime()
-  );
+  // Sort matches newest first, take last N, then reverse to oldest first
+  const sorted = [...matches]
+    .sort((a, b) => new Date(b.game_start).getTime() - new Date(a.game_start).getTime())
+    .slice(0, MAX_GAMES)
+    .reverse();
 
   // Walk backwards from current LP to estimate historical LP
   let estimatedLP = currentLP;
