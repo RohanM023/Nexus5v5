@@ -14,8 +14,8 @@ BLOCKED_QUEUE_IDS: frozenset[int] = frozenset({70})
 
 class IngestRequest(BaseModel):
     queue_ids: list[int] = Field(
-        default=[420, 700],
-        description="Queue IDs to ingest (420=Ranked Solo, 700=Clash)",
+        default=[],
+        description="Queue IDs to ingest. Empty list = all queues.",
     )
     count: int = Field(default=10, ge=1, le=100)
     region: str = Field(

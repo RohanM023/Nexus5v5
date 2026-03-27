@@ -62,7 +62,7 @@ interface RankProgressionProps {
 
 const LP_PER_GAME = 15;
 
-const MAX_GAMES = 20;
+const MAX_GAMES = 10;
 
 export function RankProgression({ soloEntry, matches }: RankProgressionProps) {
   if (!soloEntry || matches.length === 0) {

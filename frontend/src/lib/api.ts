@@ -194,6 +194,7 @@ class ApiClient {
         body: JSON.stringify({
           region: options?.region ?? "na1",
           count: options?.count ?? 10,
+          queue_ids: [],
         }),
       }
     );
