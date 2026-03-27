@@ -135,7 +135,7 @@ export default function SummonerPage() {
   const triggerIngest = useCallback(async (puuid: string) => {
     setIngestionError(null);
     try {
-      const res = await api.triggerIngestion(puuid, { region, count: 50 });
+      const res = await api.triggerIngestion(puuid, { region, count: 100 });
       if (res.error) {
         setIngestionError(res.error);
       } else if (res.job_id) {
