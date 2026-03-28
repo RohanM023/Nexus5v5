@@ -79,7 +79,7 @@ services:
       dockerfile: Dockerfile
       target: production
     container_name: nexus-worker-prod
-    command: ["uv", "run", "arq", "nexus.worker.WorkerSettings"]
+    command: ["python", "-m", "arq", "nexus.worker.WorkerSettings"]
     restart: unless-stopped
     env_file:
       - .env
