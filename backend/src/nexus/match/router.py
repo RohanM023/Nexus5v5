@@ -240,7 +240,7 @@ async def get_match_history(
     start_date: str | None = Query(default=None),
     end_date: str | None = Query(default=None),
     cursor: str | None = Query(default=None),
-    limit: int = Query(default=20, ge=1, le=100),
+    limit: int = Query(default=20, ge=1, le=150),
     current_user: dict[str, Any] | None = Depends(get_optional_user),
 ) -> dict[str, Any]:
     """Get paginated match history from ClickHouse.

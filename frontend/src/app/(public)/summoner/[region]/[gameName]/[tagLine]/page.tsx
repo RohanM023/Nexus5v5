@@ -25,6 +25,8 @@ const QUEUE_OPTIONS = [
   { value: 700, label: "Clash" },
 ] as const;
 
+const GAME_COUNT_OPTIONS = [20, 50, 75, 100, 150] as const;
+
 const QUEUE_LABELS: Record<number, string> = {
   420: "Ranked",
   440: "Flex",
@@ -46,6 +48,7 @@ export default function SummonerPage() {
   const queryClient = useQueryClient();
 
   const [queue, setQueue] = useState<number | undefined>(undefined);
+  const [gameCount, setGameCount] = useState<number>(20);
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const [ingestionJobId, setIngestionJobId] = useState<string | null>(null);
   const [ingestionError, setIngestionError] = useState<string | null>(null);
@@ -78,8 +81,8 @@ export default function SummonerPage() {
   });
 
   const matchesQuery = useQuery({
-    queryKey: ["summoner-matches", summonerQuery.data?.puuid, queue],
-    queryFn: () => api.getSummonerMatches(summonerQuery.data!.puuid, undefined, queue),
+    queryKey: ["summoner-matches", summonerQuery.data?.puuid, queue, gameCount],
+    queryFn: () => api.getSummonerMatches(summonerQuery.data!.puuid, undefined, queue, undefined, undefined, undefined, gameCount),
     enabled: !!summonerQuery.data?.puuid,
   });
 
@@ -98,7 +101,7 @@ export default function SummonerPage() {
   // Separate query for ranked matches used by the rank progression chart
   const rankedMatchesQuery = useQuery({
     queryKey: ["summoner-ranked-matches", summonerQuery.data?.puuid],
-    queryFn: () => api.getSummonerMatches(summonerQuery.data!.puuid, undefined, 420, undefined, undefined, undefined, 30),
+    queryFn: () => api.getSummonerMatches(summonerQuery.data!.puuid, undefined, 420, undefined, undefined, undefined, 150),
     enabled: !!summonerQuery.data?.puuid,
   });
 
@@ -291,6 +294,22 @@ export default function SummonerPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 rounded border border-[var(--color-border)] px-1">
+            {GAME_COUNT_OPTIONS.map((count) => (
+              <button
+                key={count}
+                onClick={() => setGameCount(count)}
+                className={cn(
+                  "font-mono text-[9px] px-1.5 py-0.5 transition-colors",
+                  gameCount === count
+                    ? "text-[var(--color-accent-text)]"
+                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                )}
+              >
+                {count}
+              </button>
+            ))}
+          </div>
           {matches.length > 0 && matches[0]?.game_start && (
             <span className="font-mono text-[9px] text-[var(--color-text-muted)]">
               Data from {formatTimeAgo(matches[0].game_start)}
