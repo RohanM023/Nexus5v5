@@ -1,15 +1,12 @@
 {$DOMAIN::80} {
-    # API reverse proxy
-    handle /api/* {
-        reverse_proxy api:8000
-    }
-
-    # WebSocket support for draft
+    # WebSocket support for draft (must be before general frontend handler)
     handle /api/v1/draft/live/* {
         reverse_proxy api:8000
     }
 
-    # Frontend reverse proxy
+    # Let Next.js handle all /api/* requests so its rewrites
+    # (/api/:path* → backend /api/v1/:path*) work correctly.
+    # All other requests also go to Next.js.
     handle {
         reverse_proxy web:3000
     }
@@ -19,6 +16,6 @@
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
         Referrer-Policy "strict-origin-when-cross-origin"
-        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https://ddragon.leagueoflegends.com https://raw.communitydragon.org data:; connect-src 'self' wss:; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://ddragon.leagueoflegends.com https://raw.communitydragon.org data:; connect-src 'self' wss:; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     }
 }
