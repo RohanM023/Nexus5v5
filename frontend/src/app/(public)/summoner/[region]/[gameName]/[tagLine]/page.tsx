@@ -95,6 +95,13 @@ export default function SummonerPage() {
     enabled: !!summonerQuery.data,
   });
 
+  // Separate query for ranked matches used by the rank progression chart
+  const rankedMatchesQuery = useQuery({
+    queryKey: ["summoner-ranked-matches", summonerQuery.data?.puuid],
+    queryFn: () => api.getSummonerMatches(summonerQuery.data!.puuid, undefined, 420, undefined, undefined, undefined, 30),
+    enabled: !!summonerQuery.data?.puuid,
+  });
+
   const ingestionStartTime = useRef<number>(0);
 
   const ingestionStatusQuery = useQuery({
@@ -120,6 +127,7 @@ export default function SummonerPage() {
       queryClient.invalidateQueries({ queryKey: ["summoner-performance"] });
       queryClient.invalidateQueries({ queryKey: ["summoner-champion-pool"] });
       queryClient.invalidateQueries({ queryKey: ["summoner-matches"] });
+      queryClient.invalidateQueries({ queryKey: ["summoner-ranked-matches"] });
       return;
     }
 
@@ -129,6 +137,7 @@ export default function SummonerPage() {
       queryClient.invalidateQueries({ queryKey: ["summoner-performance"] });
       queryClient.invalidateQueries({ queryKey: ["summoner-champion-pool"] });
       queryClient.invalidateQueries({ queryKey: ["summoner-matches"] });
+      queryClient.invalidateQueries({ queryKey: ["summoner-ranked-matches"] });
     }
   }, [ingestionStatusQuery.data?.status, ingestionJobId, queryClient]);
 
@@ -375,14 +384,10 @@ export default function SummonerPage() {
         {/* Left sidebar: Rank Progression + Champion Pool */}
         <div className="w-full lg:w-[280px] lg:shrink-0 space-y-5">
           {rankedQuery.data && (() => {
-            const allMatches = matchesQuery.data?.data ?? [];
-            const isFlexTab = queue === 440;
             const entry = rankedQuery.data.entries.find(e =>
-              e.queue_type === (isFlexTab ? "RANKED_FLEX_SR" : "RANKED_SOLO_5x5")
+              e.queue_type === "RANKED_SOLO_5x5"
             ) ?? null;
-            const rankedMatches = allMatches.filter(m =>
-              m.queue_id === (isFlexTab ? 440 : 420)
-            );
+            const rankedMatches = rankedMatchesQuery.data?.data ?? [];
             if (!entry || rankedMatches.length === 0) return null;
             return (
               <RankProgression
