@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   AreaChart,
   Area,
@@ -63,10 +62,9 @@ interface RankProgressionProps {
 
 const LP_PER_GAME = 15;
 
-export function RankProgression({ soloEntry, matches }: RankProgressionProps) {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+const MAX_GAMES = 30;
 
+export function RankProgression({ soloEntry, matches }: RankProgressionProps) {
   if (!soloEntry || matches.length === 0) {
     return (
       <Card>
@@ -82,42 +80,27 @@ export function RankProgression({ soloEntry, matches }: RankProgressionProps) {
 
   const currentLP = toAbsoluteLP(soloEntry.tier, soloEntry.rank, soloEntry.league_points);
 
-  // Sort matches newest first
+  // Sort matches newest first, take last N, reverse to oldest first for chart
   const newestFirst = [...matches].sort(
     (a, b) => new Date(b.game_start).getTime() - new Date(a.game_start).getTime()
   );
+  const sorted = newestFirst.slice(0, MAX_GAMES).reverse();
 
-  // Apply date range filter
-  let filtered = newestFirst;
-  if (startDate) {
-    const start = new Date(startDate).getTime();
-    filtered = filtered.filter((m) => new Date(m.game_start).getTime() >= start);
-  }
-  if (endDate) {
-    const end = new Date(endDate + "T23:59:59").getTime();
-    filtered = filtered.filter((m) => new Date(m.game_start).getTime() <= end);
-  }
-
-  const sorted = filtered.reverse();
-
-  // Estimate LP for each game by walking backwards from current LP through
-  // ALL matches (not just filtered), then pick out the filtered ones.
-  // First, build LP estimates for every match (newest first).
-  const lpByMatchId = new Map<string, number>();
-  let walkLP = currentLP;
-  for (const m of newestFirst) {
-    lpByMatchId.set(m.match_id, walkLP);
-    walkLP += m.win ? -LP_PER_GAME : LP_PER_GAME;
-    if (walkLP < 0) walkLP = 0;
-  }
-
+  // Walk backwards from current LP to estimate historical LP
+  let estimatedLP = currentLP;
   const rawPoints: { date: string; lp: number; result: "W" | "L" }[] = [];
-  for (const m of sorted) {
-    rawPoints.push({
+
+  // Walk from most recent to oldest to estimate LP at each point
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    const m = sorted[i];
+    rawPoints.unshift({
       date: new Date(m.game_start).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      lp: lpByMatchId.get(m.match_id) ?? currentLP,
+      lp: estimatedLP,
       result: m.win ? "W" : "L",
     });
+    // Reverse the result to go back in time
+    estimatedLP += m.win ? -LP_PER_GAME : LP_PER_GAME;
+    if (estimatedLP < 0) estimatedLP = 0;
   }
 
   const data: DataPoint[] = rawPoints.map((p, i) => ({
@@ -126,45 +109,6 @@ export function RankProgression({ soloEntry, matches }: RankProgressionProps) {
     lp: p.lp,
     result: p.result,
   }));
-
-  if (data.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Rank Progression</CardTitle>
-            <span className="font-mono text-[9px] text-[var(--color-text-muted)]">0 games</span>
-          </div>
-          <div className="mt-2 flex items-center gap-1.5">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="h-6 rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-1.5 font-mono text-[9px] text-[var(--color-text-secondary)] outline-none focus:border-[var(--color-accent-text)] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-40"
-            />
-            <span className="font-mono text-[8px] text-[var(--color-text-muted)]">to</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="h-6 rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-1.5 font-mono text-[9px] text-[var(--color-text-secondary)] outline-none focus:border-[var(--color-accent-text)] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-40"
-            />
-            {(startDate || endDate) && (
-              <button
-                onClick={() => { setStartDate(""); setEndDate(""); }}
-                className="font-mono text-[9px] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="py-6 text-center text-xs text-[var(--color-text-muted)]">
-          No ranked games in this date range.
-        </CardContent>
-      </Card>
-    );
-  }
 
   // Determine Y-axis range
   const lpValues = data.map((d) => d.lp);
@@ -185,35 +129,7 @@ export function RankProgression({ soloEntry, matches }: RankProgressionProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Rank Progression</CardTitle>
-          <span className="font-mono text-[9px] text-[var(--color-text-muted)]">
-            {sorted.length} game{sorted.length !== 1 ? "s" : ""}
-          </span>
-        </div>
-        <div className="mt-2 flex items-center gap-1.5">
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="h-6 rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-1.5 font-mono text-[9px] text-[var(--color-text-secondary)] outline-none focus:border-[var(--color-accent-text)] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-40"
-          />
-          <span className="font-mono text-[8px] text-[var(--color-text-muted)]">to</span>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="h-6 rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-1.5 font-mono text-[9px] text-[var(--color-text-secondary)] outline-none focus:border-[var(--color-accent-text)] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-40"
-          />
-          {(startDate || endDate) && (
-            <button
-              onClick={() => { setStartDate(""); setEndDate(""); }}
-              className="font-mono text-[9px] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
-            >
-              Clear
-            </button>
-          )}
-        </div>
+        <CardTitle>Rank Progression</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={220}>
