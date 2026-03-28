@@ -36,6 +36,8 @@ services:
         reservations:
           memory: 256m
           cpus: "0.25"
+    volumes:
+      - ./backend/keys:/app/keys:ro
     networks:
       - nexus-net
 
@@ -103,6 +105,8 @@ services:
         reservations:
           memory: 256m
           cpus: "0.25"
+    volumes:
+      - ./backend/keys:/app/keys:ro
     networks:
       - nexus-net
 
