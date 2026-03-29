@@ -25,6 +25,9 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+ARG INTERNAL_API_URL=http://api:8000
+ENV INTERNAL_API_URL=$INTERNAL_API_URL
+
 RUN npm run build
 
 # Stage 4: Production runner
