@@ -268,6 +268,11 @@ async def run_crawler_cycle(
             total_discovered += new_count
             CRAWLER_DISCOVERED.labels(region=region).inc(new_count)
 
+            # Update stats incrementally so admin panel shows real-time progress
+            await redis.hincrby(stats_key, "players_processed", 1)
+            await redis.hincrby(stats_key, "matches_inserted", matches_inserted)
+            await redis.hset(stats_key, "last_run_at", str(int(time.time())))
+
             logger.info(
                 "Crawled puuid=%s: inserted=%d discovered=%d (region=%s)",
                 puuid[:8],
@@ -314,9 +319,6 @@ async def run_crawler_cycle(
     CRAWLER_QUEUE_DEPTH.labels(region=region).set(final_depth)
 
     await redis.hincrby(stats_key, "cycles", 1)
-    await redis.hincrby(stats_key, "players_processed", players_processed)
-    await redis.hincrby(stats_key, "matches_inserted", total_matches_inserted)
-    await redis.hset(stats_key, "last_run_at", str(int(time.time())))
 
     CRAWLER_CYCLES.labels(region=region, status="ok").inc()
 
