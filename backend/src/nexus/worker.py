@@ -79,6 +79,7 @@ class WorkerSettings:
             run_crawler_cycle,
             hour={0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22},
             minute=30,
+            timeout=1800,  # 30 min — crawler processes many players with rate-limit sleeps
         ),
     ]
     on_startup = startup
