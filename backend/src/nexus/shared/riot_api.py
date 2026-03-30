@@ -126,9 +126,27 @@ class RiotAPIClient:
 
     async def _check_quota_backoff(self) -> None:
         """Add linear delay when quota usage exceeds 80%."""
+        from nexus.shared.redis import get_redis
+
+        per_second_ratio = self._per_second.usage_ratio
         ratio = self._per_2min.usage_ratio
-        RIOT_API_QUOTA.labels(bucket="per_second").set(self._per_second.usage_ratio * 100)
+        RIOT_API_QUOTA.labels(bucket="per_second").set(per_second_ratio * 100)
         RIOT_API_QUOTA.labels(bucket="per_2min").set(ratio * 100)
+
+        # Publish quota to Redis so the admin API can read cross-process usage
+        try:
+            redis = await get_redis()
+            await redis.hset(
+                "riot:quota",
+                mapping={
+                    "per_second_pct": str(round(per_second_ratio * 100, 1)),
+                    "per_2min_pct": str(round(ratio * 100, 1)),
+                },
+            )
+            await redis.expire("riot:quota", 10)
+        except Exception:
+            pass  # Best-effort — don't break requests if Redis is down
+
         if ratio >= 0.8:
             delay = (ratio - 0.8) / 0.2 * 2.0  # 0-2s linear from 80-100%
             logger.warning("Riot API quota at %.0f%%, backing off %.1fs", ratio * 100, delay)

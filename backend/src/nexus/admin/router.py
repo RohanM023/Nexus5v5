@@ -57,16 +57,24 @@ async def prometheus_metrics(
 async def riot_quota(
     _current_user: dict[str, Any] = Depends(get_admin_user),
 ) -> dict[str, Any]:
-    """Show current Riot API quota usage. Requires authentication."""
+    """Show current Riot API quota usage. Reads from Redis for cross-process visibility."""
+    from nexus.shared.redis import get_redis
     from nexus.shared.riot_api import get_riot_client
 
     client = get_riot_client()
+    redis = await get_redis()
+
+    # Read quota from Redis (published by whichever process is making API calls)
+    quota_raw = await redis.hgetall("riot:quota")
+    per_second_pct = float(quota_raw.get("per_second_pct", 0))
+    per_2min_pct = float(quota_raw.get("per_2min_pct", 0))
+
     return {
         "per_second_limit": client.per_second_bucket.rate,
         "per_2min_limit": client.per_2min_bucket.rate,
-        "per_second_used_pct": round(client.per_second_bucket.usage_ratio * 100, 1),
-        "per_2min_used_pct": round(client.per_2min_bucket.usage_ratio * 100, 1),
-        "auto_backoff_active": client.per_2min_bucket.usage_ratio >= 0.8,
+        "per_second_used_pct": per_second_pct,
+        "per_2min_used_pct": per_2min_pct,
+        "auto_backoff_active": per_2min_pct >= 80.0,
     }
 
 
