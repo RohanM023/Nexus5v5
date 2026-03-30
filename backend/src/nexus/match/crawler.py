@@ -87,14 +87,11 @@ async def _validate_api_key(region: str) -> bool:
     """Canary request to verify the API key is still valid."""
     client = get_riot_client()
     try:
-        # Use a lightweight account lookup for a well-known PUUID (Faker)
-        await client.get_account_by_puuid(
-            "Mzj7RGOaEeu94K9KaevDH4FNsKjXCPH73OFQrHE_7VDB-LrWjGyRm0sxE3pBPQ2TqmZGfMEDMsMxhQ",
-            region,
-        )
+        # Use challenger league endpoint — lightweight, no hardcoded PUUID
+        await client.get_challenger_league(region=region)
         return True
     except RiotAPIError as exc:
-        if exc.status_code in (401, 403, 502):
+        if exc.status_code in (400, 401, 403, 502):
             logger.critical(
                 "API key invalid/expired — circuit breaker tripped (region=%s)", region
             )
@@ -105,10 +102,7 @@ async def _validate_api_key(region: str) -> bool:
         logger.warning("Rate limited during canary request, retrying once")
         await asyncio.sleep(2)
         try:
-            await client.get_account_by_puuid(
-                "Mzj7RGOaEeu94K9KaevDH4FNsKjXCPH73OFQrHE_7VDB-LrWjGyRm0sxE3pBPQ2TqmZGfMEDMsMxhQ",
-                region,
-            )
+            await client.get_challenger_league(region=region)
             return True
         except (RateLimitError, RiotAPIError):
             await trip_circuit_breaker(600, region, "rate_limit_canary")
