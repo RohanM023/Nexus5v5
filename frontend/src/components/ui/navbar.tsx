@@ -65,6 +65,12 @@ export function Navbar() {
           >
             Duo
           </Link>
+          <Link
+            href="/tournaments"
+            className="px-3 py-1 text-xs tracking-wide text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
+          >
+            Tourneys
+          </Link>
         </div>
 
         <form onSubmit={handleSearch} className="mx-4 flex min-w-0 flex-1 items-center justify-center">
