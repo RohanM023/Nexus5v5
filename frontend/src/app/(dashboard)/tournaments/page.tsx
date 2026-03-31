@@ -204,7 +204,6 @@ export default function TournamentsPage() {
             No tournaments yet
           </p>
           <p className="mt-1 max-w-xs text-xs leading-relaxed text-[var(--color-text-muted)]">
-            Tournaments will be available once the Riot production API key is approved.
             Organizers with tournament access can create events for the community.
           </p>
         </div>
