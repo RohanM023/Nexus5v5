@@ -132,12 +132,31 @@ Composite = 0.35*Synergy + 0.35*Counter + 0.30*Comfort
 
 ## Deployment
 
-- **Frontend**: Vercel (Next.js). Rewrites `/api/:path*` → `${BACKEND_URL}/api/v1/:path*`
-- **Backend**: FastAPI (Docker). Worker: arq for background jobs
-- **Databases**: PostgreSQL + ClickHouse + Redis (Docker dev, managed cloud prod)
+### VPS (Production)
+- **Host**: Vultr VPS — Ubuntu 24.04, IP `45.76.25.119`
+- **SSH**: `ssh root@45.76.25.119`
+- **Repo path**: `/opt/nexus` (cloned from `git@github.com:RohanM023/Nexus5v5.git`)
+- **Compose file**: `docker-compose.prod.yml` (production targets, resource limits, restart policies)
+- **Services** (all Docker, `nexus-net` bridge network):
+  - `nexus-api` — FastAPI (uvicorn), port 8000, healthchecked
+  - `nexus-worker` — arq background worker
+  - `nexus-web` — Next.js, port 3000
+  - `nexus-postgres` — PostgreSQL 16 Alpine
+  - `nexus-clickhouse` — ClickHouse 24 Alpine (ports 8123/9000)
+  - `nexus-redis` — Redis 7 Alpine
+  - `nexus-caddy` — Caddy 2 reverse proxy (ports 80/443, auto TLS)
+  - `nexus-prometheus` / `nexus-grafana` — monitoring (Grafana on port 3001)
+- **Env file**: `/opt/nexus/.env` (RIOT_API_KEY, DB creds, ports, etc.)
+- **Deploy workflow**: `git pull` on VPS → `docker compose -f docker-compose.prod.yml up --build -d`
+
+### Local Dev
+- **Frontend**: `docker compose up` or standalone `npm run dev` in `frontend/`
+- **Backend**: `docker compose up` or standalone `uv run uvicorn` in `backend/`
+- **Databases**: PostgreSQL + ClickHouse + Redis via Docker Compose
+
+### General
 - **Tokens**: `localStorage` keys `nexus_access_token` / `nexus_refresh_token`
-- **Vercel env**: `NEXT_PUBLIC_API_URL`, `INTERNAL_API_URL`, `RIOT_API_KEY`
-- **ClickHouse Cloud**: `CLICKHOUSE_SECURE=true`, port 8443, HTTPS with TLS
+- **ClickHouse Cloud** (if used): `CLICKHOUSE_SECURE=true`, port 8443, HTTPS with TLS
 
 ## Key Directories
 

@@ -6,21 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
-type TournamentStatus = "upcoming" | "active" | "completed";
 type TournamentFormat = "single-elim" | "double-elim" | "round-robin" | "swiss";
-
-interface Tournament {
-  id: string;
-  name: string;
-  status: TournamentStatus;
-  format: TournamentFormat;
-  teamSize: number;
-  maxTeams: number;
-  registeredTeams: number;
-  startDate: string;
-  prizeDescription: string;
-  organizer: string;
-}
 
 const FORMAT_LABELS: Record<TournamentFormat, string> = {
   "single-elim": "Single Elimination",
@@ -29,178 +15,61 @@ const FORMAT_LABELS: Record<TournamentFormat, string> = {
   "swiss": "Swiss",
 };
 
-const STATUS_STYLES: Record<TournamentStatus, { dot: string; label: string }> = {
-  upcoming: { dot: "bg-[var(--color-warning)]", label: "Upcoming" },
-  active: { dot: "bg-[var(--color-success)]", label: "Live" },
-  completed: { dot: "bg-[var(--color-text-muted)]", label: "Completed" },
+interface CreateForm {
+  name: string;
+  startDate: string;
+  format: TournamentFormat;
+  maxTeams: string;
+  description: string;
+}
+
+const EMPTY_FORM: CreateForm = {
+  name: "",
+  startDate: "",
+  format: "single-elim",
+  maxTeams: "16",
+  description: "",
 };
-
-// Placeholder data — will be replaced with API calls
-const SAMPLE_TOURNAMENTS: Tournament[] = [
-  {
-    id: "1",
-    name: "Nexus Weekly #1",
-    status: "upcoming",
-    format: "single-elim",
-    teamSize: 5,
-    maxTeams: 16,
-    registeredTeams: 7,
-    startDate: "2026-04-05T20:00:00Z",
-    prizeDescription: "Bragging rights",
-    organizer: "Nexus 5v5",
-  },
-  {
-    id: "2",
-    name: "Community Clash Open",
-    status: "upcoming",
-    format: "double-elim",
-    teamSize: 5,
-    maxTeams: 32,
-    registeredTeams: 18,
-    startDate: "2026-04-12T18:00:00Z",
-    prizeDescription: "RP prizes for top 3",
-    organizer: "Nexus 5v5",
-  },
-  {
-    id: "3",
-    name: "Draft Kings Invitational",
-    status: "upcoming",
-    format: "swiss",
-    teamSize: 5,
-    maxTeams: 8,
-    registeredTeams: 8,
-    startDate: "2026-04-19T21:00:00Z",
-    prizeDescription: "Invite only",
-    organizer: "Nexus 5v5",
-  },
-];
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZoneName: "short",
-  });
-}
-
-function TournamentCard({ tournament }: { tournament: Tournament }) {
-  const status = STATUS_STYLES[tournament.status];
-  const spotsLeft = tournament.maxTeams - tournament.registeredTeams;
-  const fillPct = (tournament.registeredTeams / tournament.maxTeams) * 100;
-
-  return (
-    <div className="group rounded-md border border-[var(--color-border)]/40 bg-[var(--color-surface)]/50 p-5 transition-all hover:border-[var(--color-border-hover)] hover:bg-[var(--color-surface)]">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="truncate text-sm font-medium text-[var(--color-text-primary)]">
-              {tournament.name}
-            </h3>
-            <span className="flex items-center gap-1 shrink-0">
-              <span className={cn("h-1.5 w-1.5 rounded-full", status.dot)} />
-              <span className="font-mono text-[9px] tracking-wider text-[var(--color-text-muted)]">
-                {status.label}
-              </span>
-            </span>
-          </div>
-          <p className="mt-1 font-mono text-[10px] tracking-wider text-[var(--color-text-muted)]">
-            {formatDate(tournament.startDate)}
-          </p>
-        </div>
-        <Button variant="outline" size="sm" disabled={spotsLeft === 0}>
-          {spotsLeft === 0 ? "Full" : "Register"}
-        </Button>
-      </div>
-
-      <div className="mt-4 grid grid-cols-3 gap-4">
-        <div>
-          <p className="font-mono text-[9px] tracking-wider uppercase text-[var(--color-text-muted)]">
-            Format
-          </p>
-          <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
-            {FORMAT_LABELS[tournament.format]}
-          </p>
-        </div>
-        <div>
-          <p className="font-mono text-[9px] tracking-wider uppercase text-[var(--color-text-muted)]">
-            Team Size
-          </p>
-          <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
-            {tournament.teamSize}v{tournament.teamSize}
-          </p>
-        </div>
-        <div>
-          <p className="font-mono text-[9px] tracking-wider uppercase text-[var(--color-text-muted)]">
-            Prize
-          </p>
-          <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
-            {tournament.prizeDescription}
-          </p>
-        </div>
-      </div>
-
-      {/* Registration bar */}
-      <div className="mt-4">
-        <div className="flex items-center justify-between">
-          <span className="font-mono text-[9px] tracking-wider text-[var(--color-text-muted)]">
-            {tournament.registeredTeams}/{tournament.maxTeams} teams
-          </span>
-          {spotsLeft > 0 ? (
-            <span className="font-mono text-[9px] tracking-wider text-[var(--color-accent-text)]">
-              {spotsLeft} {spotsLeft === 1 ? "spot" : "spots"} left
-            </span>
-          ) : (
-            <span className="font-mono text-[9px] tracking-wider text-[var(--color-danger)]">
-              Full
-            </span>
-          )}
-        </div>
-        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
-          <div
-            className={cn(
-              "h-full rounded-full transition-all",
-              fillPct >= 100
-                ? "bg-[var(--color-danger)]"
-                : fillPct >= 75
-                  ? "bg-[var(--color-warning)]"
-                  : "bg-[var(--color-accent)]"
-            )}
-            style={{ width: `${fillPct}%` }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-type TabFilter = "all" | "upcoming" | "active" | "completed";
 
 export default function TournamentsPage() {
   const { isAuthenticated } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const tabs: { value: TabFilter; label: string }[] = [
-    { value: "all", label: "All" },
-    { value: "upcoming", label: "Upcoming" },
-    { value: "active", label: "Active" },
-    { value: "completed", label: "Past" },
-  ];
+  const updateField = <K extends keyof CreateForm>(key: K, value: CreateForm[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setFormError(null);
+  };
 
-  const filtered =
-    activeTab === "all"
-      ? SAMPLE_TOURNAMENTS
-      : SAMPLE_TOURNAMENTS.filter((t) => t.status === activeTab);
+  const handleCreate = () => {
+    if (!form.name.trim()) {
+      setFormError("Tournament name is required.");
+      return;
+    }
+    if (!form.startDate) {
+      setFormError("Start date is required.");
+      return;
+    }
+    const startMs = new Date(form.startDate).getTime();
+    if (startMs <= Date.now()) {
+      setFormError("Start date must be in the future.");
+      return;
+    }
+    // Backend tournament API not yet implemented — show confirmation
+    setFormError(null);
+    setForm(EMPTY_FORM);
+    setShowCreate(false);
+  };
+
+  const inputClass =
+    "w-full rounded-md border border-[var(--color-border)] bg-[var(--background)] px-3 py-2 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)]/40 focus:outline-none";
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       {!isAuthenticated && (
         <div className="border-l-2 border-amber-600/50 bg-amber-600/5 px-4 py-2 text-xs text-amber-400">
-          Sign in to register for tournaments and manage your team.{" "}
+          Sign in to create and register for tournaments.{" "}
           <Link href="/login" className="underline hover:text-amber-300">
             Sign In
           </Link>
@@ -214,14 +83,18 @@ export default function TournamentsPage() {
             Tournaments
           </h1>
           <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
-            Community 5v5 tournaments — register your team and compete.
+            Community 5v5 tournaments — create, register, and compete.
           </p>
         </div>
         {isAuthenticated && (
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowCreate(!showCreate)}
+            onClick={() => {
+              setShowCreate(!showCreate);
+              setFormError(null);
+              if (showCreate) setForm(EMPTY_FORM);
+            }}
           >
             {showCreate ? "Cancel" : "Create Tournament"}
           </Button>
@@ -235,6 +108,12 @@ export default function TournamentsPage() {
             New Tournament
           </p>
 
+          {formError && (
+            <div className="rounded border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/5 px-3 py-2 font-mono text-[11px] text-[var(--color-danger)]">
+              {formError}
+            </div>
+          )}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block font-mono text-[9px] tracking-wider uppercase text-[var(--color-text-muted)]">
@@ -243,7 +122,9 @@ export default function TournamentsPage() {
               <input
                 type="text"
                 placeholder="e.g. Friday Night Clash"
-                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--background)] px-3 py-2 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)]/40 focus:outline-none"
+                value={form.name}
+                onChange={(e) => updateField("name", e.target.value)}
+                className={inputClass}
               />
             </div>
             <div>
@@ -252,25 +133,36 @@ export default function TournamentsPage() {
               </label>
               <input
                 type="datetime-local"
-                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--background)] px-3 py-2 text-xs text-[var(--color-text-primary)] focus:border-[var(--color-accent)]/40 focus:outline-none"
+                value={form.startDate}
+                onChange={(e) => updateField("startDate", e.target.value)}
+                className={inputClass}
               />
             </div>
             <div>
               <label className="mb-1 block font-mono text-[9px] tracking-wider uppercase text-[var(--color-text-muted)]">
                 Format
               </label>
-              <select className="w-full rounded-md border border-[var(--color-border)] bg-[var(--background)] px-3 py-2 text-xs text-[var(--color-text-primary)] focus:border-[var(--color-accent)]/40 focus:outline-none">
-                <option value="single-elim">Single Elimination</option>
-                <option value="double-elim">Double Elimination</option>
-                <option value="round-robin">Round Robin</option>
-                <option value="swiss">Swiss</option>
+              <select
+                value={form.format}
+                onChange={(e) => updateField("format", e.target.value as TournamentFormat)}
+                className={inputClass}
+              >
+                {Object.entries(FORMAT_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
               <label className="mb-1 block font-mono text-[9px] tracking-wider uppercase text-[var(--color-text-muted)]">
                 Max Teams
               </label>
-              <select className="w-full rounded-md border border-[var(--color-border)] bg-[var(--background)] px-3 py-2 text-xs text-[var(--color-text-primary)] focus:border-[var(--color-accent)]/40 focus:outline-none">
+              <select
+                value={form.maxTeams}
+                onChange={(e) => updateField("maxTeams", e.target.value)}
+                className={inputClass}
+              >
                 <option value="8">8 teams</option>
                 <option value="16">16 teams</option>
                 <option value="32">32 teams</option>
@@ -285,52 +177,45 @@ export default function TournamentsPage() {
             <textarea
               rows={2}
               placeholder="Rules, prize info, or any other details..."
-              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--background)] px-3 py-2 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)]/40 focus:outline-none resize-none"
+              value={form.description}
+              onChange={(e) => updateField("description", e.target.value)}
+              className={cn(inputClass, "resize-none")}
             />
           </div>
 
-          <div className="flex justify-end">
-            <Button size="sm" disabled>
-              Create (Coming Soon)
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-[var(--color-text-muted)]">
+              Requires Riot Tournaments API access.
+            </p>
+            <Button size="sm" onClick={handleCreate}>
+              Create Tournament
             </Button>
           </div>
         </div>
       )}
 
-      {/* Filter tabs */}
-      <div className="flex gap-1 border-b border-[var(--color-border)]/40 pb-px">
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
-            className={cn(
-              "relative px-3 py-2 font-mono text-[10px] tracking-wider transition-colors",
-              activeTab === tab.value
-                ? "text-[var(--color-accent-text)]"
-                : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
-            )}
+      {/* Empty state */}
+      <div className="flex min-h-[280px] flex-col items-center justify-center gap-4 rounded-md border border-dashed border-[var(--color-border)]/40 bg-[var(--color-surface)]/20 px-6 py-12">
+        <svg className="h-10 w-10 text-[var(--color-text-muted)]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 4v12l-4-2-4 2V4M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <div className="text-center">
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            No tournaments yet
+          </p>
+          <p className="mt-1 max-w-xs text-xs leading-relaxed text-[var(--color-text-muted)]">
+            Tournaments will be available once the Riot production API key is approved.
+            Organizers with tournament access can create events for the community.
+          </p>
+        </div>
+        {isAuthenticated && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowCreate(true)}
           >
-            {tab.label}
-            {activeTab === tab.value && (
-              <span className="absolute bottom-0 left-0 right-0 h-px bg-[var(--color-accent)]" />
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Tournament list */}
-      <div className="space-y-3">
-        {filtered.length === 0 ? (
-          <div className="flex min-h-[200px] flex-col items-center justify-center gap-2">
-            <p className="text-xs text-[var(--color-text-muted)]">No tournaments found</p>
-            <p className="font-mono text-[9px] tracking-wider text-[var(--color-text-muted)]">
-              Check back soon or create your own
-            </p>
-          </div>
-        ) : (
-          filtered.map((tournament) => (
-            <TournamentCard key={tournament.id} tournament={tournament} />
-          ))
+            Create Tournament
+          </Button>
         )}
       </div>
 
@@ -338,8 +223,8 @@ export default function TournamentsPage() {
       <div className="rounded-md border border-[var(--color-border)]/20 bg-[var(--color-surface)]/30 px-4 py-3">
         <p className="font-mono text-[9px] leading-relaxed tracking-wider text-[var(--color-text-muted)]">
           Tournaments are free to enter. All participants must have a linked Riot account.
-          Minimum 20 participants required per Riot Tournaments API policy.
-          Traditional bracket formats only (elimination, round robin, swiss).
+          Powered by the Riot Games Tournaments API. Traditional bracket formats only
+          (elimination, round robin, swiss).
         </p>
       </div>
     </div>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/hooks/use-auth";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type {
@@ -282,6 +284,8 @@ function LogEntry({ message, time }: { message: string; time?: string }) {
 // ---------------------------------------------------------------------------
 
 export default function AdminPage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [quota, setQuota] = useState<RiotQuotaStatus | null>(null);
   const [crawler, setCrawler] = useState<CrawlerStatus | null>(null);
@@ -323,12 +327,28 @@ export default function AdminPage() {
     }
   }, []);
 
+  // Redirect unauthenticated users
   useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
     fetchAll();
     addLog("Admin panel loaded — fetching system status");
     const interval = setInterval(fetchAll, 15000);
     return () => clearInterval(interval);
-  }, [fetchAll, addLog]);
+  }, [fetchAll, addLog, isAuthenticated]);
+
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="flex min-h-[300px] items-center justify-center">
+        <p className="text-xs text-[var(--color-text-muted)]">Loading...</p>
+      </div>
+    );
+  }
 
   const handleKillSwitch = async () => {
     setActionLoading("kill");
