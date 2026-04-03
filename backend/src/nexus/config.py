@@ -127,6 +127,11 @@ class Settings(BaseSettings):
             raise ValueError("JWT_SECRET_KEY must be changed from the default value in production")
         return v
 
+    # --- Discord Bot ---
+    discord_bot_token: str = ""
+    discord_application_id: str = ""
+    nexus_api_base_url: str = "http://localhost:8000"
+
     # --- Crawler ---
     crawler_enabled: bool = False
     crawler_regions: str = "na1"

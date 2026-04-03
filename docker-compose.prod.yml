@@ -110,6 +110,30 @@ services:
     networks:
       - nexus-net
 
+  bot:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: nexus-bot-prod
+    command: ["python", "-m", "nexus.bot"]
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - ENVIRONMENT=production
+      - NEXUS_API_BASE_URL=http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.25"
+    networks:
+      - nexus-net
+
   postgres:
     image: postgres:16-alpine
     container_name: nexus-postgres-prod
