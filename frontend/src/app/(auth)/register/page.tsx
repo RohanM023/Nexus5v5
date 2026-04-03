@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { OAuthButtons } from "@/components/auth/oauth-buttons";
 import { cn } from "@/lib/utils";
 
 function getPasswordStrength(password: string): {
@@ -139,6 +140,8 @@ export default function RegisterPage() {
           Create Account
         </Button>
       </form>
+
+      <OAuthButtons />
 
       <p className="mt-8 text-center text-xs text-[var(--color-text-muted)]">
         Already have an account?{" "}

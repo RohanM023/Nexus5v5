@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { OAuthButtons } from "@/components/auth/oauth-buttons";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -63,6 +64,8 @@ export default function LoginPage() {
           Sign In
         </Button>
       </form>
+
+      <OAuthButtons />
 
       <p className="mt-8 text-center text-xs text-[var(--color-text-muted)]">
         No account?{" "}
