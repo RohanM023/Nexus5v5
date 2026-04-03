@@ -9,8 +9,8 @@ export function useProfile(userId?: string) {
 
   const profileQuery = useQuery({
     queryKey: ["profile", userId],
-    queryFn: () => (userId ? api.getProfile(userId) : api.getMe()),
-    enabled: true,
+    queryFn: () => api.getMe(),
+    enabled: !!userId,
   });
 
   const championPoolQuery = useQuery({
