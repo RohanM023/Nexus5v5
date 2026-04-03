@@ -31,6 +31,38 @@ import type {
   RiotQuotaStatus,
 } from "@/types";
 
+function friendlyErrorMessage(status: number, path: string): string {
+  const isAuth = path.includes("/auth/login") || path.includes("/auth/register");
+
+  if (isAuth) {
+    switch (status) {
+      case 401:
+        return "Incorrect email or password.";
+      case 403:
+        return "Account is locked. Please try again later.";
+      case 404:
+        return "Account not found. Check your email or create a new account.";
+      case 409:
+        return "An account with this email already exists.";
+      case 422:
+        return "Invalid email or password format.";
+      case 429:
+        return "Too many login attempts. Please wait a moment and try again.";
+    }
+  }
+
+  switch (status) {
+    case 500:
+      return "Something went wrong on our end. Please try again later.";
+    case 502:
+    case 503:
+    case 504:
+      return "Server is temporarily unavailable. Please try again in a moment.";
+    default:
+      return `Something went wrong (${status}). Please try again.`;
+  }
+}
+
 class ApiClient {
   private async request<T>(
     path: string,
@@ -48,10 +80,15 @@ class ApiClient {
       }
     }
 
-    const response = await fetch(path, {
-      ...options,
-      headers,
-    });
+    let response: Response;
+    try {
+      response = await fetch(path, {
+        ...options,
+        headers,
+      });
+    } catch {
+      throw new ApiError(0, "Unable to connect to the server. Check your internet connection and try again.");
+    }
 
     if (response.status === 401) {
       // Check if this is actually an auth error from our backend
@@ -70,7 +107,7 @@ class ApiClient {
           if (!retryResponse.ok) {
             const errorBody = await retryResponse.json().catch(() => null);
             const message =
-              errorBody?.error?.message || `Request failed: ${retryResponse.status}`;
+              errorBody?.error?.message || friendlyErrorMessage(retryResponse.status, path);
             throw new ApiError(retryResponse.status, message, errorBody?.error?.code);
           }
           if (retryResponse.status === 204) {
@@ -88,14 +125,14 @@ class ApiClient {
       }
 
       // Non-auth 401 (e.g., upstream error) — treat as a normal error
-      const message = body?.error?.message || `Request failed: ${response.status}`;
+      const message = body?.error?.message || friendlyErrorMessage(response.status, path);
       throw new ApiError(response.status, message, body?.error?.code);
     }
 
     if (!response.ok) {
       const errorBody = await response.json().catch(() => null);
       const message =
-        errorBody?.error?.message || `Request failed: ${response.status}`;
+        errorBody?.error?.message || friendlyErrorMessage(response.status, path);
       throw new ApiError(response.status, message, errorBody?.error?.code);
     }
 

@@ -222,8 +222,6 @@ export default function TournamentsPage() {
       <div className="rounded-md border border-[var(--color-border)]/20 bg-[var(--color-surface)]/30 px-4 py-3">
         <p className="font-mono text-[9px] leading-relaxed tracking-wider text-[var(--color-text-muted)]">
           Tournaments are free to enter. All participants must have a linked Riot account.
-          Powered by the Riot Games Tournaments API. Traditional bracket formats only
-          (elimination, round robin, swiss).
         </p>
       </div>
     </div>
