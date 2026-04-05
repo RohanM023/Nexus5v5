@@ -98,7 +98,10 @@ export function ScoutReport({ opponentTeam, opponentPools, banTargets }: ScoutRe
           const pool = opponentPools[opponentTeam.indexOf(player)];
           const topChamps = pool?.champions.slice(0, 4) ?? player.top_champions?.slice(0, 4) ?? [];
           const highestComfort = pool?.champions[0]?.comfort_score ?? 0;
-          const avgWinRate = pool?.champions.slice(0, 5).reduce((a, c) => a + c.win_rate, 0) / Math.min(5, pool?.champions.length ?? 1) ?? 0;
+          const poolChamps = pool?.champions ?? [];
+          const avgWinRate = poolChamps.length > 0
+            ? poolChamps.slice(0, 5).reduce((a, c) => a + c.win_rate, 0) / Math.min(5, poolChamps.length)
+            : 0;
 
           return (
             <div
