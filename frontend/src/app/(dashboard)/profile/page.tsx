@@ -7,6 +7,7 @@ import { ChampionPoolGrid } from "@/components/profile/champion-pool-grid";
 import { AccountCard } from "@/components/profile/account-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageLoader, ErrorDisplay } from "@/components/ui/loading";
+import { PocketPickSuggester } from "@/components/profile/pocket-pick-suggester";
 import Link from "next/link";
 
 export default function ProfilePage() {
@@ -90,6 +91,10 @@ export default function ProfilePage() {
       </Card>
 
       {championPool && <ChampionPoolGrid champions={championPool.champions} />}
+
+      {performance && championPool && (
+        <PocketPickSuggester performance={performance} championPool={championPool} />
+      )}
     </div>
   );
 }

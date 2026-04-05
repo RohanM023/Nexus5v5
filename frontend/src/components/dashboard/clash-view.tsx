@@ -13,6 +13,7 @@ import { TeamPanel } from "./team-panel";
 import { WinProbability } from "./win-probability";
 import { RecommendationRow } from "./recommendation-row";
 import { BanPriority } from "./ban-priority";
+import { ScoutReport } from "./scout-report";
 import { TeamRadarChart } from "@/components/charts/team-radar-chart";
 import { ChampionSelect } from "@/components/draft/champion-select";
 import type { TeamPlayer, TeamRole } from "@/types";
@@ -566,6 +567,18 @@ export function ClashView() {
           <BanPriority bans={banTargets.slice(0, 10)} />
           <BanPriority bans={banTargets.slice(10, 20)} />
         </div>
+      </div>
+
+      {/* Scout Report */}
+      <div className="space-y-3">
+        <h3 className="text-xs font-semibold tracking-wide text-[var(--color-text-primary)]">
+          Scouting Report
+        </h3>
+        <ScoutReport
+          opponentTeam={opponentTeam}
+          opponentPools={opponentPools}
+          banTargets={banTargets}
+        />
       </div>
     </div>
   );
