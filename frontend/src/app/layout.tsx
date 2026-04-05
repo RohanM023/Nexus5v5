@@ -14,12 +14,12 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://nexus5v5.gg"),
-  title: "Nexus 5v5 - Draft Intelligence Platform",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://lynkr.gg"),
+  title: "Lynkr - Draft Intelligence Platform",
   description:
     "AI-driven League of Legends Clash analytics with identity aggregation and real-time draft intelligence.",
   openGraph: {
-    siteName: "Nexus 5v5",
+    siteName: "Lynkr",
   },
   twitter: {
     card: "summary",

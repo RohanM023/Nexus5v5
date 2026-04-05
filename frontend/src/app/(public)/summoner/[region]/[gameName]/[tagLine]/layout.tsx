@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: SummonerLayoutParams): Promis
   const decodedName = decodeURIComponent(gameName);
   const decodedTag = decodeURIComponent(tagLine);
 
-  const title = `${decodedName}#${decodedTag} — Nexus 5v5`;
+  const title = `${decodedName}#${decodedTag} — Lynkr`;
   const description = `View stats, champion pool, and match history for ${decodedName}#${decodedTag} on ${region.toUpperCase()}`;
 
   return {

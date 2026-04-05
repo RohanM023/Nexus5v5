@@ -58,7 +58,7 @@ export default function RegisterPage() {
     <div className="animate-fade-in">
       <h2 className="text-center text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">Create Account</h2>
       <p className="mt-1 text-center text-xs text-[var(--color-text-muted)]">
-        Join Nexus to unlock draft intelligence
+        Join Lynkr to unlock draft intelligence
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">

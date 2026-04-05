@@ -50,7 +50,7 @@ export default function Home() {
       <div className="w-full max-w-[520px] animate-fade-in">
         <h1 className="mb-12 text-center">
           <span className="block font-mono text-3xl font-bold tracking-[0.2em] uppercase text-[var(--color-text-primary)] sm:text-4xl">
-            Nexus
+            Lynkr
           </span>
           <span className="mt-1 block font-mono text-[10px] tracking-[0.5em] uppercase text-[var(--color-text-muted)]">
             Draft Intelligence

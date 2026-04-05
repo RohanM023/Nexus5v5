@@ -28,7 +28,7 @@ export default function LoginPage() {
     <div className="animate-fade-in">
       <h2 className="text-center text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">Welcome back</h2>
       <p className="mt-1 text-center text-xs text-[var(--color-text-muted)]">
-        Sign in to your Nexus account
+        Sign in to your Lynkr account
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">

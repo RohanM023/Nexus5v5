@@ -62,10 +62,10 @@ export default function DiscordPage() {
             </svg>
           </div>
           <h1 className="font-mono text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">
-            Nexus Discord Bot
+            Lynkr Discord Bot
           </h1>
           <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-muted)]">
-            Bring Nexus analytics directly into your Discord server —
+            Bring Lynkr analytics directly into your Discord server —
             summoner lookups, draft sessions, scouting reports, and more.
           </p>
         </div>

@@ -23,10 +23,7 @@ export default function AuthLayout({
       <div className="mb-10">
         <Link href="/" className="flex flex-col items-center gap-1">
           <span className="font-mono text-xl font-bold tracking-[0.2em] uppercase text-[var(--color-text-primary)]">
-            Nexus
-          </span>
-          <span className="font-mono text-[9px] tracking-[0.4em] uppercase text-[var(--color-text-muted)]">
-            5v5
+            Lynkr
           </span>
         </Link>
       </div>
