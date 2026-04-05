@@ -481,3 +481,78 @@ export interface DbStats {
   storage_mb: number;
   recent_days: { day: string; matches: number; players: number }[];
 }
+
+// --- Community ---
+
+export interface FindListing {
+  id: string;
+  user_id: string;
+  riot_id: string;
+  roles: string[];
+  rank: string | null;
+  champions: string | null;
+  discord: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FindListingCreate {
+  riot_id: string;
+  roles: string[];
+  rank?: string;
+  champions?: string;
+  discord?: string;
+  notes?: string;
+}
+
+export interface ScrimListing {
+  id: string;
+  user_id: string;
+  team_name: string;
+  contact_riot_id: string;
+  discord: string | null;
+  rank_range: string | null;
+  formats: string[];
+  availability: string[];
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScrimListingCreate {
+  team_name: string;
+  contact_riot_id: string;
+  discord?: string;
+  rank_range?: string;
+  formats: string[];
+  availability: string[];
+  notes?: string;
+}
+
+export interface ClashTournamentPhase {
+  id: number;
+  registration_time: number;
+  start_time: number;
+  cancelled: boolean;
+}
+
+export interface ClashTournament {
+  id: string;
+  theme_id: number;
+  name_key: string;
+  name_key_secondary: string;
+  schedule: ClashTournamentPhase[];
+}
+
+export interface PatchChange {
+  champion: string;
+  type: "buff" | "nerf" | "adjust";
+  summary: string;
+  impact: "High" | "Med" | "Low";
+}
+
+export interface PatchData {
+  patch: string;
+  changes: PatchChange[];
+}

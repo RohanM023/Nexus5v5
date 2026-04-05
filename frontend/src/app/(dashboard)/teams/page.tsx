@@ -1,23 +1,35 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import type { ClashTournament } from "@/types";
 
-// 2026 Clash schedule — approximate dates based on Riot's historical cadence
-const CLASH_WEEKENDS = [
-  { id: "jan-1", label: "January Tournament I", dates: ["Jan 17", "Jan 18"], month: "January" },
-  { id: "jan-2", label: "January Tournament II", dates: ["Jan 31", "Feb 1"], month: "January" },
-  { id: "feb-1", label: "February Tournament I", dates: ["Feb 14", "Feb 15"], month: "February" },
-  { id: "feb-2", label: "February Tournament II", dates: ["Feb 28", "Mar 1"], month: "February" },
-  { id: "mar-1", label: "March Tournament I", dates: ["Mar 14", "Mar 15"], month: "March" },
-  { id: "mar-2", label: "March Tournament II", dates: ["Mar 28", "Mar 29"], month: "March" },
-  { id: "apr-1", label: "April Tournament I", dates: ["Apr 11", "Apr 12"], month: "April" },
-  { id: "apr-2", label: "April Tournament II", dates: ["Apr 25", "Apr 26"], month: "April" },
-  { id: "may-1", label: "May Tournament I", dates: ["May 9", "May 10"], month: "May" },
-  { id: "may-2", label: "May Tournament II", dates: ["May 23", "May 24"], month: "May" },
-  { id: "jun-1", label: "June Tournament I", dates: ["Jun 6", "Jun 7"], month: "June" },
-  { id: "jun-2", label: "June Tournament II", dates: ["Jun 20", "Jun 21"], month: "June" },
-];
+function formatTournamentDates(phases: ClashTournament["schedule"]): string[] {
+  const times = phases
+    .filter((p) => !p.cancelled)
+    .map((p) => new Date(p.start_time * 1000));
+  if (times.length === 0) return [];
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const unique = [...new Set(times.map((d) => fmt(d)))];
+  return unique;
+}
+
+function tournamentToWeekend(t: ClashTournament, idx: number) {
+  const dates = formatTournamentDates(t.schedule);
+  const firstPhase = t.schedule.find((p) => !p.cancelled);
+  const startMs = firstPhase ? firstPhase.start_time * 1000 : Date.now();
+  const month = new Date(startMs).toLocaleDateString("en-US", { month: "long" });
+  return {
+    id: t.id,
+    label: t.name_key || `Tournament ${idx + 1}`,
+    dates,
+    month,
+    startMs,
+  };
+}
 
 const SLOT_LABELS = ["Top", "Jungle", "Mid", "Bot", "Support"] as const;
 
@@ -36,10 +48,8 @@ interface Availability {
 const STORAGE_KEY_TEAM = "lynkr-clash-team";
 const STORAGE_KEY_AVAIL = "lynkr-clash-availability";
 
-function isPast(dates: string[]): boolean {
-  const last = dates[dates.length - 1];
-  const d = new Date(`${last}, 2026`);
-  return d < new Date();
+function isPastMs(ms: number): boolean {
+  return ms < Date.now();
 }
 
 export default function TeamsPage() {
@@ -48,6 +58,12 @@ export default function TeamsPage() {
   const [addName, setAddName] = useState("");
   const [addRiotId, setAddRiotId] = useState("");
   const [filterMonth, setFilterMonth] = useState<string>("All");
+
+  const { data: tournaments = [] } = useQuery({
+    queryKey: ["clash-tournaments"],
+    queryFn: () => api.getClashTournaments(),
+    staleTime: 60 * 60 * 1000,
+  });
 
   useEffect(() => {
     try {
@@ -102,9 +118,10 @@ export default function TeamsPage() {
   const allAvailable = (weekendId: string) =>
     teammates.length > 0 && teammates.every((t) => availability[weekendId]?.[t.id]);
 
-  const months = ["All", ...Array.from(new Set(CLASH_WEEKENDS.map((w) => w.month)))];
-  const filtered = CLASH_WEEKENDS.filter((w) => filterMonth === "All" || w.month === filterMonth);
-  const upcomingFull = CLASH_WEEKENDS.filter((w) => !isPast(w.dates) && allAvailable(w.id));
+  const weekends = tournaments.map((t, i) => tournamentToWeekend(t as ClashTournament, i));
+  const months = ["All", ...Array.from(new Set(weekends.map((w) => w.month)))];
+  const filtered = weekends.filter((w) => filterMonth === "All" || w.month === filterMonth);
+  const upcomingFull = weekends.filter((w) => !isPastMs(w.startMs) && allAvailable(w.id));
 
   const inputClass =
     "rounded-md border border-[var(--color-border)] bg-[var(--background)] px-3 py-2 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)]/40 focus:outline-none transition-colors";
@@ -200,9 +217,15 @@ export default function TeamsPage() {
           ))}
         </div>
 
+        {weekends.length === 0 && (
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-8 text-center">
+            <p className="text-xs text-[var(--color-text-muted)]">No upcoming Clash tournaments found.</p>
+            <p className="mt-1 font-mono text-[9px] text-[var(--color-text-muted)]">Riot may not have announced the next schedule yet.</p>
+          </div>
+        )}
         <div className="space-y-2">
           {filtered.map((weekend) => {
-            const past = isPast(weekend.dates);
+            const past = isPastMs(weekend.startMs);
             const count = getAvailCount(weekend.id);
             const full = allAvailable(weekend.id);
 

@@ -447,6 +447,40 @@ class ApiClient {
       method: "POST",
     });
   }
+
+  // --- Community ---
+
+  async getFindListings(): Promise<FindListing[]> {
+    return this.request<FindListing[]>("/api/v1/community/find");
+  }
+
+  async upsertFindListing(data: FindListingCreate): Promise<FindListing> {
+    return this.request<FindListing>("/api/v1/community/find", { method: "POST", body: JSON.stringify(data) });
+  }
+
+  async deleteFindListing(): Promise<void> {
+    await this.request<void>("/api/v1/community/find", { method: "DELETE" });
+  }
+
+  async getScrimListings(): Promise<ScrimListing[]> {
+    return this.request<ScrimListing[]>("/api/v1/community/scrims");
+  }
+
+  async upsertScrimListing(data: ScrimListingCreate): Promise<ScrimListing> {
+    return this.request<ScrimListing>("/api/v1/community/scrims", { method: "POST", body: JSON.stringify(data) });
+  }
+
+  async deleteScrimListing(): Promise<void> {
+    await this.request<void>("/api/v1/community/scrims", { method: "DELETE" });
+  }
+
+  async getClashTournaments(): Promise<ClashTournament[]> {
+    return this.request<ClashTournament[]>("/api/v1/community/clash/tournaments");
+  }
+
+  async getPatchData(): Promise<PatchData> {
+    return this.request<PatchData>("/api/v1/community/patch");
+  }
 }
 
 export class ApiError extends Error {
