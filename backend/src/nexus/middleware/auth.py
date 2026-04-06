@@ -21,6 +21,7 @@ _security = HTTPBearer(auto_error=False)
 
 _public_key_cache: str | None = None
 _private_key_cache: str | None = None
+_algorithm_cache: str | None = None
 
 
 def _load_key(path: str) -> str | None:
@@ -47,12 +48,17 @@ def _get_private_key(settings: Settings) -> str:
 
 
 def _get_algorithm(settings: Settings) -> str:
+    global _algorithm_cache
+    if _algorithm_cache is not None:
+        return _algorithm_cache
     key = _load_key(settings.jwt_private_key_path)
     if key and key.startswith("-----BEGIN"):
-        return "RS256"
+        _algorithm_cache = "RS256"
+        return _algorithm_cache
     if settings.environment == "production":
         raise RuntimeError("RS256 keys missing in production — JWT security compromised")
-    return "HS256"
+    _algorithm_cache = "HS256"
+    return _algorithm_cache
 
 
 def create_access_token(
