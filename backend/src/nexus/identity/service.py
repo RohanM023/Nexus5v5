@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import bcrypt
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -90,6 +90,14 @@ async def login_user(
 
     if not _verify_password(password, user.password_hash):
         raise AuthError("Invalid email or password")
+
+    # Clean up expired refresh tokens for this user before issuing a new one
+    await db.execute(
+        delete(RefreshToken).where(
+            RefreshToken.user_id == user.id,
+            RefreshToken.expires_at < datetime.now(UTC),
+        )
+    )
 
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
