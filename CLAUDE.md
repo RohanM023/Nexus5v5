@@ -69,6 +69,15 @@ Clients (Next.js, Nexus-Core widgets, partner sites)
 | GET | `/api/v1/admin/riot-quota` | Riot API quota usage |
 | POST | `/api/v1/admin/synergy/rebuild` | Rebuild synergy matrix |
 
+### Tier List
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/v1/tier-list` | No | Clash tier list (latest patch, or `?patch=14.8`) |
+| GET | `/api/v1/tier-list/patches` | No | List available patch versions |
+| PUT | `/api/v1/tier-list` | Admin | Create/replace tier list for a patch |
+
+Tier list data lives in `backend/data/tier_list/{patch}.json` (one file per patch). To publish a new patch without a redeploy: add the JSON file on the VPS and the API auto-serves it as latest. PUT endpoint writes files directly — no DB required.
+
 ## Scoring Formulas
 
 ### True Mastery (per champion, per user) → 0-100
@@ -161,7 +170,8 @@ Composite = 0.35*Synergy + 0.35*Counter + 0.30*Comfort
 ## Key Directories
 
 ```
-backend/src/nexus/     — FastAPI modules (identity/, draft/, match/, analytics/, admin/, shared/)
+backend/src/nexus/     — FastAPI modules (identity/, draft/, match/, analytics/, admin/, shared/, tier_list/)
+backend/data/tier_list/ — Clash tier list JSON files, one per patch (e.g. 14.8.json)
 backend/tests/         — unit/, integration/, load/
 frontend/src/app/      — Next.js App Router pages
 frontend/src/components/ — ui/, draft/, profile/, charts/, dashboard/, match/

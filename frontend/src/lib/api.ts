@@ -29,6 +29,7 @@ import type {
   RegisterRequest,
   RiotAccount,
   RiotQuotaStatus,
+  TierListResponse,
 } from "@/types";
 
 function friendlyErrorMessage(status: number, path: string): string {
@@ -480,6 +481,17 @@ class ApiClient {
 
   async getPatchData(): Promise<PatchData> {
     return this.request<PatchData>("/api/v1/community/patch");
+  }
+
+  // ---- Tier List ----
+
+  async getTierList(patch?: string): Promise<TierListResponse> {
+    const url = patch ? `/api/v1/tier-list?patch=${encodeURIComponent(patch)}` : "/api/v1/tier-list";
+    return this.request<TierListResponse>(url);
+  }
+
+  async getTierListPatches(): Promise<{ patches: string[] }> {
+    return this.request<{ patches: string[] }>("/api/v1/tier-list/patches");
   }
 }
 

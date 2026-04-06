@@ -556,3 +556,23 @@ export interface PatchData {
   patch: string;
   changes: PatchChange[];
 }
+
+// ---- Tier List ----
+
+export type TierRank = "S" | "A" | "B" | "C" | "D";
+export type TierRole = "Top" | "Jungle" | "Mid" | "Bot" | "Support";
+export type TierPickRate = "High" | "Med" | "Low";
+
+export interface TierEntry {
+  name: string;
+  roles: TierRole[];
+  tier: TierRank;
+  why: string;
+  pickRate: TierPickRate;
+}
+
+export interface TierListResponse {
+  patch: string;
+  updated_at: string;
+  entries: TierEntry[];
+}
